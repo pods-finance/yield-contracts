@@ -1,5 +1,5 @@
 {
-  "name": "hardhat-project",
+  "name": "lisbon",
   "scripts": {
     "compile": "hardhat commpile",
     "lint:ts": "ts-standard --fix",
