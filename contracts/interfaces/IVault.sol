@@ -2,10 +2,14 @@
 pragma solidity >=0.8.6;
 
 interface IVault {
-    event Stake(address indexed owner, uint shareAmount, uint underlyingAmount);
-    event Claim(address indexed owner, uint shareAmount, uint underlyingAmount);
+    error CallerHasNotEnoughShares();
+    error ClaimNotAllowed();
+    error ClaimNotAvailable();
+    error NotInClaimWindow();
 
-    error CallerHasNoShares();
+    event Stake(address indexed owner, uint shareAmount, uint underlyingAmount);
+    event ClaimRequested(address indexed owner, uint roundId);
+    event Claim(address indexed owner, uint shareAmount, uint underlyingAmount);
 
     function stake(uint amount) external;
 

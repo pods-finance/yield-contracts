@@ -2,10 +2,14 @@
 pragma solidity >=0.8.6;
 
 import "@openzeppelin/contracts/access/Ownable.sol";
-import "./Vault.sol";
+import "@openzeppelin/contracts/token/ERC20/extensions/IERC20Metadata.sol";
+import "./interfaces/IVault.sol";
+import "./libs/TransferUtils.sol";
 
-contract StrategyVault is Vault, Ownable {
+contract StrategyVault is IVault, Ownable {
     using TransferUtils for IERC20Metadata;
+
+    IERC20Metadata public immutable underlying;
 
     address strategist;
 
@@ -16,15 +20,10 @@ contract StrategyVault is Vault, Ownable {
     uint totalLockedShares;
 
     mapping(address => uint) claimRequest;
-    bool claimWindow;
-    error ClaimNotAllowed();
-    error NotInClaimWindow();
+    bool claimWindowOpen;
 
-    event ClaimRequested(address indexed owner, uint roundId);
-
-    constructor(string memory name, string memory symbol, address _underlying, address _strategist)
-        Vault(name, symbol, _underlying)
-    {
+    constructor(address _underlying, address _strategist) {
+        underlying = IERC20Metadata(_underlying);
         strategist = _strategist;
     }
 
