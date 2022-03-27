@@ -19,17 +19,15 @@ contract StrategyVault is IVault, Ownable {
     mapping(address => uint) userLockedShares;
     uint totalLockedShares;
 
-    mapping(address => uint) claimRequest;
-    bool claimWindowOpen;
+    mapping(address => uint) withdrawRequest;
+    bool withdrawWindowOpen;
 
     constructor(address _underlying, address _strategist) {
         underlying = IERC20Metadata(_underlying);
         strategist = _strategist;
     }
 
-    function stake(uint amount) public override {
-        uint shareAmount = previewShares(amount);
-
+    function deposit(uint amount) public override {
         underlying.safeTransferFrom(msg.sender, address(this), amount);
         _mint(address(this), shareAmount);
 
@@ -53,14 +51,14 @@ contract StrategyVault is IVault, Ownable {
         transfer(msg.sender, unlockedShares);
     }
 
-    function requestClaim(address to) external {
-        claimRequest[to] = currentRoundId;
-        emit ClaimRequested(to, currentRoundId);
+    function requestWithdraw(address to) external {
+        withdrawRequest[to] = currentRoundId;
+        emit WithdrawRequest(to, currentRoundId);
     }
 
-    function claim() public override {
-        if (claimRequest[msg.sender] != currentRoundId) revert ClaimNotAllowed();
-        if (!claimWindow) revert NotInClaimWindow();
+    function withdraw() public override {
+        if (!withdrawWindowOpen) revert NotInWithdrawWindow();
+        if (withdrawRequest[msg.sender] != currentRoundId) revert WithdrawNotAllowed();
 
         uint shareAmount = balanceOf(msg.sender);
         if (shareAmount == 0) revert CallerHasNoShares();
@@ -78,7 +76,7 @@ contract StrategyVault is IVault, Ownable {
         uint claimableUnderlying = previewClaim(shareAmount);
         underlying.transfer(msg.sender, claimableUnderlying);
 
-        emit Claim(msg.sender, shareAmount, claimableUnderlying);
+        emit Withdraw(msg.sender, shareAmount, claimableUnderlying);
     }
 
     function unlockedSharesOf(address owner) public view returns (uint) {
