@@ -5,6 +5,7 @@ import "@openzeppelin/contracts/access/Ownable.sol";
 import "@openzeppelin/contracts/token/ERC20/extensions/IERC20Metadata.sol";
 import "./interfaces/IVault.sol";
 import "./libs/TransferUtils.sol";
+import "hardhat/console.sol";
 
 contract StrategyVault is IVault, Ownable {
     using TransferUtils for IERC20Metadata;
@@ -32,11 +33,13 @@ contract StrategyVault is IVault, Ownable {
         strategist = _strategist;
     }
 
+    // Depositor
     function deposit(uint amount) public override {
         underlying.safeTransferFrom(msg.sender, address(this), amount);
-        totalDeposited += amount;
 
         uint shareAmount = previewShares(amount);
+        totalDeposited += amount;
+
         _unlockPreviousShares(msg.sender);
         _mintLockedShares(msg.sender, shareAmount);
 
@@ -51,20 +54,24 @@ contract StrategyVault is IVault, Ownable {
     function withdraw() public override {
         address owner = msg.sender;
         if (!withdrawWindowOpen) revert NotInWithdrawWindow();
-        if (withdrawRequest[owner] != currentRoundId) revert WithdrawNotAllowed();
+        if (withdrawRequest[owner] != currentRoundId - 1) revert WithdrawNotAllowed();
 
         _unlockPreviousShares(owner);
 
         (uint shareAmount,) = sharesOf(owner);
-        _burnShares(owner, shareAmount);
-
         uint claimableUnderlying = previewClaim(shareAmount);
+
+        _burnShares(owner, shareAmount);
         totalDeposited -= claimableUnderlying;
         underlying.transfer(owner, claimableUnderlying);
 
         emit Withdraw(owner, shareAmount, claimableUnderlying);
     }
 
+    /**
+     * @dev Outputs the amount of shares and the locked shares
+     * for a given `owner` address
+     */
     function sharesOf(address owner) public view returns (uint unlocked, uint locked) {
         locked = userLockedShares[owner];
 
@@ -72,7 +79,7 @@ contract StrategyVault is IVault, Ownable {
             locked = 0;
         }
 
-        unlocked = userShares[owner] - userLockedShares[owner];
+        unlocked = userShares[owner] - locked;
     }
 
     /**
@@ -93,6 +100,29 @@ contract StrategyVault is IVault, Ownable {
      */
     function previewClaim(uint shareAmount) public view returns(uint) {
         return (shareAmount * totalShares) / totalDeposited;
+    }
+
+    // Strategist
+
+    modifier onlyStrategist {
+        if(msg.sender != strategist) revert CallerIsNotTheStrategist();
+        _;
+    }
+
+    function prepareRound() public onlyStrategist {
+        withdrawWindowOpen = false;
+
+        uint balance = underlying.balanceOf(address(this));
+        underlying.safeTransfer(strategist, balance);
+
+        emit PrepareRound(currentRoundId, balance);
+    }
+
+    function closeRound(uint amountYielded) public onlyStrategist {
+        underlying.safeTransferFrom(msg.sender, address(this), amountYielded);
+        withdrawWindowOpen = true;
+
+        emit CloseRound(currentRoundId++, amountYielded);
     }
 
     /**

@@ -6,10 +6,13 @@ interface IVault {
     error WithdrawNotAllowed();
     error WithdrawNotAvailable();
     error NotInWithdrawWindow();
+    error CallerIsNotTheStrategist();
 
     event Deposit(address indexed owner, uint shareAmount, uint underlyingAmount);
     event WithdrawRequest(address indexed owner, uint roundId);
     event Withdraw(address indexed owner, uint shareAmount, uint underlyingAmount);
+    event PrepareRound(uint indexed roundId, uint amount);
+    event CloseRound(uint indexed roundId, uint amountYielded);
 
     function deposit(uint amount) external;
 
