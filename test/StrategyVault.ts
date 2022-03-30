@@ -10,8 +10,8 @@ describe('StrategyVault', () => {
 
   before(async () => {
     [, user0, user1, strategist] = await ethers.getSigners()
-    const Collateral = await ethers.getContractFactory('Underlying')
-    underlying = await Collateral.deploy()
+    const Underlying = await ethers.getContractFactory('Underlying')
+    underlying = await Underlying.deploy()
 
     const Vault = await ethers.getContractFactory('StrategyVault')
     vault = await Vault.deploy(underlying.address, await strategist.getAddress())
