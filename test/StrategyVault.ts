@@ -93,4 +93,46 @@ describe('StrategyVault', () => {
 
     expect(await underlying.balanceOf(vault.address)).to.be.equal(0)
   })
+
+  it('redeposit test case', async () => {
+    const underlyingAmount = ethers.utils.parseEther('100')
+    await underlying.connect(user0).mint(underlyingAmount.mul(2))
+    await underlying.connect(user1).mint(underlyingAmount)
+    await underlying.connect(strategist).mint(underlyingAmount.mul(100))
+
+    await vault.connect(user0).deposit(underlyingAmount)
+    await vault.connect(user1).deposit(underlyingAmount)
+
+    let user0UnlockedShares: BigNumber, user0LockedShares: BigNumber,
+      user1UnlockedShares: BigNumber, user1LockedShares: BigNumber
+
+    // Round 1
+    await vault.connect(strategist).prepareRound()
+    await vault.connect(strategist).closeRound(underlyingAmount.mul(3))
+
+    // Round 2
+    await vault.connect(user0).deposit(underlyingAmount)
+
+    await vault.connect(strategist).prepareRound()
+    await vault.connect(user0).requestWithdraw(await user0.getAddress())
+    await vault.connect(user1).requestWithdraw(await user1.getAddress())
+    await vault.connect(strategist).closeRound(underlyingAmount.mul(6))
+
+    const expectedUser0Amount = ethers.utils.parseEther('375')
+    const expectedUser1Amount = ethers.utils.parseEther('225')
+
+    await vault.connect(user0).withdraw()
+    expect(await underlying.balanceOf(await user0.getAddress())).to.be.equal(expectedUser0Amount)
+    ;[user0UnlockedShares, user0LockedShares] = await vault.sharesOf(await user0.getAddress())
+    expect(user0UnlockedShares).to.be.equal(0)
+    expect(user0LockedShares).to.be.equal(0)
+
+    await vault.connect(user1).withdraw()
+    expect(await underlying.balanceOf(await user1.getAddress())).to.be.equal(expectedUser1Amount)
+    ;[user1UnlockedShares, user1LockedShares] = await vault.sharesOf(await user1.getAddress())
+    expect(user1UnlockedShares).to.be.equal(0)
+    expect(user1LockedShares).to.be.equal(0)
+
+    expect(await underlying.balanceOf(vault.address)).to.be.equal(0)
+  })
 })
