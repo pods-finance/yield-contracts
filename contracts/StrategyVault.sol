@@ -5,16 +5,15 @@ import "@openzeppelin/contracts/access/Ownable.sol";
 import "@openzeppelin/contracts/token/ERC20/extensions/IERC20Metadata.sol";
 import "./interfaces/IVault.sol";
 import "./libs/TransferUtils.sol";
-import "hardhat/console.sol";
+import "./libs/FixedPointMath.sol";
 
 contract StrategyVault is IVault, Ownable {
     using TransferUtils for IERC20Metadata;
+    using FixedPointMath for uint256;
 
     IERC20Metadata public immutable underlying;
 
     address strategist;
-
-    uint256 totalDeposited;
 
     uint256 currentRoundId;
     mapping(address => uint256) userRounds;
@@ -35,10 +34,9 @@ contract StrategyVault is IVault, Ownable {
 
     // Depositor
     function deposit(uint256 amount) public override {
-        underlying.safeTransferFrom(msg.sender, address(this), amount);
-
         uint256 shareAmount = previewShares(amount);
-        totalDeposited += amount;
+
+        underlying.safeTransferFrom(msg.sender, address(this), amount);
 
         _unlockPreviousShares(msg.sender);
         _mintLockedShares(msg.sender, shareAmount);
@@ -54,16 +52,12 @@ contract StrategyVault is IVault, Ownable {
     function withdraw() public override {
         address owner = msg.sender;
         if (!withdrawWindowOpen) revert NotInWithdrawWindow();
-        if (withdrawRequest[owner] != currentRoundId - 1)
-            revert WithdrawNotAllowed();
+        if (withdrawRequest[owner] != currentRoundId - 1) revert WithdrawNotAllowed();
 
         _unlockPreviousShares(owner);
 
-        (uint256 shareAmount, ) = sharesOf(owner);
-        uint256 claimableUnderlying = previewClaim(shareAmount);
-
-        _burnShares(owner, shareAmount);
-        totalDeposited -= claimableUnderlying;
+        (uint256 shareAmount,) = sharesOf(owner);
+        uint256 claimableUnderlying = _burnShares(owner, shareAmount);
         underlying.transfer(owner, claimableUnderlying);
 
         emit Withdraw(owner, shareAmount, claimableUnderlying);
@@ -98,7 +92,7 @@ contract StrategyVault is IVault, Ownable {
         uint256 shareAmount = underlyingAmount;
 
         if (totalShares > 0) {
-            shareAmount = (underlyingAmount * totalShares) / totalDeposited;
+            shareAmount = underlyingAmount.mulDivUp(totalShares, _totalBalance());
         }
 
         return shareAmount;
@@ -107,8 +101,8 @@ contract StrategyVault is IVault, Ownable {
     /**
      * @dev Outputs the amount of underlying that would be claimed given the `shareAmount`
      */
-    function previewClaim(uint256 shareAmount) public view returns (uint256) {
-        return (shareAmount * totalShares) / totalDeposited;
+    function previewClaim(address owner) public view returns (uint256) {
+        return userShares[owner].mulDivDown(_totalBalance(), totalShares);
     }
 
     // Strategist
@@ -134,6 +128,10 @@ contract StrategyVault is IVault, Ownable {
         emit CloseRound(currentRoundId++, amountYielded);
     }
 
+    function _totalBalance() internal view returns(uint) {
+        return underlying.balanceOf(strategist) + underlying.balanceOf(address(this));
+    }
+
     /**
      * @dev Mint new shares, and locks them until they the next round
      * @param owner Address owner of the shares
@@ -152,8 +150,9 @@ contract StrategyVault is IVault, Ownable {
      * @param owner Address owner of the shares
      * @param shareAmount Amount of shares to lock
      */
-    function _burnShares(address owner, uint256 shareAmount) private {
+    function _burnShares(address owner, uint256 shareAmount) private returns(uint claimableUnderlying) {
         if (shareAmount > userShares[owner]) revert CallerHasNotEnoughShares();
+        claimableUnderlying = previewClaim(owner);
         userShares[owner] -= shareAmount;
         totalShares -= shareAmount;
     }

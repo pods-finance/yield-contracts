@@ -6,7 +6,7 @@ import { BigNumber, Signer } from 'ethers'
 describe('StrategyVault', () => {
   let underlying: Contract, vault: Contract
   let user0: Signer, user1: Signer, strategist: Signer
-  let snapshotId: number
+  let snapshotId: BigNumber
 
   before(async () => {
     [, user0, user1, strategist] = await ethers.getSigners()
@@ -19,6 +19,9 @@ describe('StrategyVault', () => {
     await underlying.connect(user0).approve(vault.address, ethers.constants.MaxUint256)
     await underlying.connect(user1).approve(vault.address, ethers.constants.MaxUint256)
     await underlying.connect(strategist).approve(vault.address, ethers.constants.MaxUint256)
+  })
+
+  beforeEach(async () => {
     snapshotId = await ethers.provider.send('evm_snapshot', [])
   })
 
@@ -98,7 +101,6 @@ describe('StrategyVault', () => {
     const underlyingAmount = ethers.utils.parseEther('100')
     await underlying.connect(user0).mint(underlyingAmount.mul(2))
     await underlying.connect(user1).mint(underlyingAmount)
-    await underlying.connect(strategist).mint(underlyingAmount.mul(100))
 
     await vault.connect(user0).deposit(underlyingAmount)
     await vault.connect(user1).deposit(underlyingAmount)
@@ -108,14 +110,18 @@ describe('StrategyVault', () => {
 
     // Round 1
     await vault.connect(strategist).prepareRound()
+    await underlying.connect(strategist).mint(underlyingAmount) // Accruing yield
+
     await vault.connect(strategist).closeRound(underlyingAmount.mul(3))
 
     // Round 2
     await vault.connect(user0).deposit(underlyingAmount)
 
     await vault.connect(strategist).prepareRound()
+    await underlying.connect(strategist).mint(underlyingAmount.mul(2)) // Accruing yield
     await vault.connect(user0).requestWithdraw(await user0.getAddress())
     await vault.connect(user1).requestWithdraw(await user1.getAddress())
+
     await vault.connect(strategist).closeRound(underlyingAmount.mul(6))
 
     const expectedUser0Amount = ethers.utils.parseEther('375')
