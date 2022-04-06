@@ -62,6 +62,10 @@ contract BaseVault is IVault {
         emit Withdraw(owner, shareAmount, claimableUnderlying);
     }
 
+    function getName() external virtual override pure returns(string memory) {
+        return "Base Vault";
+    }
+
     /**
      * @dev Outputs the amount of shares and the locked shares
      * for a given `owner` address
