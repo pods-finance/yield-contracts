@@ -14,7 +14,7 @@ interface IVault {
     event PrepareRound(uint indexed roundId, uint amount);
     event CloseRound(uint indexed roundId, uint amountYielded);
 
-    function getName() external view returns(string memory);
+    function name() external view returns(string memory);
 
     function deposit(uint amount) external;
 

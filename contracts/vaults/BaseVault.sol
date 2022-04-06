@@ -62,7 +62,7 @@ contract BaseVault is IVault {
         emit Withdraw(owner, shareAmount, claimableUnderlying);
     }
 
-    function getName() external virtual override pure returns(string memory) {
+    function name() external virtual override pure returns(string memory) {
         return "Base Vault";
     }
 
