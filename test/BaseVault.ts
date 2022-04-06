@@ -3,7 +3,7 @@ import { expect } from 'chai'
 import { ethers } from 'hardhat'
 import { BigNumber, Signer } from 'ethers'
 
-describe('StrategyVault', () => {
+describe('BaseVault', () => {
   let underlying: Contract, vault: Contract
   let user0: Signer, user1: Signer, strategist: Signer
   let snapshotId: BigNumber
@@ -13,7 +13,7 @@ describe('StrategyVault', () => {
     const Underlying = await ethers.getContractFactory('Underlying')
     underlying = await Underlying.deploy()
 
-    const Vault = await ethers.getContractFactory('StrategyVault')
+    const Vault = await ethers.getContractFactory('BaseVault')
     vault = await Vault.deploy(underlying.address, await strategist.getAddress())
 
     await underlying.connect(user0).approve(vault.address, ethers.constants.MaxUint256)

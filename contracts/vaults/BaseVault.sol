@@ -2,11 +2,11 @@
 pragma solidity >=0.8.6;
 
 import "@openzeppelin/contracts/token/ERC20/extensions/IERC20Metadata.sol";
-import "./interfaces/IVault.sol";
-import "./libs/TransferUtils.sol";
-import "./libs/FixedPointMath.sol";
+import "../interfaces/IVault.sol";
+import "../libs/TransferUtils.sol";
+import "../libs/FixedPointMath.sol";
 
-contract StrategyVault is IVault {
+contract BaseVault is IVault {
     using TransferUtils for IERC20Metadata;
     using FixedPointMath for uint256;
 
