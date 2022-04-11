@@ -57,8 +57,8 @@ contract BaseVault is IVault {
      */
     function withdraw() public virtual override {
         address owner = msg.sender;
-        if (!withdrawWindowOpen) revert NotInWithdrawWindow();
-        if (withdrawRequest[owner] != currentRoundId - 1) revert WithdrawNotAllowed();
+        if (!withdrawWindowOpen) revert IVault__NotInWithdrawWindow();
+        if (withdrawRequest[owner] != currentRoundId - 1) revert IVault__WithdrawNotAllowed();
 
         _unlockPreviousShares(owner);
 
@@ -116,7 +116,7 @@ contract BaseVault is IVault {
     /** Strategist **/
 
     modifier onlyStrategist() {
-        if (msg.sender != strategist) revert CallerIsNotTheStrategist();
+        if (msg.sender != strategist) revert IVault__CallerIsNotTheStrategist();
         _;
     }
 
@@ -164,7 +164,7 @@ contract BaseVault is IVault {
      * @param shareAmount Amount of shares to lock
      */
     function _burnShares(address owner, uint256 shareAmount) internal virtual returns(uint claimableUnderlying) {
-        if (shareAmount > userShares[owner]) revert CallerHasNotEnoughShares();
+        if (shareAmount > userShares[owner]) revert IVault__CallerHasNotEnoughShares();
         claimableUnderlying = previewWithdraw(userShares[owner]);
         userShares[owner] -= shareAmount;
         totalShares -= shareAmount;

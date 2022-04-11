@@ -2,11 +2,11 @@
 pragma solidity >=0.8.6;
 
 interface IVault {
-    error CallerHasNotEnoughShares();
-    error WithdrawNotAllowed();
-    error WithdrawNotAvailable();
-    error NotInWithdrawWindow();
-    error CallerIsNotTheStrategist();
+    error IVault__CallerHasNotEnoughShares();
+    error IVault__WithdrawNotAllowed();
+    error IVault__WithdrawNotAvailable();
+    error IVault__NotInWithdrawWindow();
+    error IVault__CallerIsNotTheStrategist();
 
     event Deposit(address indexed owner, uint shareAmount, uint underlyingAmount);
     event WithdrawRequest(address indexed owner, uint roundId);
