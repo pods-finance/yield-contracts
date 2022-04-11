@@ -14,9 +14,19 @@ interface IVault {
     event PrepareRound(uint indexed roundId, uint amount);
     event CloseRound(uint indexed roundId, uint amountYielded);
 
+    /**
+     * @dev Returns the name of the Vault.
+     */
     function name() external view returns(string memory);
 
+    /**
+     * @dev Deposits underlying tokens, generating shares.
+     * @param amount The amount of underlying tokens to deposit
+     */
     function deposit(uint amount) external;
 
+    /**
+     * @dev Burn shares, withdrawing underlying tokens.
+     */
     function withdraw() external;
 }
