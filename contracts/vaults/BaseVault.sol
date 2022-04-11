@@ -63,10 +63,14 @@ contract BaseVault is IVault {
         _unlockPreviousShares(owner);
 
         (uint256 shareAmount,) = sharesOf(owner);
-        uint256 claimableUnderlying = _burnShares(owner, shareAmount);
-        underlying.transfer(owner, claimableUnderlying);
+        uint256 underlyingAmount = _burnShares(owner, shareAmount);
 
-        emit Withdraw(owner, shareAmount, claimableUnderlying);
+        // Apply custom withdraw logic
+        _beforeWithdraw(shareAmount, underlyingAmount);
+
+        underlying.transfer(owner, underlyingAmount);
+
+        emit Withdraw(owner, shareAmount, underlyingAmount);
     }
 
     /**
@@ -177,4 +181,8 @@ contract BaseVault is IVault {
             userRounds[owner] = currentRoundId;
         }
     }
+
+    /** Hooks **/
+
+    function _beforeWithdraw(uint256 shareAmount, uint256 underlyingAmount) internal virtual {}
 }
