@@ -103,10 +103,10 @@ contract BaseVault is IVault {
     }
 
     /**
-     * @dev Outputs the amount of underlying tokens would be withdrawn by the `owner` address.
+     * @dev Outputs the amount of underlying tokens would be withdrawn with a given amount of shares.
      */
-    function previewWithdraw(address owner) public virtual view returns (uint256) {
-        return userShares[owner].mulDivDown(_totalBalance(), totalShares);
+    function previewWithdraw(uint256 shareAmount) public virtual view returns (uint256) {
+        return shareAmount.mulDivDown(_totalBalance(), totalShares);
     }
 
     /** Strategist **/
@@ -161,7 +161,7 @@ contract BaseVault is IVault {
      */
     function _burnShares(address owner, uint256 shareAmount) internal virtual returns(uint claimableUnderlying) {
         if (shareAmount > userShares[owner]) revert CallerHasNotEnoughShares();
-        claimableUnderlying = previewWithdraw(owner);
+        claimableUnderlying = previewWithdraw(userShares[owner]);
         userShares[owner] -= shareAmount;
         totalShares -= shareAmount;
     }
