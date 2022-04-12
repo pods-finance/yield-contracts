@@ -6,6 +6,10 @@ import "../interfaces/IVault.sol";
 import "../libs/TransferUtils.sol";
 import "../libs/FixedPointMath.sol";
 
+/**
+ * @title A Vault that tokenize shares of strategy
+ * @author Pods Finance
+ */
 contract BaseVault is IVault {
     using TransferUtils for IERC20Metadata;
     using FixedPointMath for uint256;
@@ -47,6 +51,10 @@ contract BaseVault is IVault {
         emit Deposit(msg.sender, shareAmount, amount);
     }
 
+    /**
+     * @dev Creates a request to withdraw.
+     * @param owner The share owner
+     */
     function requestWithdraw(address owner) external {
         withdrawRequest[owner] = currentRoundId;
         emit WithdrawRequest(owner, currentRoundId);
@@ -120,6 +128,10 @@ contract BaseVault is IVault {
         _;
     }
 
+    /**
+     * @dev Creates the next round, sending the parked funds to the
+     * strategist where it should start accruing yield.
+     */
     function prepareRound() public virtual onlyStrategist {
         withdrawWindowOpen = false;
 
@@ -129,6 +141,10 @@ contract BaseVault is IVault {
         emit PrepareRound(currentRoundId, balance);
     }
 
+    /**
+     * @dev Closes the round, reporting the amount yielded in the period
+     * and opens the window for withdraws.
+     */
     function closeRound(uint256 amountYielded) public virtual onlyStrategist {
         underlying.safeTransferFrom(msg.sender, address(this), amountYielded);
         withdrawWindowOpen = true;
