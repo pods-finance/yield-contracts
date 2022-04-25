@@ -3,7 +3,7 @@ import { BigNumber, Signer } from 'ethers'
 import { ethers } from 'hardhat'
 import { expect } from 'chai'
 
-describe.only('DepositQueueLib', () => {
+describe('DepositQueueLib', () => {
   let queue: Contract
   let user0: Signer, user1: Signer
   let snapshotId: BigNumber
