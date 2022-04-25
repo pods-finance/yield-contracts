@@ -45,23 +45,25 @@ describe('BaseVault', () => {
     const underlyingAmount = ethers.utils.parseEther('10')
 
     await underlying.connect(user0).mint(underlyingAmount)
-    expect(await underlying.balanceOf(user0Address))
-      .to.be.equal(underlyingAmount)
+    expect(await underlying.balanceOf(user0Address)).to.be.equal(underlyingAmount)
 
+    // User0 deposits to vault
     await vault.connect(user0).deposit(underlyingAmount)
     expect(await vault.depositQueueSize()).to.be.equal(1)
     expect(await underlying.balanceOf(user0Address)).to.be.equal(0)
     expect(await underlying.balanceOf(vault.address)).to.be.equal(underlyingAmount)
-
     expect(await vault.sharesOf(user0Address)).to.be.equal(0)
     expect(await vault.idleAmountOf(user0Address)).to.be.equal(underlyingAmount)
 
-    await vault.connect(strategist).endRound(await underlying.balanceOf(await strategist.getAddress()))
+    // Process deposits
     await vault.connect(strategist).processQueuedDeposits(0, await vault.depositQueueSize())
     expect(await vault.depositQueueSize()).to.be.equal(0)
-
     expect(await vault.sharesOf(user0Address)).to.be.equal(underlyingAmount)
     expect(await vault.idleAmountOf(user0Address)).to.be.equal(0)
+
+    // Start round
+    await vault.connect(strategist).startRound()
+    expect(await underlying.balanceOf(vault.address)).to.be.equal(0)
   })
 
   it('withdraws proportionally', async () => {

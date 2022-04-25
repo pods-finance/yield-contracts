@@ -3,7 +3,7 @@ pragma solidity >=0.8.6;
 
 interface IVault {
     error IVault__CallerHasNotEnoughShares();
-    error IVault__NotInWithdrawWindow();
+    error IVault__NotProcessingDeposits();
     error IVault__CallerIsNotTheStrategist();
 
     event Deposit(address indexed owner, uint amountDeposited);

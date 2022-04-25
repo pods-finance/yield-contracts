@@ -26,7 +26,7 @@ contract BaseVault is IVault {
     mapping(address => uint256) userShares;
     uint256 totalShares;
 
-    bool withdrawWindowOpen;
+    bool processingDeposits = true;
 
     DepositQueueLib.DepositQueue private depositQueue;
 
@@ -117,7 +117,7 @@ contract BaseVault is IVault {
      * strategist where it should start accruing yield.
      */
     function startRound() public virtual onlyStrategist {
-        withdrawWindowOpen = false;
+        processingDeposits = false;
 
         uint256 idleBalance = underlying.balanceOf(address(this));
         _afterRoundStart(idleBalance);
@@ -131,13 +131,13 @@ contract BaseVault is IVault {
      */
     function endRound(uint256 amountYielded) public virtual onlyStrategist {
         underlying.safeTransferFrom(msg.sender, address(this), amountYielded);
-        withdrawWindowOpen = true;
+        processingDeposits = true;
 
         emit EndRound(currentRoundId++, amountYielded);
     }
 
     function processQueuedDeposits(uint startIndex, uint endIndex) public {
-        if (!withdrawWindowOpen) revert IVault__NotInWithdrawWindow();
+        if (!processingDeposits) revert IVault__NotProcessingDeposits();
 
         uint processedDeposits;
         for(uint i = startIndex; i < endIndex; i++) {
