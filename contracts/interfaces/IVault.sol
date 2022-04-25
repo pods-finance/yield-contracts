@@ -8,11 +8,11 @@ interface IVault {
     error IVault__NotInWithdrawWindow();
     error IVault__CallerIsNotTheStrategist();
 
-    event Deposit(address indexed owner, uint shareAmount, uint underlyingAmount);
+    event Deposit(address indexed owner, uint amountDeposited);
     event WithdrawRequest(address indexed owner, uint roundId);
-    event Withdraw(address indexed owner, uint shareAmount, uint underlyingAmount);
-    event PrepareRound(uint indexed roundId, uint amount);
-    event CloseRound(uint indexed roundId, uint amountYielded);
+    event Withdraw(address indexed owner, uint sharesBurnt, uint amountWithdrawn);
+    event StartRound(uint indexed roundId, uint amountAddedToStrategy);
+    event EndRound(uint indexed roundId, uint amountYielded);
 
     /**
      * @dev Returns the name of the Vault.

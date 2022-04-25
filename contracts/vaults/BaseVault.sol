@@ -123,27 +123,27 @@ contract BaseVault is IVault {
     }
 
     /**
-     * @dev Creates the next round, sending the parked funds to the
+     * @dev Starts the next round, sending the idle funds to the
      * strategist where it should start accruing yield.
      */
-    function prepareRound() public virtual onlyStrategist {
+    function startRound() public virtual onlyStrategist {
         withdrawWindowOpen = false;
 
-        uint256 balance = underlying.balanceOf(address(this));
-        underlying.safeTransfer(strategist, balance);
+        uint256 idleBalance = underlying.balanceOf(address(this));
+        _afterRoundStart(idleBalance);
 
-        emit PrepareRound(currentRoundId, balance);
+        emit StartRound(currentRoundId, idleBalance);
     }
 
     /**
      * @dev Closes the round, reporting the amount yielded in the period
      * and opens the window for withdraws.
      */
-    function closeRound(uint256 amountYielded) public virtual onlyStrategist {
+    function endRound(uint256 amountYielded) public virtual onlyStrategist {
         underlying.safeTransferFrom(msg.sender, address(this), amountYielded);
         withdrawWindowOpen = true;
 
-        emit CloseRound(currentRoundId++, amountYielded);
+        emit EndRound(currentRoundId++, amountYielded);
     }
 
     function processQueuedDeposits(uint startIndex, uint endIndex) public {
@@ -202,4 +202,8 @@ contract BaseVault is IVault {
     /** Hooks **/
 
     function _beforeWithdraw(uint256 shareAmount, uint256 underlyingAmount) internal virtual {}
+
+    function _afterRoundStart(uint underlyingAmount) internal virtual {
+        underlying.safeTransfer(strategist, underlyingAmount);
+    }
 }

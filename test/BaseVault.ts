@@ -56,7 +56,7 @@ describe('BaseVault', () => {
     expect(await vault.sharesOf(user0Address)).to.be.equal(0)
     expect(await vault.idleAmountOf(user0Address)).to.be.equal(underlyingAmount)
 
-    await vault.connect(strategist).closeRound(await underlying.balanceOf(await strategist.getAddress()))
+    await vault.connect(strategist).endRound(await underlying.balanceOf(await strategist.getAddress()))
     await vault.connect(strategist).processQueuedDeposits(0, await vault.depositQueueSize())
     expect(await vault.depositQueueSize()).to.be.equal(0)
 
@@ -71,9 +71,9 @@ describe('BaseVault', () => {
     await vault.connect(user0).deposit(underlyingAmount)
 
     // Simulate
-    await vault.connect(strategist).prepareRound()
-    await vault.connect(strategist).closeRound(await underlying.balanceOf(await strategist.getAddress()))
-    await vault.connect(strategist).prepareRound()
+    await vault.connect(strategist).startRound()
+    await vault.connect(strategist).endRound(await underlying.balanceOf(await strategist.getAddress()))
+    await vault.connect(strategist).startRound()
     await vault.connect(user0).requestWithdraw(user0Address)
 
     await expect(vault.connect(user0).withdraw()).to.be.revertedWith('IVault__NotInWithdrawWindow()')
@@ -86,8 +86,8 @@ describe('BaseVault', () => {
     await vault.connect(user0).deposit(underlyingAmount)
 
     // Simulate
-    await vault.connect(strategist).prepareRound()
-    await vault.connect(strategist).closeRound(await underlying.balanceOf(await strategist.getAddress()))
+    await vault.connect(strategist).startRound()
+    await vault.connect(strategist).endRound(await underlying.balanceOf(await strategist.getAddress()))
 
     await expect(vault.connect(user0).withdraw()).to.be.revertedWith('IVault__WithdrawNotAllowed()')
   })
@@ -111,11 +111,11 @@ describe('BaseVault', () => {
     expect(await vault.sharesOf(user1Address)).to.be.equal(0)
     expect(await vault.idleAmountOf(user1Address)).to.be.equal(underlyingAmount)
 
-    await vault.connect(strategist).prepareRound()
+    await vault.connect(strategist).startRound()
     await vault.connect(user0).requestWithdraw(user0Address)
     await vault.connect(user1).requestWithdraw(user1Address)
 
-    await vault.connect(strategist).closeRound(await underlying.balanceOf(await strategist.getAddress()))
+    await vault.connect(strategist).endRound(await underlying.balanceOf(await strategist.getAddress()))
     await vault.connect(strategist).processQueuedDeposits(0, await vault.depositQueueSize())
     expect(await vault.depositQueueSize()).to.be.equal(0)
 
@@ -144,20 +144,20 @@ describe('BaseVault', () => {
       user1UnlockedShares: BigNumber, user1LockedShares: BigNumber
 
     // Round 1
-    await vault.connect(strategist).prepareRound()
+    await vault.connect(strategist).startRound()
     await underlying.connect(strategist).mint(underlyingAmount) // Accruing yield
 
-    await vault.connect(strategist).closeRound(underlyingAmount.mul(3))
+    await vault.connect(strategist).endRound(underlyingAmount.mul(3))
 
     // Round 2
     await vault.connect(user0).deposit(underlyingAmount)
 
-    await vault.connect(strategist).prepareRound()
+    await vault.connect(strategist).startRound()
     await underlying.connect(strategist).mint(underlyingAmount.mul(2)) // Accruing yield
     await vault.connect(user0).requestWithdraw(user0Address)
     await vault.connect(user1).requestWithdraw(user1Address)
 
-    await vault.connect(strategist).closeRound(underlyingAmount.mul(6))
+    await vault.connect(strategist).endRound(underlyingAmount.mul(6))
 
     const expectedUser0Amount = ethers.utils.parseEther('375')
     const expectedUser1Amount = ethers.utils.parseEther('225')
