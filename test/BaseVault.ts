@@ -92,7 +92,7 @@ describe('BaseVault', () => {
     await expect(vault.connect(user0).withdraw()).to.be.revertedWith('IVault__WithdrawNotAllowed()')
   })
 
-  it.only('withdraws proportionally', async () => {
+  it('withdraws proportionally', async () => {
     const underlyingAmount = ethers.utils.parseEther('10')
     await underlying.connect(user0).mint(underlyingAmount.mul(2))
     await underlying.connect(user1).mint(underlyingAmount)

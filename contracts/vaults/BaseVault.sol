@@ -193,7 +193,8 @@ contract BaseVault is IVault {
      */
     function _burnShares(address owner, uint256 shareAmount) internal virtual returns(uint claimableUnderlying) {
         if (shareAmount > userShares[owner]) revert IVault__CallerHasNotEnoughShares();
-        claimableUnderlying = previewWithdraw(userShares[owner]);
+        uint totalWithdrawable = underlying.balanceOf(address(this));
+        claimableUnderlying = userShares[owner].mulDivDown(totalWithdrawable, totalShares);
         userShares[owner] -= shareAmount;
         totalShares -= shareAmount;
     }
