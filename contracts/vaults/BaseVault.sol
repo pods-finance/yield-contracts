@@ -51,6 +51,8 @@ contract BaseVault is IVault {
      * @dev See {IVault-withdraw}.
      */
     function withdraw() public virtual override {
+        if(processingDeposits) revert IVault__NotInWithdrawPeriod();
+
         address owner = msg.sender;
 
         uint256 shareAmount = sharesOf(owner);

@@ -66,6 +66,17 @@ describe('BaseVault', () => {
     expect(await underlying.balanceOf(vault.address)).to.be.equal(0)
   })
 
+  it('cannot withdraw between a round\'s end and the beginning of the next', async () => {
+    const underlyingAmount = ethers.utils.parseEther('10')
+
+    await underlying.connect(user0).mint(underlyingAmount)
+    await vault.connect(user0).deposit(underlyingAmount)
+    await vault.connect(strategist).processQueuedDeposits(0, await vault.depositQueueSize())
+    await vault.connect(strategist).endRound(await underlying.balanceOf(await strategist.getAddress()))
+
+    await expect(vault.connect(user0).withdraw()).to.be.revertedWith('IVault__NotInWithdrawPeriod()')
+  })
+
   it('withdraws proportionally', async () => {
     const underlyingAmount = ethers.utils.parseEther('10')
     await underlying.connect(user0).mint(underlyingAmount.mul(2))
