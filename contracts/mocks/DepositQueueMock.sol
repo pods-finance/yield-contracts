@@ -21,6 +21,10 @@ contract DepositQueueMock {
         return depositQueue.get(index);
     }
 
+    function balanceOf(address owner) external view returns(uint) {
+        return depositQueue.balanceOf(owner);
+    }
+
     function size() external view returns(uint) {
         return depositQueue.size();
     }

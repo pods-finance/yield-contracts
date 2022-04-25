@@ -3,7 +3,7 @@ import { BigNumber, Signer } from 'ethers'
 import { ethers } from 'hardhat'
 import { expect } from 'chai'
 
-describe('DepositQueueLib', () => {
+describe.only('DepositQueueLib', () => {
   let queue: Contract
   let user0: Signer, user1: Signer
   let snapshotId: BigNumber
@@ -37,12 +37,14 @@ describe('DepositQueueLib', () => {
     deposit = await queue.get(0)
     expect(deposit.owner).to.be.equal(await user0.getAddress())
     expect(deposit.amount).to.be.equal(1)
+    expect(await queue.balanceOf(await user0.getAddress())).to.be.equal(1)
 
     await queue.connect(user1).push(10)
     expect(await queue.size()).to.be.equal(2)
     deposit = await queue.get(1)
     expect(deposit.owner).to.be.equal(await user1.getAddress())
     expect(deposit.amount).to.be.equal(10)
+    expect(await queue.balanceOf(await user1.getAddress())).to.be.equal(10)
   })
 
   it('re-adds the user to the queue', async () => {
@@ -54,12 +56,14 @@ describe('DepositQueueLib', () => {
     deposit = await queue.get(0)
     expect(deposit.owner).to.be.equal(await user0.getAddress())
     expect(deposit.amount).to.be.equal(1)
+    expect(await queue.balanceOf(await user0.getAddress())).to.be.equal(1)
 
     await queue.connect(user0).push(3)
     expect(await queue.size()).to.be.equal(1)
     deposit = await queue.get(0)
     expect(deposit.owner).to.be.equal(await user0.getAddress())
     expect(deposit.amount).to.be.equal(4)
+    expect(await queue.balanceOf(await user0.getAddress())).to.be.equal(4)
   })
 
   it('removes users from the queue and reorganize queue', async () => {
