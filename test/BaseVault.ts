@@ -64,34 +64,6 @@ describe('BaseVault', () => {
     expect(await vault.idleAmountOf(user0Address)).to.be.equal(0)
   })
 
-  it('should revert if trying to withdraw outside the withdrawal window', async () => {
-    const underlyingAmount = ethers.utils.parseEther('10')
-
-    await underlying.connect(user0).mint(underlyingAmount)
-    await vault.connect(user0).deposit(underlyingAmount)
-
-    // Simulate
-    await vault.connect(strategist).startRound()
-    await vault.connect(strategist).endRound(await underlying.balanceOf(await strategist.getAddress()))
-    await vault.connect(strategist).startRound()
-    await vault.connect(user0).requestWithdraw(user0Address)
-
-    await expect(vault.connect(user0).withdraw()).to.be.revertedWith('IVault__NotInWithdrawWindow()')
-  })
-
-  it('should revert if trying to withdraw without requesting first', async () => {
-    const underlyingAmount = ethers.utils.parseEther('10')
-
-    await underlying.connect(user0).mint(underlyingAmount)
-    await vault.connect(user0).deposit(underlyingAmount)
-
-    // Simulate
-    await vault.connect(strategist).startRound()
-    await vault.connect(strategist).endRound(await underlying.balanceOf(await strategist.getAddress()))
-
-    await expect(vault.connect(user0).withdraw()).to.be.revertedWith('IVault__WithdrawNotAllowed()')
-  })
-
   it('withdraws proportionally', async () => {
     const underlyingAmount = ethers.utils.parseEther('10')
     await underlying.connect(user0).mint(underlyingAmount.mul(2))
@@ -112,10 +84,8 @@ describe('BaseVault', () => {
     expect(await vault.idleAmountOf(user1Address)).to.be.equal(underlyingAmount)
 
     await vault.connect(strategist).startRound()
-    await vault.connect(user0).requestWithdraw(user0Address)
-    await vault.connect(user1).requestWithdraw(user1Address)
-
     await vault.connect(strategist).endRound(await underlying.balanceOf(await strategist.getAddress()))
+
     await vault.connect(strategist).processQueuedDeposits(0, await vault.depositQueueSize())
     expect(await vault.depositQueueSize()).to.be.equal(0)
 
@@ -154,9 +124,6 @@ describe('BaseVault', () => {
 
     await vault.connect(strategist).startRound()
     await underlying.connect(strategist).mint(underlyingAmount.mul(2)) // Accruing yield
-    await vault.connect(user0).requestWithdraw(user0Address)
-    await vault.connect(user1).requestWithdraw(user1Address)
-
     await vault.connect(strategist).endRound(underlyingAmount.mul(6))
 
     const expectedUser0Amount = ethers.utils.parseEther('375')

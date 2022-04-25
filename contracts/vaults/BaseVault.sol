@@ -26,7 +26,6 @@ contract BaseVault is IVault {
     mapping(address => uint256) userShares;
     uint256 totalShares;
 
-    mapping(address => uint256) withdrawRequest;
     bool withdrawWindowOpen;
 
     DepositQueueLib.DepositQueue private depositQueue;
@@ -46,15 +45,6 @@ contract BaseVault is IVault {
         depositQueue.push(DepositQueueLib.DepositEntry(msg.sender, amount));
 
         emit Deposit(msg.sender, amount);
-    }
-
-    /**
-     * @dev Creates a request to withdraw.
-     * @param owner The share owner
-     */
-    function requestWithdraw(address owner) external {
-        withdrawRequest[owner] = currentRoundId;
-        emit WithdrawRequest(owner, currentRoundId);
     }
 
     /**
