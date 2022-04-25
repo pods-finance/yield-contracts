@@ -46,6 +46,10 @@ library DepositQueueLib {
         depositEntry.amount = queue.cache[owner];
     }
 
+    function balanceOf(DepositQueue storage queue, address owner) external view returns(uint) {
+        return queue.cache[owner];
+    }
+
     function size(DepositQueue storage queue) external view returns(uint) {
         return queue.list.length;
     }
