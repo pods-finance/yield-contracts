@@ -11,11 +11,7 @@ contract YieldVaultMock is BaseVault {
         pool = YieldSourceMock(_pool);
     }
 
-    function totalBalance() public view returns(uint) {
-        return _totalBalance();
-    }
-
-    function _totalBalance() internal override view returns(uint) {
+    function totalAssets() public override view returns(uint) {
         return pool.convertToAssets(pool.balanceOf(address(this)));
     }
 

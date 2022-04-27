@@ -33,13 +33,13 @@ contract PrincipalProtectedETHBull is BaseVault {
 
     function _afterRoundStart(uint assets) internal override {
         pool.deposit(assets, address(this));
-        lastRoundBalance = _totalBalance();
+        lastRoundBalance = totalAssets();
     }
 
     function _afterRoundEnd() internal override {
         uint underlyingBefore = asset.balanceOf(address(this));
         // Marks the amount interest gained in the round
-        uint interest = _totalBalance() - lastRoundBalance;
+        uint interest = totalAssets() - lastRoundBalance;
         // Pulls the yields from investor
         uint investmentYield = asset.balanceOf(investor);
         if(investmentYield > 0) {
@@ -56,9 +56,9 @@ contract PrincipalProtectedETHBull is BaseVault {
     }
 
     /**
-     * @dev See {BaseVault-_totalBalance}.
+     * @dev See {BaseVault-totalAssets}.
      */
-    function _totalBalance() internal override view returns(uint) {
+    function totalAssets() public override view returns(uint) {
         return pool.previewRedeem(pool.balanceOf(address(this)));
     }
 

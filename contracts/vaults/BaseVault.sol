@@ -89,7 +89,7 @@ contract BaseVault is IVault {
         uint256 shares;
 
         if (totalShares > 0) {
-            shares = assets.mulDivUp(totalShares, _totalBalance());
+            shares = assets.mulDivUp(totalShares, totalAssets());
         }
 
         return shares;
@@ -99,7 +99,7 @@ contract BaseVault is IVault {
      * @dev Outputs the amount of underlying tokens would be withdrawn with a given amount of shares.
      */
     function previewWithdraw(uint256 shares) public virtual view returns (uint256) {
-        return shares.mulDivDown(_totalBalance(), totalShares);
+        return shares.mulDivDown(totalAssets(), totalShares);
     }
 
     /**
@@ -161,7 +161,7 @@ contract BaseVault is IVault {
     /**
      * @dev Calculate the total amount of assets under management.
      */
-    function _totalBalance() internal virtual view returns(uint) {
+    function totalAssets() public virtual view returns(uint) {
         return asset.balanceOf(strategist);
     }
 
@@ -170,7 +170,7 @@ contract BaseVault is IVault {
      */
     function _mintShares(address owner, uint256 assets, uint256 processedDeposits) internal virtual {
         uint256 shares = assets;
-        processedDeposits += _totalBalance();
+        processedDeposits += totalAssets();
 
         if (totalShares > 0) {
             shares = assets.mulDivUp(totalShares, processedDeposits);
@@ -187,7 +187,7 @@ contract BaseVault is IVault {
      */
     function _burnShares(address owner, uint256 shares) internal virtual returns(uint claimableUnderlying) {
         if (shares > userShares[owner]) revert IVault__CallerHasNotEnoughShares();
-        claimableUnderlying = userShares[owner].mulDivDown(_totalBalance(), totalShares);
+        claimableUnderlying = userShares[owner].mulDivDown(totalAssets(), totalShares);
         userShares[owner] -= shares;
         totalShares -= shares;
     }
