@@ -23,8 +23,8 @@ const config: HardhatUserConfig = {
     kovan: {
       url: 'https://kovan.infura.io/v3/' + process.env.INFURA_PROJECT_ID,
       accounts: {
-        mnemonic: process.env.DEV_MNEMONIC
-      },
+        mnemonic: process.env.DEV_MNEMONIC || ''
+      }
     },
   },
   gasReporter: {
