@@ -31,8 +31,8 @@ contract PrincipalProtectedETHBull is BaseVault {
         return "Principal Protected ETH Bull";
     }
 
-    function _afterRoundStart(uint underlyingAmount) internal override {
-        pool.deposit(underlyingAmount, address(this));
+    function _afterRoundStart(uint assets) internal override {
+        pool.deposit(assets, address(this));
         lastRoundBalance = _totalBalance();
     }
 
@@ -62,7 +62,7 @@ contract PrincipalProtectedETHBull is BaseVault {
         return pool.previewRedeem(pool.balanceOf(address(this)));
     }
 
-    function _beforeWithdraw(uint256, uint256 underlyingAmount) internal override {
-        pool.withdraw(underlyingAmount);
+    function _beforeWithdraw(uint256, uint256 assets) internal override {
+        pool.withdraw(assets);
     }
 }

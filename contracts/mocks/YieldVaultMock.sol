@@ -19,14 +19,14 @@ contract YieldVaultMock is BaseVault {
         return pool.convertToAssets(pool.balanceOf(address(this)));
     }
 
-    function _beforeWithdraw(uint256, uint256 underlyingAmount) internal override {
-        pool.withdraw(underlyingAmount);
+    function _beforeWithdraw(uint256, uint256 assets) internal override {
+        pool.withdraw(assets);
     }
 
-    function _afterRoundStart(uint underlyingAmount) internal override {
-        if (pool.previewDeposit(underlyingAmount) > 0) {
-            pool.asset().approve(address(pool), underlyingAmount);
-            pool.deposit(underlyingAmount, address(this));
+    function _afterRoundStart(uint assets) internal override {
+        if (pool.previewDeposit(assets) > 0) {
+            pool.asset().approve(address(pool), assets);
+            pool.deposit(assets, address(this));
         }
     }
 }
