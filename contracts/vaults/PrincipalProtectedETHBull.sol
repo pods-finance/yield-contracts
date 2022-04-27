@@ -20,8 +20,15 @@ contract PrincipalProtectedETHBull is BaseVault {
 
     YieldSourceMock public pool;
 
-    constructor(address _underlying, address _strategist, address _investor) BaseVault(_underlying, _strategist) {
+    constructor(
+        address _underlying,
+        address _strategist,
+        address _investor,
+        address _pool
+    ) BaseVault(_underlying, _strategist)
+    {
         investor = _investor;
+        pool = YieldSourceMock(_pool);
     }
 
     /**
