@@ -2,15 +2,13 @@
 pragma solidity >=0.8.6;
 
 import "../vaults/BaseVault.sol";
-import "./InterestPool.sol";
+import "./YieldSourceMock.sol";
 
-import "hardhat/console.sol";
-
-contract InterestVaultMock is BaseVault {
-    InterestPool public pool;
+contract YieldVaultMock is BaseVault {
+    YieldSourceMock public pool;
 
     constructor(address _underlying, address _strategist, address _pool) BaseVault(_underlying, _strategist) {
-        pool = InterestPool(_pool);
+        pool = YieldSourceMock(_pool);
     }
 
     function totalBalance() public view returns(uint) {
