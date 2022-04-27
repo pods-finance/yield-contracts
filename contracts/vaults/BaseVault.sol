@@ -50,7 +50,7 @@ contract BaseVault is IVault {
     }
 
     /**
-     * @dev See {IVault-withdtraw}.
+     * @dev See {IVault-withdraw}.
      */
     function withdraw() public virtual override {
         if(processingDeposits) revert IVault__ForbiddenDuringProcessDeposits();
