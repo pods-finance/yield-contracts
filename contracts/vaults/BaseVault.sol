@@ -26,7 +26,7 @@ contract BaseVault is IVault {
     mapping(address => uint256) userShares;
     uint256 totalShares;
 
-    bool processingDeposits = true;
+    bool processingDeposits = false;
 
     DepositQueueLib.DepositQueue private depositQueue;
 
