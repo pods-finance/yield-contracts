@@ -10,7 +10,7 @@ interface IVault {
     event Deposit(address indexed owner, uint amountDeposited);
     event Withdraw(address indexed owner, uint sharesBurnt, uint amountWithdrawn);
     event StartRound(uint indexed roundId, uint amountAddedToStrategy);
-    event EndRound(uint indexed roundId, uint amountYielded);
+    event EndRound(uint indexed roundId);
 
     /**
      * @dev Returns the name of the Vault.
