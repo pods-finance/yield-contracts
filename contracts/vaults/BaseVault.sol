@@ -128,14 +128,14 @@ contract BaseVault is IVault {
     }
 
     /**
-     * @dev Closes the round, reporting the amount yielded in the period
+     * @dev Closes the round, allowing deposits to the next round be processed.
      * and opens the window for withdraws.
      */
-    function endRound(uint256 amountYielded) public virtual onlyStrategist {
-        underlying.safeTransferFrom(msg.sender, address(this), amountYielded);
+    function endRound() public virtual onlyStrategist {
         processingDeposits = true;
+        _afterRoundEnd();
 
-        emit EndRound(currentRoundId++, amountYielded);
+        emit EndRound(currentRoundId++);
     }
 
     function processQueuedDeposits(uint startIndex, uint endIndex) public {
@@ -198,4 +198,6 @@ contract BaseVault is IVault {
     function _afterRoundStart(uint underlyingAmount) internal virtual {
         underlying.safeTransfer(strategist, underlyingAmount);
     }
+
+    function _afterRoundEnd() internal virtual {}
 }
