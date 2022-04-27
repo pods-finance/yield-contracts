@@ -148,6 +148,7 @@ contract BaseVault is IVault {
             DepositQueueLib.DepositEntry memory depositEntry = depositQueue.get(i);
             _mintShares(depositEntry.owner, depositEntry.amount, processedDeposits);
             processedDeposits += depositEntry.amount;
+            emit DepositProcessed(depositEntry.owner, currentRoundId, depositEntry.amount);
         }
         depositQueue.remove(startIndex, endIndex);
     }
