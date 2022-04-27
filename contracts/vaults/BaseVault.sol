@@ -109,6 +109,13 @@ contract BaseVault is IVault {
         return depositQueue.balanceOf(owner);
     }
 
+    /**
+     * @dev Outputs current size of the deposit queue.
+     */
+    function depositQueueSize() external view returns(uint256) {
+        return depositQueue.size();
+    }
+
     /** Strategist **/
 
     modifier onlyStrategist() {
@@ -140,6 +147,14 @@ contract BaseVault is IVault {
         emit EndRound(currentRoundId++);
     }
 
+    /**
+     * @dev Mint shares for deposits accumulated, effectively including their owners in the next round.
+     * `processQueuedDeposits` extracts up to but not including endIndex. For example, processQueuedDeposits(1,4)
+     * extracts the second element through the fourth element (elements indexed 1, 2, and 3).
+     *
+     * @param startIndex Zero-based index at which to start processing deposits
+     * @param endIndex The index of the first element to exclude from queue
+     */
     function processQueuedDeposits(uint startIndex, uint endIndex) public {
         if (!processingDeposits) revert IVault__NotProcessingDeposits();
 
@@ -151,10 +166,6 @@ contract BaseVault is IVault {
             emit DepositProcessed(depositEntry.owner, currentRoundId, depositEntry.amount);
         }
         depositQueue.remove(startIndex, endIndex);
-    }
-
-    function depositQueueSize() external view returns(uint256) {
-        return depositQueue.size();
     }
 
     /** Internals **/
