@@ -7,7 +7,7 @@ import "./YieldSourceMock.sol";
 contract YieldVaultMock is BaseVault {
     YieldSourceMock public pool;
 
-    constructor(address _underlying, address _strategist, address _pool) BaseVault(_underlying, _strategist) {
+    constructor(address _asset, address _strategist, address _pool) BaseVault(_asset, _strategist) {
         pool = YieldSourceMock(_pool);
     }
 
@@ -25,7 +25,7 @@ contract YieldVaultMock is BaseVault {
 
     function _afterRoundStart(uint underlyingAmount) internal override {
         if (pool.previewDeposit(underlyingAmount) > 0) {
-            pool.underlying().approve(address(pool), underlyingAmount);
+            pool.asset().approve(address(pool), underlyingAmount);
             pool.deposit(underlyingAmount, address(this));
         }
     }

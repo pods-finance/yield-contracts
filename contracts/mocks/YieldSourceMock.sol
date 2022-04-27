@@ -4,19 +4,19 @@ pragma solidity >=0.8.6;
 import "@openzeppelin/contracts/token/ERC20/extensions/IERC20Metadata.sol";
 import "@openzeppelin/contracts/token/ERC20/ERC20.sol";
 import "../libs/FixedPointMath.sol";
-import "./Underlying.sol";
+import "./Asset.sol";
 
 contract YieldSourceMock is ERC20("Interest Pool", "INTP") {
     using FixedPointMath for uint;
 
-    Underlying public immutable underlying;
+    Asset public immutable asset;
 
-    constructor(address _underlying) {
-        underlying = Underlying(_underlying);
+    constructor(address _asset) {
+        asset = Asset(_asset);
     }
 
     function generateInterest(uint amount) external {
-        underlying.mint(amount);
+        asset.mint(amount);
     }
 
     function deposit(uint amount, address receiver) external returns(uint shares) {
@@ -25,7 +25,7 @@ contract YieldSourceMock is ERC20("Interest Pool", "INTP") {
         // Check for rounding error since we round down in previewDeposit.
         require(amount != 0, "Shares too low");
 
-        underlying.transferFrom(msg.sender, address(this), amount);
+        asset.transferFrom(msg.sender, address(this), amount);
         _mint(receiver, shares);
     }
 
@@ -33,7 +33,7 @@ contract YieldSourceMock is ERC20("Interest Pool", "INTP") {
         shares = previewWithdraw(amount);
 
         _burn(msg.sender, shares);
-        underlying.transfer(msg.sender, amount);
+        asset.transfer(msg.sender, amount);
     }
 
     function redeem(uint shares) external returns(uint amount) {
@@ -43,7 +43,7 @@ contract YieldSourceMock is ERC20("Interest Pool", "INTP") {
         require(amount != 0, "Shares too low");
 
         _burn(msg.sender, shares);
-        underlying.transfer(msg.sender, amount);
+        asset.transfer(msg.sender, amount);
     }
 
     function previewDeposit(uint amount) public view returns (uint) {
@@ -60,7 +60,7 @@ contract YieldSourceMock is ERC20("Interest Pool", "INTP") {
     }
 
     function totalAssets() public view returns(uint) {
-        return underlying.balanceOf(address(this));
+        return asset.balanceOf(address(this));
     }
 
     function convertToShares(uint amount) public view returns (uint) {

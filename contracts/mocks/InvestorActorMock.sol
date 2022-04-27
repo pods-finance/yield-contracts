@@ -2,26 +2,26 @@
 pragma solidity >=0.8.6;
 
 import "../libs/FixedPointMath.sol";
-import "./Underlying.sol";
+import "./Asset.sol";
 
 contract InvestorActorMock {
     using FixedPointMath for uint256;
-    Underlying public immutable underlying;
+    Asset public immutable asset;
 
-    constructor(address _underlying) {
-        underlying = Underlying(_underlying);
+    constructor(address _asset) {
+        asset = Asset(_asset);
     }
 
     function generatePremium(uint256 amount) external {
-        underlying.mint(amount);
+        asset.mint(amount);
     }
 
     function buyOptionsWithYield() external {
-        uint256 ownBalance = underlying.balanceOf(address(this));
-        underlying.burn(ownBalance);
+        uint256 ownBalance = asset.balanceOf(address(this));
+        asset.burn(ownBalance);
     }
 
     function approveVaultToPull(address vaultAddress, uint256 amount) external {
-        underlying.approve(vaultAddress, amount);
+        asset.approve(vaultAddress, amount);
     }
 }

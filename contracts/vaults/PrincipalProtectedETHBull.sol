@@ -37,22 +37,22 @@ contract PrincipalProtectedETHBull is BaseVault {
     }
 
     function _afterRoundEnd() internal override {
-        uint underlyingBefore = underlying.balanceOf(address(this));
+        uint underlyingBefore = asset.balanceOf(address(this));
         // Marks the amount interest gained in the round
         uint interest = _totalBalance() - lastRoundBalance;
         // Pulls the yields from investor
-        uint investmentYield = underlying.balanceOf(investor);
+        uint investmentYield = asset.balanceOf(investor);
         if(investmentYield > 0) {
-            underlying.safeTransferFrom(investor, address(this), investmentYield);
+            asset.safeTransferFrom(investor, address(this), investmentYield);
         }
 
-        uint toPosition = underlying.balanceOf(address(this)) - underlyingBefore;
+        uint toPosition = asset.balanceOf(address(this)) - underlyingBefore;
         pool.deposit(toPosition, address(this));
 
         // Send round investment to investor
         uint investment = interest * investorRatio / DENOMINATOR;
         pool.withdraw(investment);
-        underlying.safeTransfer(investor, investment);
+        asset.safeTransfer(investor, investment);
     }
 
     /**

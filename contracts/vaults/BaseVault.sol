@@ -16,7 +16,7 @@ contract BaseVault is IVault {
     using FixedPointMath for uint256;
     using DepositQueueLib for DepositQueueLib.DepositQueue;
 
-    IERC20Metadata public immutable underlying;
+    IERC20Metadata public immutable asset;
 
     address strategist;
 
@@ -30,8 +30,8 @@ contract BaseVault is IVault {
 
     DepositQueueLib.DepositQueue private depositQueue;
 
-    constructor(address _underlying, address _strategist) {
-        underlying = IERC20Metadata(_underlying);
+    constructor(address _asset, address _strategist) {
+        asset = IERC20Metadata(_asset);
         strategist = _strategist;
     }
 
@@ -43,7 +43,7 @@ contract BaseVault is IVault {
     function deposit(uint256 amount) public virtual override {
         if(processingDeposits) revert IVault__ForbiddenDuringProcessDeposits();
 
-        underlying.safeTransferFrom(msg.sender, address(this), amount);
+        asset.safeTransferFrom(msg.sender, address(this), amount);
         depositQueue.push(DepositQueueLib.DepositEntry(msg.sender, amount));
 
         emit Deposit(msg.sender, amount);
@@ -63,7 +63,7 @@ contract BaseVault is IVault {
         // Apply custom withdraw logic
         _beforeWithdraw(shareAmount, underlyingAmount);
 
-        underlying.transfer(owner, underlyingAmount);
+        asset.transfer(owner, underlyingAmount);
 
         emit Withdraw(owner, shareAmount, underlyingAmount);
     }
@@ -123,7 +123,7 @@ contract BaseVault is IVault {
     function startRound() public virtual onlyStrategist {
         processingDeposits = false;
 
-        uint256 idleBalance = underlying.balanceOf(address(this));
+        uint256 idleBalance = asset.balanceOf(address(this));
         _afterRoundStart(idleBalance);
 
         emit StartRound(currentRoundId, idleBalance);
@@ -162,7 +162,7 @@ contract BaseVault is IVault {
      * @dev Calculate the total amount of assets under management.
      */
     function _totalBalance() internal virtual view returns(uint) {
-        return underlying.balanceOf(strategist);
+        return asset.balanceOf(strategist);
     }
 
     /**
@@ -197,7 +197,7 @@ contract BaseVault is IVault {
     function _beforeWithdraw(uint256 shareAmount, uint256 underlyingAmount) internal virtual {}
 
     function _afterRoundStart(uint underlyingAmount) internal virtual {
-        underlying.safeTransfer(strategist, underlyingAmount);
+        asset.safeTransfer(strategist, underlyingAmount);
     }
 
     function _afterRoundEnd() internal virtual {}
