@@ -3,7 +3,7 @@ pragma solidity >=0.8.6;
 
 import "@openzeppelin/contracts/token/ERC20/ERC20.sol";
 
-contract Underlying is ERC20("Underlying", "UND") {
+contract Asset is ERC20("Asset", "AST") {
     function mint(uint amount) public {
         _mint(msg.sender, amount);
     }
