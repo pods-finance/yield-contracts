@@ -8,15 +8,16 @@ import {
 
 describe.only('BaseVault', () => {
   let underlying: Contract, vault: Contract, pool: Contract
-  let user0: Signer, user1: Signer, strategist: Signer
-  let user0Address: string, user1Address: string
+  let user0: Signer, user1: Signer, user2: Signer, strategist: Signer
+  let user0Address: string, user1Address: string, user2Address: string
   let snapshotId: BigNumber
 
   before(async () => {
-    ;[, user0, user1, strategist] = await ethers.getSigners()
-    ;[user0Address, user1Address] = await Promise.all([
+    ;[, user0, user1, user2, strategist] = await ethers.getSigners()
+    ;[user0Address, user1Address, user2Address] = await Promise.all([
       user0.getAddress(),
-      user1.getAddress()
+      user1.getAddress(),
+      user2.getAddress()
     ])
     const DepositQueueLib = await ethers.getContractFactory('DepositQueueLib')
     const depositQueueLib = await DepositQueueLib.deploy()
@@ -36,6 +37,7 @@ describe.only('BaseVault', () => {
 
     await underlying.connect(user0).approve(vault.address, ethers.constants.MaxUint256)
     await underlying.connect(user1).approve(vault.address, ethers.constants.MaxUint256)
+    await underlying.connect(user2).approve(vault.address, ethers.constants.MaxUint256)
     await underlying.connect(strategist).approve(vault.address, ethers.constants.MaxUint256)
   })
 
@@ -149,17 +151,19 @@ describe.only('BaseVault', () => {
 
     // Round 1
     await vault.connect(strategist).startRound()
+    await pool.generateInterest(ethers.utils.parseEther('100'))
     await vault.connect(user0).deposit(underlyingAmount)
-    await pool.generateInterest(ethers.utils.parseEther('300')) // Accruing yield
+
+     // Accruing yield
     await vault.connect(strategist).endRound()
     await vault.connect(strategist).processQueuedDeposits(0, await vault.depositQueueSize())
+    await vault.connect(strategist).startRound()
 
-    await pool.generateInterest(underlyingAmount.mul(2)) // Accruing yield
+    await pool.generateInterest(ethers.utils.parseEther('200')) // Accruing yield
 
     const expectedUser0Amount = ethers.utils.parseEther('375')
     const expectedUser1Amount = ethers.utils.parseEther('225')
 
-    await vault.connect(strategist).startRound()
     await vault.connect(user0).withdraw()
     expect(await underlying.balanceOf(user0Address)).to.be.equal(expectedUser0Amount)
     expect(await vault.sharesOf(user0Address)).to.be.equal(0)
@@ -171,5 +175,6 @@ describe.only('BaseVault', () => {
     expect(await vault.idleAmountOf(user1Address)).to.be.equal(0)
 
     expect(await underlying.balanceOf(vault.address)).to.be.equal(0)
+    expect(await underlying.balanceOf(pool.address)).to.be.equal(0)
   })
 })
