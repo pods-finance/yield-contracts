@@ -78,6 +78,14 @@ describe('BaseVault', () => {
     await expect(vault.connect(user0).withdraw()).to.be.revertedWith('IVault__ForbiddenDuringProcessDeposits()')
   })
 
+  it('cannot deposit between a round\'s end and the beginning of the next', async () => {
+    const underlyingAmount = ethers.utils.parseEther('10')
+
+    await underlying.connect(user0).mint(underlyingAmount)
+    await vault.connect(strategist).endRound()
+    await expect(vault.connect(user0).deposit(underlyingAmount)).to.be.revertedWith('IVault__ForbiddenDuringProcessDeposits()')
+  })
+
   it('withdraws proportionally', async () => {
     const underlyingAmount = ethers.utils.parseEther('10')
 
