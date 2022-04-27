@@ -91,6 +91,16 @@ describe('BaseVault', () => {
     await expect(vault.connect(user0).deposit(underlyingAmount)).to.be.revertedWith('IVault__ForbiddenDuringProcessDeposits()')
   })
 
+  it('cannot processQueue After round started', async () => {
+    const underlyingAmount = ethers.utils.parseEther('10')
+
+    await underlying.connect(user0).mint(underlyingAmount)
+    await vault.connect(user0).deposit(underlyingAmount)
+    await vault.connect(strategist).endRound()
+    await vault.connect(strategist).startRound()
+    await expect(vault.connect(strategist).processQueuedDeposits(0, await vault.depositQueueSize())).to.be.revertedWith('IVault__NotProcessingDeposits()')
+  })
+
   it('withdraws proportionally', async () => {
     const underlyingAmount = ethers.utils.parseEther('10')
 
