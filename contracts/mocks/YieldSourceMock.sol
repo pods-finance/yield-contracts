@@ -6,7 +6,7 @@ import "@openzeppelin/contracts/token/ERC20/ERC20.sol";
 import "../libs/FixedPointMath.sol";
 import "./Underlying.sol";
 
-contract InterestPool is ERC20("Interest Pool", "INTP") {
+contract YieldSourceMock is ERC20("Interest Pool", "INTP") {
     using FixedPointMath for uint;
 
     Underlying public immutable underlying;
