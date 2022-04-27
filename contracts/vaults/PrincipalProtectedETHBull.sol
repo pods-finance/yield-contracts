@@ -2,23 +2,27 @@
 pragma solidity >=0.8.6;
 
 import "./BaseVault.sol";
+import "../mocks/YieldSourceMock.sol";
 
 /**
  * @title A Vault that use variable weekly yields to buy calls
  * @author Pods Finance
  */
 contract PrincipalProtectedETHBull is BaseVault {
+    using TransferUtils for IERC20Metadata;
     using FixedPointMath for uint256;
 
-    /**
-     * @dev The accumulated debt of buying Call options
-     */
-    uint totalDebt;
+    uint256 public constant DENOMINATOR = 10000;
 
-    error PrincipalProtectedETHBull__TargetCallsMismatch();
-    error PrincipalProtectedETHBull__FailedSilently();
+    uint256 public lastRoundBalance;
+    uint256 public investorRatio = 3000;
+    address public investor;
 
-    constructor(address _underlying, address _strategist) BaseVault(_underlying, _strategist) {}
+    YieldSourceMock public pool;
+
+    constructor(address _underlying, address _strategist, address _investor) BaseVault(_underlying, _strategist) {
+        investor = _investor;
+    }
 
     /**
      * @dev See {IVault-name}.
@@ -27,57 +31,38 @@ contract PrincipalProtectedETHBull is BaseVault {
         return "Principal Protected ETH Bull";
     }
 
-    function buyCalls(address[] calldata targets, bytes[] calldata calls, uint debt) external onlyStrategist {
-        _execute(targets, calls);
-        // Include the amount spent in options to the liabilities
-        totalDebt += debt;
+    function _afterRoundStart(uint underlyingAmount) internal override {
+        pool.deposit(underlyingAmount, address(this));
+        lastRoundBalance = _totalBalance();
     }
 
-    /**
-     * @dev See {BaseVault-previewWithdraw}.
-     */
-    function previewWithdraw(uint256 shareAmount) public override view returns (uint256) {
-        uint256 claimable = shareAmount.mulDivDown(_totalBalance(), totalShares);
-        uint256 debtPaid = shareAmount.mulDivDown(totalDebt, totalShares);
-        return claimable - debtPaid;
+    function _afterRoundEnd() internal override {
+        uint underlyingBefore = underlying.balanceOf(address(this));
+        // Marks the amount interest gained in the round
+        uint interest = _totalBalance() - lastRoundBalance;
+        // Pulls the yields from investor
+        uint investmentYield = underlying.balanceOf(investor);
+        if(investmentYield > 0) {
+            underlying.safeTransferFrom(investor, address(this), investmentYield);
+        }
+
+        uint toPosition = underlying.balanceOf(address(this)) - underlyingBefore;
+        pool.deposit(toPosition, address(this));
+
+        // Send round investment to investor
+        uint investment = interest * investorRatio / DENOMINATOR;
+        pool.withdraw(investment);
+        underlying.safeTransfer(investor, investment);
     }
 
     /**
      * @dev See {BaseVault-_totalBalance}.
      */
     function _totalBalance() internal override view returns(uint) {
-        uint invested = underlying.balanceOf(strategist);
-        uint parked = underlying.balanceOf(address(this));
-
-        return invested + parked + totalDebt;
+        return pool.previewRedeem(pool.balanceOf(address(this)));
     }
 
-    /**
-     * @dev Sends custom contract calls.
-     */
-    function _execute(address[] calldata targets, bytes[] calldata calls) private {
-        if (targets.length != calls.length) revert PrincipalProtectedETHBull__TargetCallsMismatch();
-
-        for (uint i = 0; i < calls.length; i++) {
-            (bool success, bytes memory result) = targets[i].delegatecall(calls[i]);
-            if (!success) {
-                if (result.length > 0) {
-                    // The easiest way to bubble the revert reason is using memory via assembly
-
-                    assembly {
-                        let result_size := mload(result)
-                        revert(add(32, result), result_size)
-                    }
-                } else {
-                    revert PrincipalProtectedETHBull__FailedSilently();
-                }
-            }
-        }
-    }
-
-    function _beforeWithdraw(uint256 shareAmount, uint256) internal override {
-        // Pays for current Vault debts
-        uint256 debtPaid = shareAmount.mulDivDown(totalDebt, totalShares);
-        totalDebt -= debtPaid;
+    function _beforeWithdraw(uint256, uint256 underlyingAmount) internal override {
+        pool.withdraw(underlyingAmount);
     }
 }
