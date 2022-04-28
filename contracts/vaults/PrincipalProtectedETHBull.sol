@@ -39,6 +39,7 @@ contract PrincipalProtectedETHBull is BaseVault {
 
     function _afterRoundStart(uint256 assets) internal override {
         if (assets > 0) {
+            asset.approve(address(pool), assets);
             pool.deposit(assets, address(this));
         }
         lastRoundBalance = totalAssets();
@@ -55,12 +56,16 @@ contract PrincipalProtectedETHBull is BaseVault {
         }
 
         uint256 toPosition = asset.balanceOf(address(this)) - underlyingBefore;
-        pool.deposit(toPosition, address(this));
+        if (toPosition > 0) {
+            pool.deposit(toPosition, address(this));
+        }
 
         // Send round investment to investor
         uint256 investment = (interest * investorRatio) / DENOMINATOR;
-        pool.withdraw(investment);
-        asset.safeTransfer(investor, investment);
+        if (investment > 0) {
+            pool.withdraw(investment);
+            asset.safeTransfer(investor, investment);
+        }
     }
 
     /**
