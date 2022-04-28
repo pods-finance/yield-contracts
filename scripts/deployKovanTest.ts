@@ -3,7 +3,9 @@
 //
 // When running the script with `npx hardhat run <script>` you'll find the Hardhat
 // Runtime Environment's members available in the global scope.
-import { ethers } from 'hardhat'
+import hre, { ethers } from 'hardhat'
+import verifyContract from './verify'
+
 
 async function main (): Promise<void> {
   let deployer
@@ -29,8 +31,13 @@ async function main (): Promise<void> {
   const PrincipalProtected = await ethers.getContractFactory('PrincipalProtectedETHBull', { libraries: {
     DepositQueueLib: depositQueueLib.address
   }})
-  const principalProtected = await PrincipalProtected.deploy(asset.address, deployerAddress, deployerAddress, yieldSource.address)
+  const constructorArguments = [asset.address, deployerAddress, deployerAddress, yieldSource.address] as const
+  const principalProtected = await PrincipalProtected.deploy(...constructorArguments)
   await principalProtected.deployed()
+
+  await verifyContract(hre, principalProtected.address, constructorArguments, {
+    DepositQueueLib: depositQueueLib.address
+  })
 
   console.log('Asset:', asset.address)
   console.log('yieldSource:', yieldSource.address)
