@@ -39,6 +39,7 @@ contract PrincipalProtectedETHBull is BaseVault {
 
     function _afterRoundStart(uint256 assets) internal override {
         if (assets > 0) {
+            asset.approve(address(pool), assets);
             pool.deposit(assets, address(this));
         }
         lastRoundBalance = totalAssets();
