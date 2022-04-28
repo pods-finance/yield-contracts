@@ -19,7 +19,7 @@ jobs:
       - name: install packages
         run: yarn
       - name: lint
-        run: yarn lint
+        run: yarn solhint
       - name: compile
         run: yarn compile
         env:

@@ -2,6 +2,7 @@
   "name": "lisbon",
   "scripts": {
     "compile": "hardhat compile",
+    "solhint": "./node_modules/.bin/solhint -f table contracts/**/*.sol",
     "lint:ts": "ts-standard --fix",
     "test": "hardhat test"
   },
