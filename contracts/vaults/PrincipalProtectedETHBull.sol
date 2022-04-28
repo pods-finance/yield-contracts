@@ -15,7 +15,7 @@ contract PrincipalProtectedETHBull is BaseVault {
     uint256 public constant DENOMINATOR = 10000;
 
     uint256 public lastRoundBalance;
-    uint256 public investorRatio = 3000;
+    uint256 public investorRatio = 5000;
     address public investor;
 
     YieldSourceMock public pool;
@@ -57,6 +57,7 @@ contract PrincipalProtectedETHBull is BaseVault {
 
         uint256 toPosition = asset.balanceOf(address(this)) - underlyingBefore;
         if (toPosition > 0) {
+            asset.approve(address(pool), toPosition);
             pool.deposit(toPosition, address(this));
         }
 
