@@ -2,20 +2,18 @@ import { Contract } from '@ethersproject/contracts'
 import { expect } from 'chai'
 import { ethers } from 'hardhat'
 import { BigNumber, Signer } from 'ethers'
-import { approximately } from './utils/utils'
 
-describe.only('PrincipalProtectedETHBull', () => {
+describe('PrincipalProtectedETHBull', () => {
   let asset: Contract, vault: Contract, yieldSource: Contract, investor: Contract
   let user0: Signer, user1: Signer, user2: Signer, vaultController: Signer
-  let user0Address: string, user1Address: string, user2Address: string
+  let user0Address: string, user1Address: string
   let snapshotId: BigNumber
 
   before(async () => {
     ;[, user0, user1, user2, vaultController] = await ethers.getSigners()
-    ;[user0Address, user1Address, user2Address] = await Promise.all([
+    ;[user0Address, user1Address] = await Promise.all([
       user0.getAddress(),
-      user1.getAddress(),
-      user2.getAddress()
+      user1.getAddress()
     ])
     const DepositQueueLib = await ethers.getContractFactory('DepositQueueLib')
     const depositQueueLib = await DepositQueueLib.deploy()
@@ -184,25 +182,14 @@ describe.only('PrincipalProtectedETHBull', () => {
     await vault.connect(user0).withdraw()
     await vault.connect(user1).withdraw()
 
-    console.log('total Assets After all 2')
-    console.log((await vault.totalAssets()).toString())
+    const expectedUser0Amount = '1495424836601307189542'
+    const expectedUser1Amount = '104575163398692810458'
 
-    console.log('user0 balance:')
-    console.log((await asset.balanceOf(user0Address)).toString())
-
-    console.log('user1 balance2:')
-    console.log((await asset.balanceOf(user1Address)).toString())
-
-    const expectedUser0Amount = ethers.utils.parseEther('1495')
-    const expectedUser1Amount = ethers.utils.parseEther('104')
-
-    const user0Balance = await asset.balanceOf(user0Address)
-    expect(approximately(expectedUser0Amount, user0Balance, 1)).to.equal(true)
+    expect(await asset.balanceOf(user0Address)).to.be.equal(expectedUser0Amount)
     expect(await vault.sharesOf(user0Address)).to.be.equal(0)
     expect(await vault.idleAmountOf(user0Address)).to.be.equal(0)
 
-    const user1Balance = await asset.balanceOf(user1Address)
-    expect(approximately(expectedUser1Amount, user1Balance, 1)).to.equal(true)
+    expect(await asset.balanceOf(user1Address)).to.be.equal(expectedUser1Amount)
     expect(await vault.sharesOf(user1Address)).to.be.equal(0)
     expect(await vault.idleAmountOf(user1Address)).to.be.equal(0)
 
