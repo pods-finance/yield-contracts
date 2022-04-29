@@ -2,7 +2,12 @@
 pragma solidity >=0.8.6;
 
 import "./BaseVault.sol";
-import "../mocks/YieldSourceMock.sol";
+
+interface IYearnVault is IERC20 {
+    function deposit(uint256 amount) external returns (uint256);
+    function withdraw(uint256 maxShares, address recipient, uint256 maxLoss) external returns (uint256);
+    function pricePerShare() external view returns (uint256);
+}
 
 /**
  * @title A Vault that use variable weekly yields to buy calls
@@ -13,12 +18,13 @@ contract PrincipalProtectedETHBull is BaseVault {
     using FixedPointMath for uint256;
 
     uint256 public constant DENOMINATOR = 10000;
+    uint256 public constant BPS = 1;
 
     uint256 public lastRoundBalance;
     uint256 public investorRatio = 5000;
     address public investor;
 
-    YieldSourceMock public pool;
+    IYearnVault public vault;
 
     constructor(
         address _underlying,
@@ -27,7 +33,7 @@ contract PrincipalProtectedETHBull is BaseVault {
         address _pool
     ) BaseVault(_underlying, _strategist) {
         investor = _investor;
-        pool = YieldSourceMock(_pool);
+        vault = IYearnVault(_pool);
     }
 
     /**
@@ -39,8 +45,8 @@ contract PrincipalProtectedETHBull is BaseVault {
 
     function _afterRoundStart(uint256 assets) internal override {
         if (assets > 0) {
-            asset.approve(address(pool), assets);
-            pool.deposit(assets, address(this));
+            asset.approve(address(vault), assets);
+            vault.deposit(assets);
         }
         lastRoundBalance = totalAssets();
     }
@@ -57,14 +63,14 @@ contract PrincipalProtectedETHBull is BaseVault {
 
         uint256 toPosition = asset.balanceOf(address(this)) - underlyingBefore;
         if (toPosition > 0) {
-            asset.approve(address(pool), toPosition);
-            pool.deposit(toPosition, address(this));
+            asset.approve(address(vault), toPosition);
+            vault.deposit(toPosition);
         }
 
         // Send round investment to investor
         uint256 investment = (interest * investorRatio) / DENOMINATOR;
         if (investment > 0) {
-            pool.withdraw(investment);
+            vault.withdraw(_assetsToShares(investment), address(this), BPS);
             asset.safeTransfer(investor, investment);
         }
     }
@@ -73,10 +79,15 @@ contract PrincipalProtectedETHBull is BaseVault {
      * @dev See {BaseVault-totalAssets}.
      */
     function totalAssets() public view override returns (uint256) {
-        return pool.previewRedeem(pool.balanceOf(address(this)));
+        uint shares = vault.balanceOf(address(this));
+        return shares * vault.pricePerShare();
     }
 
     function _beforeWithdraw(uint256, uint256 assets) internal override {
-        pool.withdraw(assets);
+        vault.withdraw(_assetsToShares(assets), address(this), BPS);
+    }
+
+    function _assetsToShares(uint assets) internal view returns(uint) {
+        return assets / vault.pricePerShare();
     }
 }
