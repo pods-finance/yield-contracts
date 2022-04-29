@@ -1,4 +1,4 @@
-  
+
 name: lint+compile+test
 on:
   push
@@ -13,7 +13,7 @@ jobs:
       - name: setup-node
         uses: actions/setup-node@v1
         with:
-          node-version: '12.x'
+          node-version: '16.14.0'
       - name: install yarn
         run: npm install yarn
       - name: install packages
@@ -24,7 +24,7 @@ jobs:
         run: yarn compile
         env:
           INFURA_PROJECT_ID: ${{ secrets.INFURA_PROJECT_ID }}
-          DEV_MNEMONIC: ${{ secrets.DEV_MNEMONIC }} 
+          DEV_MNEMONIC: ${{ secrets.DEV_MNEMONIC }}
       - name: test
         run: yarn test --no-compile
         env:
@@ -39,4 +39,4 @@ jobs:
         uses: "coverallsapp/github-action@master"
         with:
           github-token: ${{ secrets.GITHUB_TOKEN }}
-          path-to-lcov: "./coverage/lcov.info"    
+          path-to-lcov: "./coverage/lcov.info"
