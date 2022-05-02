@@ -164,9 +164,9 @@ contract BaseVault is IVault {
         uint processedDeposits;
         for(uint i = startIndex; i < endIndex; i++) {
             DepositQueueLib.DepositEntry memory depositEntry = depositQueue.get(i);
-            _mintShares(depositEntry.owner, depositEntry.amount, processedDeposits);
+            uint shares = _mintShares(depositEntry.owner, depositEntry.amount, processedDeposits);
             processedDeposits += depositEntry.amount;
-            emit DepositProcessed(depositEntry.owner, currentRoundId, depositEntry.amount);
+            emit DepositProcessed(depositEntry.owner, currentRoundId, depositEntry.amount, shares);
         }
         depositQueue.remove(startIndex, endIndex);
     }
@@ -183,8 +183,8 @@ contract BaseVault is IVault {
     /**
      * @dev Mint new shares, effectively representing user participation in the Vault.
      */
-    function _mintShares(address owner, uint256 assets, uint256 processedDeposits) internal virtual {
-        uint256 shares = assets;
+    function _mintShares(address owner, uint256 assets, uint256 processedDeposits) internal virtual returns(uint256 shares) {
+        shares = assets;
         processedDeposits += totalAssets();
 
         if (totalShares > 0) {
