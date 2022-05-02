@@ -32,6 +32,9 @@ describe('BaseVault', () => {
     })
     vault = await Vault.deploy(asset.address, await strategist.getAddress(), yieldSource.address)
 
+    await expect(vault.deployTransaction)
+      .to.emit(vault, 'StartRound').withArgs(0, 0)
+
     await asset.connect(user0).approve(vault.address, ethers.constants.MaxUint256)
     await asset.connect(user1).approve(vault.address, ethers.constants.MaxUint256)
     await asset.connect(user2).approve(vault.address, ethers.constants.MaxUint256)
@@ -61,11 +64,14 @@ describe('BaseVault', () => {
     expect(await vault.idleAmountOf(user0Address)).to.be.equal(assets)
 
     // Process deposits
-    await vault.connect(strategist).endRound()
-    const tx = vault.connect(strategist).processQueuedDeposits(0, await vault.depositQueueSize())
-    await expect(tx).to.emit(vault, 'DepositProcessed').withArgs(user0Address, 1, assets)
+    // Since Round 0 started upon deployment, it should end the exact same round number "0"
+    const endRoundTx = vault.connect(strategist).endRound()
+    await expect(endRoundTx).to.emit(vault, 'EndRound').withArgs(0)
+    const depositProcessingTx = vault.connect(strategist).processQueuedDeposits(0, await vault.depositQueueSize())
+    const expectedShares = assets
+    await expect(depositProcessingTx).to.emit(vault, 'DepositProcessed').withArgs(user0Address, 1, assets, expectedShares)
     expect(await vault.depositQueueSize()).to.be.equal(0)
-    expect(await vault.sharesOf(user0Address)).to.be.equal(assets)
+    expect(await vault.sharesOf(user0Address)).to.be.equal(expectedShares)
     expect(await vault.idleAmountOf(user0Address)).to.be.equal(0)
 
     // Start round
@@ -81,7 +87,7 @@ describe('BaseVault', () => {
     await vault.connect(strategist).endRound()
     await vault.connect(strategist).processQueuedDeposits(0, await vault.depositQueueSize())
 
-    await expect(vault.connect(user0).withdraw()).to.be.revertedWith('IVault__ForbiddenDuringProcessDeposits()')
+    await expect(vault.connect(user0).withdraw()).to.be.revertedWith('IVault__ForbiddenWhileProcessingDeposits()')
   })
 
   it('cannot deposit between a round\'s end and the beginning of the next', async () => {
@@ -89,7 +95,7 @@ describe('BaseVault', () => {
 
     await asset.connect(user0).mint(assets)
     await vault.connect(strategist).endRound()
-    await expect(vault.connect(user0).deposit(assets)).to.be.revertedWith('IVault__ForbiddenDuringProcessDeposits()')
+    await expect(vault.connect(user0).deposit(assets)).to.be.revertedWith('IVault__ForbiddenWhileProcessingDeposits()')
   })
 
   it('cannot processQueue After round started', async () => {

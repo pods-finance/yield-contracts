@@ -41,7 +41,7 @@ describe('PrincipalProtectedETHBull', () => {
     await asset.connect(user1).approve(vault.address, ethers.constants.MaxUint256)
     await asset.connect(user2).approve(vault.address, ethers.constants.MaxUint256)
     await asset.connect(vaultController).approve(vault.address, ethers.constants.MaxUint256)
-    
+
   })
 
   beforeEach(async () => {
@@ -87,7 +87,7 @@ describe('PrincipalProtectedETHBull', () => {
     await vault.connect(vaultController).endRound()
     await vault.connect(vaultController).processQueuedDeposits(0, await vault.depositQueueSize())
 
-    await expect(vault.connect(user0).withdraw()).to.be.revertedWith('IVault__ForbiddenDuringProcessDeposits()')
+    await expect(vault.connect(user0).withdraw()).to.be.revertedWith('IVault__ForbiddenWhileProcessingDeposits()')
   })
 
   it('cannot deposit between a round\'s end and the beginning of the next', async () => {
@@ -95,7 +95,7 @@ describe('PrincipalProtectedETHBull', () => {
 
     await asset.connect(user0).mint(assetAmount)
     await vault.connect(vaultController).endRound()
-    await expect(vault.connect(user0).deposit(assetAmount)).to.be.revertedWith('IVault__ForbiddenDuringProcessDeposits()')
+    await expect(vault.connect(user0).deposit(assetAmount)).to.be.revertedWith('IVault__ForbiddenWhileProcessingDeposits()')
   })
 
   it('cannot processQueue After round started', async () => {
