@@ -3,7 +3,7 @@ import { expect } from 'chai'
 import { ethers } from 'hardhat'
 import { BigNumber, Signer } from 'ethers'
 
-describe('PrincipalProtectedETHBull', () => {
+describe('PrincipalProtectedMock', () => {
   let asset: Contract, vault: Contract, yieldSource: Contract, investor: Contract
   let user0: Signer, user1: Signer, user2: Signer, vaultController: Signer
   let user0Address: string, user1Address: string
@@ -27,7 +27,7 @@ describe('PrincipalProtectedETHBull', () => {
     const InvestorActorMock = await ethers.getContractFactory('InvestorActorMock')
     investor = await InvestorActorMock.deploy(asset.address)
 
-    const PrincipalProtectedETHBull = await ethers.getContractFactory('PrincipalProtectedETHBull', {
+    const PrincipalProtectedETHBull = await ethers.getContractFactory('PrincipalProtectedMock', {
       libraries: {
         DepositQueueLib: depositQueueLib.address
       }
@@ -41,7 +41,7 @@ describe('PrincipalProtectedETHBull', () => {
     await asset.connect(user1).approve(vault.address, ethers.constants.MaxUint256)
     await asset.connect(user2).approve(vault.address, ethers.constants.MaxUint256)
     await asset.connect(vaultController).approve(vault.address, ethers.constants.MaxUint256)
-    
+
   })
 
   beforeEach(async () => {
