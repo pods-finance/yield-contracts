@@ -87,7 +87,7 @@ describe('BaseVault', () => {
     await vault.connect(strategist).endRound()
     await vault.connect(strategist).processQueuedDeposits(0, await vault.depositQueueSize())
 
-    await expect(vault.connect(user0).withdraw()).to.be.revertedWith('IVault__ForbiddenDuringProcessDeposits()')
+    await expect(vault.connect(user0).withdraw()).to.be.revertedWith('IVault__ForbiddenWhileProcessingDeposits()')
   })
 
   it('cannot deposit between a round\'s end and the beginning of the next', async () => {
@@ -95,7 +95,7 @@ describe('BaseVault', () => {
 
     await asset.connect(user0).mint(assets)
     await vault.connect(strategist).endRound()
-    await expect(vault.connect(user0).deposit(assets)).to.be.revertedWith('IVault__ForbiddenDuringProcessDeposits()')
+    await expect(vault.connect(user0).deposit(assets)).to.be.revertedWith('IVault__ForbiddenWhileProcessingDeposits()')
   })
 
   it('cannot processQueue After round started', async () => {

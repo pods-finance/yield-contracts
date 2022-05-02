@@ -5,7 +5,7 @@ interface IVault {
     error IVault__CallerHasNotEnoughShares();
     error IVault__CallerIsNotTheStrategist();
     error IVault__NotProcessingDeposits();
-    error IVault__ForbiddenDuringProcessDeposits();
+    error IVault__ForbiddenWhileProcessingDeposits();
 
     event Deposit(address indexed owner, uint amountDeposited);
     event Withdraw(address indexed owner, uint sharesBurnt, uint amountWithdrawn);

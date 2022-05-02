@@ -44,7 +44,7 @@ contract BaseVault is IVault {
      * @dev See {IVault-deposit}.
      */
     function deposit(uint256 amount) public virtual override {
-        if(processingDeposits) revert IVault__ForbiddenDuringProcessDeposits();
+        if(processingDeposits) revert IVault__ForbiddenWhileProcessingDeposits();
 
         asset.safeTransferFrom(msg.sender, address(this), amount);
         depositQueue.push(DepositQueueLib.DepositEntry(msg.sender, amount));
@@ -56,7 +56,7 @@ contract BaseVault is IVault {
      * @dev See {IVault-withdraw}.
      */
     function withdraw() public virtual override {
-        if(processingDeposits) revert IVault__ForbiddenDuringProcessDeposits();
+        if(processingDeposits) revert IVault__ForbiddenWhileProcessingDeposits();
 
         address owner = msg.sender;
 
