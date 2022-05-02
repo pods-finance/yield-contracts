@@ -64,10 +64,12 @@ describe('BaseVault', () => {
     expect(await vault.idleAmountOf(user0Address)).to.be.equal(assets)
 
     // Process deposits
-    await vault.connect(strategist).endRound()
-    const tx = vault.connect(strategist).processQueuedDeposits(0, await vault.depositQueueSize())
+    // Since Round 0 started upon deployment, it should end the exact same round number "0"
+    const endRoundTx = vault.connect(strategist).endRound()
+    await expect(endRoundTx).to.emit(vault, 'EndRound').withArgs(0)
+    const depositProcessingTx = vault.connect(strategist).processQueuedDeposits(0, await vault.depositQueueSize())
     const expectedShares = assets
-    await expect(tx).to.emit(vault, 'DepositProcessed').withArgs(user0Address, 1, assets, expectedShares)
+    await expect(depositProcessingTx).to.emit(vault, 'DepositProcessed').withArgs(user0Address, 1, assets, expectedShares)
     expect(await vault.depositQueueSize()).to.be.equal(0)
     expect(await vault.sharesOf(user0Address)).to.be.equal(expectedShares)
     expect(await vault.idleAmountOf(user0Address)).to.be.equal(0)
