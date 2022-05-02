@@ -32,6 +32,9 @@ describe('BaseVault', () => {
     })
     vault = await Vault.deploy(asset.address, await strategist.getAddress(), yieldSource.address)
 
+    await expect(vault.deployTransaction)
+      .to.emit(vault, 'StartRound').withArgs(0, 0)
+
     await asset.connect(user0).approve(vault.address, ethers.constants.MaxUint256)
     await asset.connect(user1).approve(vault.address, ethers.constants.MaxUint256)
     await asset.connect(user2).approve(vault.address, ethers.constants.MaxUint256)

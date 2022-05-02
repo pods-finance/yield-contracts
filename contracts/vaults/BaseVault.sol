@@ -33,6 +33,9 @@ contract BaseVault is IVault {
     constructor(address _asset, address _strategist) {
         asset = IERC20Metadata(_asset);
         strategist = _strategist;
+
+        // Vault starts in `start` state
+        emit StartRound(currentRoundId, 0);
     }
 
     /** Depositor **/
