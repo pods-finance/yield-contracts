@@ -26,9 +26,6 @@ const config: HardhatUserConfig = {
       forking: {
         url: process.env.ALCHEMY_MAINNET_URL || '',
         enabled: process.env.MAINNET_FORK === 'true',
-      },
-      accounts: {
-        mnemonic: process.env.DEV_MNEMONIC || ''
       }
     }
   },
