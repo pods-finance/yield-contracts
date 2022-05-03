@@ -33,6 +33,9 @@ contract BaseVault is IVault {
     constructor(address _asset, address _strategist) {
         asset = IERC20Metadata(_asset);
         strategist = _strategist;
+
+        // Vault starts in `start` state
+        emit StartRound(currentRoundId, 0);
     }
 
     /** Depositor **/
@@ -41,7 +44,7 @@ contract BaseVault is IVault {
      * @dev See {IVault-deposit}.
      */
     function deposit(uint256 amount) public virtual override {
-        if(processingDeposits) revert IVault__ForbiddenDuringProcessDeposits();
+        if(processingDeposits) revert IVault__ForbiddenWhileProcessingDeposits();
 
         asset.safeTransferFrom(msg.sender, address(this), amount);
         depositQueue.push(DepositQueueLib.DepositEntry(msg.sender, amount));
@@ -53,7 +56,7 @@ contract BaseVault is IVault {
      * @dev See {IVault-withdraw}.
      */
     function withdraw() public virtual override {
-        if(processingDeposits) revert IVault__ForbiddenDuringProcessDeposits();
+        if(processingDeposits) revert IVault__ForbiddenWhileProcessingDeposits();
 
         address owner = msg.sender;
 
@@ -161,9 +164,9 @@ contract BaseVault is IVault {
         uint processedDeposits;
         for(uint i = startIndex; i < endIndex; i++) {
             DepositQueueLib.DepositEntry memory depositEntry = depositQueue.get(i);
-            _mintShares(depositEntry.owner, depositEntry.amount, processedDeposits);
+            uint shares = _mintShares(depositEntry.owner, depositEntry.amount, processedDeposits);
             processedDeposits += depositEntry.amount;
-            emit DepositProcessed(depositEntry.owner, currentRoundId, depositEntry.amount);
+            emit DepositProcessed(depositEntry.owner, currentRoundId, depositEntry.amount, shares);
         }
         depositQueue.remove(startIndex, endIndex);
     }
@@ -180,8 +183,8 @@ contract BaseVault is IVault {
     /**
      * @dev Mint new shares, effectively representing user participation in the Vault.
      */
-    function _mintShares(address owner, uint256 assets, uint256 processedDeposits) internal virtual {
-        uint256 shares = assets;
+    function _mintShares(address owner, uint256 assets, uint256 processedDeposits) internal virtual returns(uint256 shares) {
+        shares = assets;
         processedDeposits += totalAssets();
 
         if (totalShares > 0) {
