@@ -2,6 +2,7 @@
 pragma solidity >=0.8.6;
 
 import "./BaseVault.sol";
+import "hardhat/console.sol";
 
 interface IYearnVault is IERC20 {
     function deposit(uint256 amount) external returns (uint256);
@@ -79,15 +80,20 @@ contract PrincipalProtectedETHBull is BaseVault {
      * @dev See {BaseVault-totalAssets}.
      */
     function totalAssets() public view override returns (uint256) {
-        uint shares = vault.balanceOf(address(this));
-        return shares * vault.pricePerShare();
+        uint yearnBalance = vault.balanceOf(address(this));
+
+        return yearnBalance == 0 ? 0 : yearnBalance * vault.pricePerShare() / 10**uint(asset.decimals());
     }
 
     function _beforeWithdraw(uint256, uint256 assets) internal override {
-        vault.withdraw(_assetsToShares(assets), address(this), BPS);
+        console.log("Price", vault.balanceOf(address(this)) * vault.pricePerShare());
+        console.log("Assets", assets, _assetsToShares(assets));
+        console.log("Before", asset.balanceOf(address(this)));
+        vault.withdraw(_assetsToShares(assets) + 1, address(this), BPS);
+        console.log("After ", asset.balanceOf(address(this)));
     }
 
     function _assetsToShares(uint assets) internal view returns(uint) {
-        return assets / vault.pricePerShare();
+        return assets.mulDivDown(1, vault.pricePerShare());
     }
 }

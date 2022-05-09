@@ -11,6 +11,7 @@
   "event EndRound(uint256 indexed)",
   "event StartRound(uint256 indexed,uint256)",
   "event Withdraw(address indexed,uint256,uint256)",
+  "function BPS() view returns (uint256)",
   "function DENOMINATOR() view returns (uint256)",
   "function asset() view returns (address)",
   "function deposit(uint256)",
@@ -21,12 +22,12 @@
   "function investorRatio() view returns (uint256)",
   "function lastRoundBalance() view returns (uint256)",
   "function name() pure returns (string)",
-  "function pool() view returns (address)",
   "function previewShares(uint256) view returns (uint256)",
   "function previewWithdraw(uint256) view returns (uint256)",
   "function processQueuedDeposits(uint256,uint256)",
   "function sharesOf(address) view returns (uint256)",
   "function startRound()",
   "function totalAssets() view returns (uint256)",
+  "function vault() view returns (address)",
   "function withdraw()"
 ]
