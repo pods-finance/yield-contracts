@@ -66,7 +66,7 @@ contract BaseVault is IVault {
         // Apply custom withdraw logic
         _beforeWithdraw(shares, assets);
 
-        asset.transfer(owner, assets);
+        asset.safeTransfer(owner, assets);
 
         emit Withdraw(owner, shares, assets);
     }

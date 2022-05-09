@@ -16,17 +16,18 @@ dotenv.config()
 const config: HardhatUserConfig = {
   solidity: '0.8.8',
   networks: {
-    ropsten: {
-      url: process.env.ROPSTEN_URL ?? '',
-      accounts:
-        process.env.PRIVATE_KEY !== undefined ? [process.env.PRIVATE_KEY] : []
-    },
     kovan: {
       url: 'https://kovan.infura.io/v3/' + process.env.INFURA_PROJECT_ID,
       accounts: {
         mnemonic: process.env.DEV_MNEMONIC || ''
       }
     },
+    hardhat: {
+      forking: {
+        url: process.env.ALCHEMY_MAINNET_URL || '',
+        enabled: process.env.MAINNET_FORK === 'true',
+      }
+    }
   },
   gasReporter: {
     enabled: process.env.REPORT_GAS !== undefined,
