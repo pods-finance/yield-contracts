@@ -132,7 +132,7 @@ describeIfForking('PrincipalProtectedETHBull', () => {
     await expect(vault.connect(vaultController).processQueuedDeposits(0, await vault.depositQueueSize())).to.be.revertedWith('IVault__NotProcessingDeposits()')
   })
 
-  it.only('withdraws proportionally', async () => {
+  it('withdraws proportionally', async () => {
     const assetAmount = ethers.utils.parseUnits('100', 6)
 
     // Users deposits to vault
