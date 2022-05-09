@@ -3,7 +3,7 @@
   "error FixedPointMath__DivZero()",
   "error IVault__CallerHasNotEnoughShares()",
   "error IVault__CallerIsNotTheStrategist()",
-  "error IVault__ForbiddenDuringProcessDeposits()",
+  "error IVault__ForbiddenWhileProcessingDeposits()",
   "error IVault__NotProcessingDeposits()",
   "error TransferDidNotSucceed()",
   "event Deposit(address indexed,uint256)",
