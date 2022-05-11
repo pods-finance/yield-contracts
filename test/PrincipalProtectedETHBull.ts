@@ -3,17 +3,20 @@ import { expect } from 'chai'
 import hre, { ethers } from 'hardhat'
 import { BigNumber, Signer } from 'ethers'
 import { describe } from 'mocha'
-import { NetworkConfig } from 'hardhat/src/types/config'
+import { HardhatNetworkConfig } from 'hardhat/src/types/config'
 
-function describeIfForking(title: string, suite: () => void) {
-  const localNetwork: NetworkConfig = hre.network.config
+function describeIfForking (title: string, suite: () => void): Mocha.Suite {
+  const localNetwork = (hre.network.config as HardhatNetworkConfig)
+  const isForking = localNetwork?.forking?.enabled ?? false
 
-  return 'forking' in localNetwork && localNetwork.forking?.enabled
-    ? describe.only(title, suite)
-    : describe.skip(title, suite)
+  if (isForking) {
+    return describe.only(title, suite)
+  } else {
+    return describe.skip(title, suite) as Mocha.Suite
+  }
 }
 
-function negate (value: BigNumber) {
+function negate (value: BigNumber): BigNumber {
   return ethers.utils.parseUnits('0').sub(value)
 }
 
@@ -25,15 +28,15 @@ describeIfForking('PrincipalProtectedETHBull', () => {
 
   before(async () => {
     await hre.network.provider.request({
-      method: "hardhat_impersonateAccount",
-      params: ["0xCFFAd3200574698b78f32232aa9D63eABD290703"],
+      method: 'hardhat_impersonateAccount',
+      params: ['0xCFFAd3200574698b78f32232aa9D63eABD290703']
     })
 
     user0 = await ethers.getSigner('0xCFFAd3200574698b78f32232aa9D63eABD290703')
 
     await hre.network.provider.request({
-      method: "hardhat_impersonateAccount",
-      params: ["0x15abb66bA754F05cBC0165A64A11cDed1543dE48"],
+      method: 'hardhat_impersonateAccount',
+      params: ['0x15abb66bA754F05cBC0165A64A11cDed1543dE48']
     })
 
     user1 = await ethers.getSigner('0x15abb66bA754F05cBC0165A64A11cDed1543dE48')
@@ -68,7 +71,6 @@ describeIfForking('PrincipalProtectedETHBull', () => {
     await asset.connect(user1).approve(vault.address, ethers.constants.MaxUint256)
     await asset.connect(user2).approve(vault.address, ethers.constants.MaxUint256)
     await asset.connect(vaultController).approve(vault.address, ethers.constants.MaxUint256)
-
   })
 
   beforeEach(async () => {
@@ -92,7 +94,6 @@ describeIfForking('PrincipalProtectedETHBull', () => {
     expect(await vault.depositQueueSize()).to.be.equal(1)
     expect(await vault.sharesOf(user0Address)).to.be.equal(0)
     expect(await vault.idleAmountOf(user0Address)).to.be.equal(assetAmount)
-
 
     // Process deposits
     await vault.connect(vaultController).endRound()

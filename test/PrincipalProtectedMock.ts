@@ -41,7 +41,6 @@ describe('PrincipalProtectedMock', () => {
     await asset.connect(user1).approve(vault.address, ethers.constants.MaxUint256)
     await asset.connect(user2).approve(vault.address, ethers.constants.MaxUint256)
     await asset.connect(vaultController).approve(vault.address, ethers.constants.MaxUint256)
-
   })
 
   beforeEach(async () => {
@@ -65,7 +64,6 @@ describe('PrincipalProtectedMock', () => {
     expect(await asset.balanceOf(vault.address)).to.be.equal(assetAmount)
     expect(await vault.sharesOf(user0Address)).to.be.equal(0)
     expect(await vault.idleAmountOf(user0Address)).to.be.equal(assetAmount)
-
 
     // Process deposits
     await vault.connect(vaultController).endRound()

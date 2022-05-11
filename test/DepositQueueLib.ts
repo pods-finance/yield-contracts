@@ -67,7 +67,6 @@ describe('DepositQueueLib', () => {
   })
 
   it('removes users from the queue and reorganize queue', async () => {
-    let deposit
     expect(await queue.size()).to.be.equal(0)
 
     await queue.connect(user0).push(42)
@@ -75,7 +74,7 @@ describe('DepositQueueLib', () => {
     expect(await queue.size()).to.be.equal(2)
 
     await queue.remove(0, 1)
-    deposit = await queue.get(0)
+    const deposit = await queue.get(0)
     expect(deposit.owner).to.be.equal(await user1.getAddress())
     expect(deposit.amount).to.be.equal(160)
     expect(await queue.size()).to.be.equal(1)

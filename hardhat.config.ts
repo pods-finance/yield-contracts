@@ -17,21 +17,21 @@ const config: HardhatUserConfig = {
   solidity: '0.8.8',
   networks: {
     kovan: {
-      url: 'https://kovan.infura.io/v3/' + process.env.INFURA_PROJECT_ID,
+      url: `https://kovan.infura.io/v3/${process.env.INFURA_PROJECT_ID ?? ''}`,
       accounts: {
-        mnemonic: process.env.DEV_MNEMONIC || ''
+        mnemonic: process.env.DEV_MNEMONIC ?? ''
       }
     },
     rinkeby: {
-      url: 'https://rinkeby.infura.io/v3/' + process.env.INFURA_PROJECT_ID,
+      url: `https://rinkeby.infura.io/v3/${process.env.INFURA_PROJECT_ID ?? ''}`,
       accounts: {
-        mnemonic: process.env.DEV_MNEMONIC || ''
+        mnemonic: process.env.DEV_MNEMONIC ?? ''
       }
     },
     hardhat: {
       forking: {
-        url: process.env.ALCHEMY_MAINNET_URL || '',
-        enabled: process.env.MAINNET_FORK === 'true',
+        url: process.env.ALCHEMY_MAINNET_URL ?? '',
+        enabled: process.env.MAINNET_FORK === 'true'
       }
     }
   },

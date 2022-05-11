@@ -48,11 +48,11 @@ async function main (): Promise<void> {
   await verifyContract(hre, vault.address, vaultConstructorArguments)
 
   console.table({
-    "Asset": asset.address,
-    "YieldSourceMock": yieldSource.address,
-    "InvestorActorMock": investor.address,
-    "DepositQueueLib": depositQueueLib.address,
-    "PrincipalProtectedMock": vault.address
+    Asset: asset.address,
+    YieldSourceMock: yieldSource.address,
+    InvestorActorMock: investor.address,
+    DepositQueueLib: depositQueueLib.address,
+    PrincipalProtectedMock: vault.address
   })
 }
 
