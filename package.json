@@ -3,7 +3,8 @@
   "scripts": {
     "compile": "hardhat compile",
     "solhint": "./node_modules/.bin/solhint -f table contracts/**/*.sol",
-    "lint:ts": "ts-standard --fix",
+    "lint": "yarn lint:ts && yarn solhint",
+    "lint:ts": "ts-standard",
     "test": "hardhat test",
     "postinstall": "husky install"
   },
