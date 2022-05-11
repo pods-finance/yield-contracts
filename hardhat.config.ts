@@ -49,7 +49,7 @@ const config: HardhatUserConfig = {
     runOnCompile: true,
     clear: true,
     flat: true,
-    pretty: true,
+    pretty: false,
     only: [
       'BaseVault',
       'PrincipalProtectedETHBull'
