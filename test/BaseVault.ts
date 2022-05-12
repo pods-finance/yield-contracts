@@ -6,15 +6,14 @@ import { BigNumber, Signer } from 'ethers'
 describe('BaseVault', () => {
   let asset: Contract, vault: Contract, yieldSource: Contract
   let user0: Signer, user1: Signer, user2: Signer, strategist: Signer
-  let user0Address: string, user1Address: string, user2Address: string
+  let user0Address: string, user1Address: string
   let snapshotId: BigNumber
 
   before(async () => {
     ;[, user0, user1, user2, strategist] = await ethers.getSigners()
-    ;[user0Address, user1Address, user2Address] = await Promise.all([
+    ;[user0Address, user1Address] = await Promise.all([
       user0.getAddress(),
-      user1.getAddress(),
-      user2.getAddress()
+      user1.getAddress()
     ])
     const DepositQueueLib = await ethers.getContractFactory('DepositQueueLib')
     const depositQueueLib = await DepositQueueLib.deploy()
@@ -168,7 +167,7 @@ describe('BaseVault', () => {
     await yieldSource.generateInterest(ethers.utils.parseEther('100'))
     await vault.connect(user0).deposit(assets)
 
-     // Accruing yield
+    // Accruing yield
     await vault.connect(strategist).endRound()
     await vault.connect(strategist).processQueuedDeposits(0, await vault.depositQueueSize())
     await vault.connect(strategist).startRound()

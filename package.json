@@ -3,8 +3,10 @@
   "scripts": {
     "compile": "hardhat compile",
     "solhint": "./node_modules/.bin/solhint -f table contracts/**/*.sol",
-    "lint:ts": "ts-standard --fix",
-    "test": "hardhat test"
+    "lint": "yarn lint:ts && yarn solhint",
+    "lint:ts": "ts-standard",
+    "test": "hardhat test",
+    "postinstall": "husky install"
   },
   "devDependencies": {
     "@nomiclabs/hardhat-ethers": "^2.0.5",
@@ -25,6 +27,7 @@
     "hardhat": "^2.8.4",
     "hardhat-abi-exporter": "^2.9.0",
     "hardhat-gas-reporter": "^1.0.7",
+    "husky": "^8.0.1",
     "prettier": "^2.5.1",
     "prettier-plugin-solidity": "^1.0.0-beta.19",
     "solhint": "^3.3.7",

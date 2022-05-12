@@ -15,6 +15,7 @@ library TransferUtils {
     }
 
     function _callOptionalReturn(IERC20 token, bytes memory data) private {
+        // solhint-disable-next-line avoid-low-level-calls
         (bool success, bytes memory result) = address(token).call(data);
         if (!success || result.length > 0) {
             // Return data is optional

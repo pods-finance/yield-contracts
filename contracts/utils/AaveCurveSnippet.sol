@@ -3,6 +3,7 @@ pragma solidity >=0.8.6;
 
 import "@openzeppelin/contracts/token/ERC20/extensions/IERC20Metadata.sol";
 
+// solhint-disable func-name-mixedcase
 interface ICurvePool is IERC20Metadata {
     function get_virtual_price() external view returns (uint256);
     function lp_token() external view returns (address);
@@ -17,16 +18,19 @@ interface ICurveGauge is IERC20Metadata {
     function claimable_reward(address owner, address token) external view returns(uint);
     function reward_tokens(uint index) external view returns(address);
 }
+// solhint-enable func-name-mixedcase
 
 contract CurveTest {
     uint256 public constant MAX_REWARDS = 8;
     uint256 public constant DENOMINATOR = 10000;
     uint256 public slip = 100;
 
+    // solhint-disable const-name-snakecase
     IERC20Metadata public constant underlying = IERC20Metadata(0x2791Bca1f2de4661ED88A30C99A7a9449Aa84174);
     ICurvePool public constant curvePool = ICurvePool(0x445FE580eF8d70FF569aB36e80c647af338db351);
     ICurveGauge public constant curveGaugeToken = ICurveGauge(0x19793B454D3AfC7b454F206Ffe95aDE26cA6912c);
     IERC20Metadata immutable curveLPToken;
+    // solhint-enable const-name-snakecase
 
     address[] public rewardTokens;
 

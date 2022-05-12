@@ -1,6 +1,6 @@
 import retry from './retry'
 
-export default async function verify (hre: any, address: string, constructorArguments: any = [], libraries: Object) {
+export default async function verify (hre: any, address: string, constructorArguments: any = [], libraries?: Object): Promise<void> {
   console.log('--Starting Verify Process--')
   const verifyData = {
     address,
@@ -8,7 +8,7 @@ export default async function verify (hre: any, address: string, constructorArgu
     libraries
   }
 
-  if (libraries) {
+  if (libraries != null) {
     verifyData.libraries = libraries
   }
 

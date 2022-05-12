@@ -7,6 +7,7 @@ library FixedPointMath {
     function mulDivDown(uint256 x, uint256 y, uint256 denominator) internal pure returns (uint256 z) {
         if (denominator == 0) revert FixedPointMath__DivZero();
 
+        // solhint-disable-next-line no-inline-assembly
         assembly {
             // Store x * y in z for now.
             z := mul(x, y)
@@ -25,6 +26,7 @@ library FixedPointMath {
     function mulDivUp(uint256 x, uint256 y, uint256 denominator) internal pure returns (uint256 z) {
         if (denominator == 0) revert FixedPointMath__DivZero();
 
+        // solhint-disable-next-line no-inline-assembly
         assembly {
             // Store x * y in z for now.
             z := mul(x, y)
