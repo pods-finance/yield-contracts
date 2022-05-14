@@ -174,7 +174,6 @@ contract BaseVault is IVault, ERC20 {
      * @param shares Amount of shares to lock
      */
     function _burnShares(address owner, uint256 shares) internal virtual returns(uint claimableUnderlying) {
-        if (shares > balanceOf(owner)) revert IVault__CallerHasNotEnoughShares();
         claimableUnderlying = balanceOf(owner).mulDivDown(totalAssets(), totalSupply());
         _burn(owner, shares);
     }

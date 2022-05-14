@@ -32,11 +32,6 @@
   },
   {
     "inputs": [],
-    "name": "IVault__CallerHasNotEnoughShares",
-    "type": "error"
-  },
-  {
-    "inputs": [],
     "name": "IVault__CallerIsNotTheStrategist",
     "type": "error"
   },

@@ -4,7 +4,6 @@ pragma solidity >=0.8.6;
 import "@openzeppelin/contracts/token/ERC20/extensions/IERC20Metadata.sol";
 
 interface IVault is IERC20Metadata {
-    error IVault__CallerHasNotEnoughShares();
     error IVault__CallerIsNotTheStrategist();
     error IVault__NotProcessingDeposits();
     error IVault__ForbiddenWhileProcessingDeposits();
