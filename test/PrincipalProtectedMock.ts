@@ -32,7 +32,14 @@ describe('PrincipalProtectedMock', () => {
         DepositQueueLib: depositQueueLib.address
       }
     })
-    vault = await PrincipalProtectedETHBull.deploy(asset.address, await vaultController.getAddress(), investor.address, yieldSource.address)
+    vault = await PrincipalProtectedETHBull.deploy(
+      'Principal Protected ETH Bull',
+      'PPETH',
+      asset.address,
+      await vaultController.getAddress(),
+      investor.address,
+      yieldSource.address
+    )
 
     // Give approval upfront that the vault can pull money from the investor contract
     await investor.approveVaultToPull(vault.address, ethers.constants.MaxUint256)

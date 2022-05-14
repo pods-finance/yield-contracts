@@ -28,20 +28,15 @@ contract PrincipalProtectedETHBull is BaseVault {
     IYearnVault public vault;
 
     constructor(
+        string memory name,
+        string memory symbol,
         address _underlying,
         address _strategist,
         address _investor,
         address _pool
-    ) BaseVault(_underlying, _strategist) {
+    ) BaseVault(name, symbol, _underlying, _strategist) {
         investor = _investor;
         vault = IYearnVault(_pool);
-    }
-
-    /**
-     * @dev See {IVault-name}.
-     */
-    function name() external pure override returns (string memory) {
-        return "Principal Protected ETH Bull";
     }
 
     function _afterRoundStart(uint256 assets) internal override {

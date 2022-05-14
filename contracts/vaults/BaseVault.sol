@@ -2,6 +2,7 @@
 pragma solidity >=0.8.6;
 
 import "@openzeppelin/contracts/token/ERC20/extensions/IERC20Metadata.sol";
+import "@openzeppelin/contracts/token/ERC20/ERC20.sol";
 import "../interfaces/IVault.sol";
 import "../libs/TransferUtils.sol";
 import "../libs/FixedPointMath.sol";
@@ -11,7 +12,7 @@ import "../libs/DepositQueueLib.sol";
  * @title A Vault that tokenize shares of strategy
  * @author Pods Finance
  */
-contract BaseVault is IVault {
+contract BaseVault is IVault, ERC20 {
     using TransferUtils for IERC20Metadata;
     using FixedPointMath for uint256;
     using DepositQueueLib for DepositQueueLib.DepositQueue;
@@ -30,7 +31,7 @@ contract BaseVault is IVault {
 
     DepositQueueLib.DepositQueue private depositQueue;
 
-    constructor(address _asset, address _strategist) {
+    constructor(string memory name, string memory symbol, address _asset, address _strategist) ERC20(name, symbol) {
         asset = IERC20Metadata(_asset);
         strategist = _strategist;
 
@@ -69,13 +70,6 @@ contract BaseVault is IVault {
         asset.safeTransfer(owner, assets);
 
         emit Withdraw(owner, shares, assets);
-    }
-
-    /**
-     * @dev See {IVault-name}.
-     */
-    function name() external virtual override pure returns(string memory) {
-        return "Base Vault";
     }
 
     /**

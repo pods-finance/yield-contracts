@@ -8,6 +8,8 @@ describe('BaseVault', () => {
   let user0: Signer, user1: Signer, user2: Signer, strategist: Signer
   let user0Address: string, user1Address: string
   let snapshotId: BigNumber
+  const name = 'Base Vault'
+  const symbol = 'BASE'
 
   before(async () => {
     ;[, user0, user1, user2, strategist] = await ethers.getSigners()
@@ -29,7 +31,13 @@ describe('BaseVault', () => {
         DepositQueueLib: depositQueueLib.address
       }
     })
-    vault = await Vault.deploy(asset.address, await strategist.getAddress(), yieldSource.address)
+    vault = await Vault.deploy(
+      name,
+      symbol,
+      asset.address,
+      await strategist.getAddress(),
+      yieldSource.address
+    )
 
     await expect(vault.deployTransaction)
       .to.emit(vault, 'StartRound').withArgs(0, 0)
@@ -46,6 +54,16 @@ describe('BaseVault', () => {
 
   afterEach(async () => {
     await ethers.provider.send('evm_revert', [snapshotId])
+  })
+
+  describe('ERC20 checks', () => {
+    it('has a name', async () => {
+      expect(await vault.name()).to.be.equal(name)
+    })
+
+    it('has a symbol', async () => {
+      expect(await vault.symbol()).to.be.equal(symbol)
+    })
   })
 
   it('should add collateral and receive shares', async () => {

@@ -1,7 +1,9 @@
 //SPDX-License-Identifier: UNLICENSED
 pragma solidity >=0.8.6;
 
-interface IVault {
+import "@openzeppelin/contracts/token/ERC20/extensions/IERC20Metadata.sol";
+
+interface IVault is IERC20Metadata {
     error IVault__CallerHasNotEnoughShares();
     error IVault__CallerIsNotTheStrategist();
     error IVault__NotProcessingDeposits();
@@ -12,11 +14,6 @@ interface IVault {
     event StartRound(uint indexed roundId, uint amountAddedToStrategy);
     event EndRound(uint indexed roundId);
     event DepositProcessed(address indexed owner, uint indexed roundId, uint assets, uint shares);
-
-    /**
-     * @dev Returns the name of the Vault.
-     */
-    function name() external view returns(string memory);
 
     /**
      * @dev Deposits underlying tokens, generating shares.

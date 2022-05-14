@@ -62,7 +62,14 @@ describeIfForking('PrincipalProtectedETHBull', () => {
         DepositQueueLib: depositQueueLib.address
       }
     })
-    vault = await PrincipalProtectedETHBull.deploy(asset.address, await vaultController.getAddress(), investor.address, '0xa354F35829Ae975e850e23e9615b11Da1B3dC4DE')
+    vault = await PrincipalProtectedETHBull.deploy(
+      'Principal Protected ETH Bull',
+      'PPETH',
+      asset.address,
+      await vaultController.getAddress(),
+      investor.address,
+      '0xa354F35829Ae975e850e23e9615b11Da1B3dC4DE'
+    )
 
     // Give approval upfront that the vault can pull money from the investor contract
     await investor.approveVaultToPull(vault.address, ethers.constants.MaxUint256)
