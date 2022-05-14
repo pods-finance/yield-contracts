@@ -135,13 +135,13 @@ contract BaseVault is IVault, ERC20 {
      * @param startIndex Zero-based index at which to start processing deposits
      * @param endIndex The index of the first element to exclude from queue
      */
-    function processQueuedDeposits(uint startIndex, uint endIndex) public {
+    function processQueuedDeposits(uint256 startIndex, uint256 endIndex) public {
         if (!processingDeposits) revert IVault__NotProcessingDeposits();
 
-        uint processedDeposits;
-        for(uint i = startIndex; i < endIndex; i++) {
+        uint256 processedDeposits;
+        for(uint256 i = startIndex; i < endIndex; i++) {
             DepositQueueLib.DepositEntry memory depositEntry = depositQueue.get(i);
-            uint shares = _mintShares(depositEntry.owner, depositEntry.amount, processedDeposits);
+            uint256 shares = _mintShares(depositEntry.owner, depositEntry.amount, processedDeposits);
             processedDeposits += depositEntry.amount;
             emit DepositProcessed(depositEntry.owner, currentRoundId, depositEntry.amount, shares);
         }
@@ -153,7 +153,7 @@ contract BaseVault is IVault, ERC20 {
     /**
      * @dev Calculate the total amount of assets under management.
      */
-    function totalAssets() public virtual view returns(uint) {
+    function totalAssets() public virtual view returns(uint256) {
         return asset.balanceOf(strategist);
     }
 
@@ -161,7 +161,7 @@ contract BaseVault is IVault, ERC20 {
      * @dev Mint new shares, effectively representing user participation in the Vault.
      */
     function _mintShares(address owner, uint256 assets, uint256 processedDeposits) internal virtual returns(uint256 shares) {
-        uint supply = totalSupply();
+        uint256 supply = totalSupply();
         processedDeposits += totalAssets();
 
         shares = supply == 0 ? assets : assets.mulDivUp(supply, processedDeposits);
@@ -173,7 +173,7 @@ contract BaseVault is IVault, ERC20 {
      * @param owner Address owner of the shares
      * @param shares Amount of shares to lock
      */
-    function _burnShares(address owner, uint256 shares) internal virtual returns(uint claimableUnderlying) {
+    function _burnShares(address owner, uint256 shares) internal virtual returns(uint256 claimableUnderlying) {
         claimableUnderlying = balanceOf(owner).mulDivDown(totalAssets(), totalSupply());
         _burn(owner, shares);
     }
@@ -183,7 +183,7 @@ contract BaseVault is IVault, ERC20 {
     // solhint-disable-next-line no-empty-blocks
     function _beforeWithdraw(uint256 shares, uint256 assets) internal virtual {}
 
-    function _afterRoundStart(uint assets) internal virtual {
+    function _afterRoundStart(uint256 assets) internal virtual {
         asset.safeTransfer(strategist, assets);
     }
 

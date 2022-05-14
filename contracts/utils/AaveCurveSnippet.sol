@@ -15,8 +15,8 @@ interface ICurveGauge is IERC20Metadata {
     function deposit(uint256 amount) external;
     function withdraw(uint256 amount) external;
     function claim_rewards(address to) external;
-    function claimable_reward(address owner, address token) external view returns(uint);
-    function reward_tokens(uint index) external view returns(address);
+    function claimable_reward(address owner, address token) external view returns(uint256);
+    function reward_tokens(uint256 index) external view returns(address);
 }
 // solhint-enable func-name-mixedcase
 
@@ -46,23 +46,23 @@ contract CurveTest {
         _;
     }
 
-    function setSlippage(uint slippage) external onlyOwner {
+    function setSlippage(uint256 slippage) external onlyOwner {
         slip = slippage;
     }
 
-    function deposit(uint amount) external onlyOwner {
+    function deposit(uint256 amount) external onlyOwner {
         require(underlying.transferFrom(msg.sender, address(this), amount), "Transfer failed");
 
         // Deposit into Curve
         underlying.approve(address(curvePool), 0);
         underlying.approve(address(curvePool), amount);
 
-        uint curveValue = amount * 1e30 / curvePool.get_virtual_price();
-        uint curveValueWithSlippage = curveValue * (DENOMINATOR - slip) / DENOMINATOR;
+        uint256 curveValue = amount * 1e30 / curvePool.get_virtual_price();
+        uint256 curveValueWithSlippage = curveValue * (DENOMINATOR - slip) / DENOMINATOR;
         curvePool.add_liquidity([0, amount, 0], curveValueWithSlippage, true);
 
         // Deposit into Gauge
-        uint curveLPBalance = curveLPToken.balanceOf(address(this));
+        uint256 curveLPBalance = curveLPToken.balanceOf(address(this));
         curveLPToken.approve(address(curveGaugeToken), 0);
         curveLPToken.approve(address(curveGaugeToken), curveLPBalance);
         curveGaugeToken.deposit(curveLPBalance);
@@ -70,12 +70,12 @@ contract CurveTest {
 
     function withdraw() external onlyOwner {
         // Withdraw from Gauge
-        uint curveGaugeBalance = curveGaugeToken.balanceOf(address(this));
+        uint256 curveGaugeBalance = curveGaugeToken.balanceOf(address(this));
         curveGaugeToken.withdraw(curveGaugeBalance);
 
         // Withdraw from Curve
-        uint curveLPBalance = curveLPToken.balanceOf(address(this));
-        uint curveValueWithSlippage = this.position() * (DENOMINATOR - slip) / DENOMINATOR;
+        uint256 curveLPBalance = curveLPToken.balanceOf(address(this));
+        uint256 curveValueWithSlippage = this.position() * (DENOMINATOR - slip) / DENOMINATOR;
         curvePool.remove_liquidity_one_coin(curveLPBalance, 1, curveValueWithSlippage, true);
 
         require(underlying.transfer(msg.sender, underlying.balanceOf(address(this))), "Transfer failed");
@@ -91,15 +91,15 @@ contract CurveTest {
         curveGaugeToken.transfer(msg.sender, curveGaugeToken.balanceOf(address(this)));
     }
 
-    function claimableRewards() external view returns(uint[MAX_REWARDS] memory rewards) {
-        for(uint i = 0; i < MAX_REWARDS; i++) {
+    function claimableRewards() external view returns(uint256[MAX_REWARDS] memory rewards) {
+        for(uint256 i = 0; i < MAX_REWARDS; i++) {
             address rewardToken = curveGaugeToken.reward_tokens(i);
             rewards[i] = curveGaugeToken.claimable_reward(address(this), rewardToken);
         }
     }
 
-    function position() external view returns(uint) {
-        uint curveBalance = curveLPToken.balanceOf(address(this)) + curveGaugeToken.balanceOf(address(this));
+    function position() external view returns(uint256) {
+        uint256 curveBalance = curveLPToken.balanceOf(address(this)) + curveGaugeToken.balanceOf(address(this));
 
         if (curveBalance > 0) {
             return curveBalance * curvePool.get_virtual_price() / 1e30;

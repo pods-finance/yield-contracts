@@ -17,7 +17,7 @@ contract YieldVaultMock is BaseVault {
         pool = YieldSourceMock(_pool);
     }
 
-    function totalAssets() public override view returns(uint) {
+    function totalAssets() public override view returns(uint256) {
         return pool.convertToAssets(pool.balanceOf(address(this)));
     }
 
@@ -25,7 +25,7 @@ contract YieldVaultMock is BaseVault {
         pool.withdraw(assets);
     }
 
-    function _afterRoundStart(uint assets) internal override {
+    function _afterRoundStart(uint256 assets) internal override {
         if (pool.previewDeposit(assets) > 0) {
             pool.asset().approve(address(pool), assets);
             pool.deposit(assets, address(this));

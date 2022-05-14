@@ -75,9 +75,9 @@ contract PrincipalProtectedETHBull is BaseVault {
      * @dev See {BaseVault-totalAssets}.
      */
     function totalAssets() public view override returns (uint256) {
-        uint yearnBalance = vault.balanceOf(address(this));
+        uint256 yearnBalance = vault.balanceOf(address(this));
 
-        return yearnBalance == 0 ? 0 : yearnBalance * vault.pricePerShare() / 10**uint(asset.decimals());
+        return yearnBalance == 0 ? 0 : yearnBalance * vault.pricePerShare() / 10**uint256(asset.decimals());
     }
 
     function _beforeWithdraw(uint256, uint256 assets) internal override {
@@ -88,7 +88,7 @@ contract PrincipalProtectedETHBull is BaseVault {
         console.log("After ", asset.balanceOf(address(this)));
     }
 
-    function _assetsToShares(uint assets) internal view returns(uint) {
+    function _assetsToShares(uint256 assets) internal view returns(uint256) {
         return assets.mulDivDown(1, vault.pricePerShare());
     }
 }
