@@ -287,6 +287,19 @@
     "type": "function"
   },
   {
+    "inputs": [],
+    "name": "processingDeposits",
+    "outputs": [
+      {
+        "internalType": "bool",
+        "name": "",
+        "type": "bool"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
     "inputs": [
       {
         "internalType": "address",
