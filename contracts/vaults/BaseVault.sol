@@ -18,9 +18,9 @@ contract BaseVault is IVault {
 
     IERC20Metadata public immutable asset;
 
-    address strategist;
+    address public strategist;
 
-    uint256 currentRoundId;
+    uint256 public currentRoundId;
     mapping(address => uint256) userRounds;
 
     mapping(address => uint256) userShares;
