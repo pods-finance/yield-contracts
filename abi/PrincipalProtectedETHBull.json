@@ -27,7 +27,7 @@
   },
   {
     "inputs": [],
-    "name": "FixedPointMath__DivZero",
+    "name": "FixedPointMath__DivByZero",
     "type": "error"
   },
   {

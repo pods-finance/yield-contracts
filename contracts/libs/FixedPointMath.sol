@@ -2,17 +2,16 @@
 pragma solidity >=0.8.6;
 
 library FixedPointMath {
-    error FixedPointMath__DivZero();
+    error FixedPointMath__DivByZero();
 
     function mulDivDown(uint256 x, uint256 y, uint256 denominator) internal pure returns (uint256 z) {
-        if (denominator == 0) revert FixedPointMath__DivZero();
+        if (denominator == 0) revert FixedPointMath__DivByZero();
 
         // solhint-disable-next-line no-inline-assembly
         assembly {
             // Store x * y in z for now.
             z := mul(x, y)
 
-            // Equivalent to require(denominator != 0 && (x == 0 || (x * y) / x == y))
             // Equivalent to require(x == 0 || (x * y) / x == y)
             if iszero(or(iszero(x), eq(div(z, x), y))) {
                 revert(0, 0)
@@ -24,7 +23,7 @@ library FixedPointMath {
     }
 
     function mulDivUp(uint256 x, uint256 y, uint256 denominator) internal pure returns (uint256 z) {
-        if (denominator == 0) revert FixedPointMath__DivZero();
+        if (denominator == 0) revert FixedPointMath__DivByZero();
 
         // solhint-disable-next-line no-inline-assembly
         assembly {
