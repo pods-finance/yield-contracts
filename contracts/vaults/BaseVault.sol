@@ -106,6 +106,13 @@ contract BaseVault is IVault {
     }
 
     /**
+     * @dev Calculate the total amount of assets under management.
+     */
+    function totalAssets() public virtual view returns(uint) {
+        return asset.balanceOf(address(this));
+    }
+
+    /**
      * @dev Outputs the amount of underlying tokens of an `owner` is idle, waiting for the next round.
      */
     function idleAmountOf(address owner) public virtual view returns(uint256) {
@@ -172,13 +179,6 @@ contract BaseVault is IVault {
     }
 
     /** Internals **/
-
-    /**
-     * @dev Calculate the total amount of assets under management.
-     */
-    function totalAssets() public virtual view returns(uint) {
-        return asset.balanceOf(strategist);
-    }
 
     /**
      * @dev Mint new shares, effectively representing user participation in the Vault.

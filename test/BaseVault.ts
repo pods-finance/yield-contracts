@@ -76,7 +76,13 @@ describe('BaseVault', () => {
 
     // Start round
     await vault.connect(strategist).startRound()
+    expect(await vault.totalAssets()).to.be.equal(assets)
     expect(await asset.balanceOf(vault.address)).to.be.equal(0)
+  })
+
+  it('cannot call strategist functions without permission', async () => {
+    await expect(vault.connect(user0).startRound()).to.be.revertedWith('IVault__CallerIsNotTheStrategist()')
+    await expect(vault.connect(user0).endRound()).to.be.revertedWith('IVault__CallerIsNotTheStrategist()')
   })
 
   it('cannot withdraw between a round\'s end and the beginning of the next', async () => {
