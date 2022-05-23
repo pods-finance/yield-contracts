@@ -61,14 +61,17 @@ describe('BaseVault', () => {
     expect(await asset.balanceOf(vault.address)).to.be.equal(assets)
     expect(await vault.sharesOf(user0Address)).to.be.equal(0)
     expect(await vault.idleAmountOf(user0Address)).to.be.equal(assets)
+    expect(await vault.isProcessingDeposits()).to.be.equal(false)
 
     // Process deposits
     // Since Round 0 started upon deployment, it should end the exact same round number "0"
     const endRoundTx = vault.connect(strategist).endRound()
     await expect(endRoundTx).to.emit(vault, 'EndRound').withArgs(0)
+    expect(await vault.isProcessingDeposits()).to.be.equal(true)
     const depositProcessingTx = vault.connect(strategist).processQueuedDeposits(0, await vault.depositQueueSize())
     const expectedShares = assets
     await expect(depositProcessingTx).to.emit(vault, 'DepositProcessed').withArgs(user0Address, 1, assets, expectedShares)
+    expect(await vault.totalShares()).to.be.equal(expectedShares)
     expect(await vault.depositQueueSize()).to.be.equal(0)
     expect(await vault.sharesOf(user0Address)).to.be.equal(expectedShares)
     expect(await vault.idleAmountOf(user0Address)).to.be.equal(0)
@@ -130,6 +133,11 @@ describe('BaseVault', () => {
     await vault.connect(strategist).endRound()
     await vault.connect(strategist).processQueuedDeposits(0, await vault.depositQueueSize())
     expect(await vault.depositQueueSize()).to.be.equal(0)
+    const expectedUser0Shares = ethers.utils.parseEther('20')
+    expect(await vault.sharesOf(user0Address)).to.be.equal(expectedUser0Shares)
+    const expectedUser1Shares = ethers.utils.parseEther('10')
+    expect(await vault.sharesOf(user1Address)).to.be.equal(expectedUser1Shares)
+    expect(await vault.totalShares()).to.be.equal(expectedUser0Shares.add(expectedUser1Shares))
 
     // Starts round 1
     await vault.connect(strategist).startRound()
