@@ -61,13 +61,13 @@ describe('BaseVault', () => {
     expect(await asset.balanceOf(vault.address)).to.be.equal(assets)
     expect(await vault.sharesOf(user0Address)).to.be.equal(0)
     expect(await vault.idleAmountOf(user0Address)).to.be.equal(assets)
-    expect(await vault.processingDeposits()).to.be.equal(false)
+    expect(await vault.isProcessingDeposits()).to.be.equal(false)
 
     // Process deposits
     // Since Round 0 started upon deployment, it should end the exact same round number "0"
     const endRoundTx = vault.connect(strategist).endRound()
     await expect(endRoundTx).to.emit(vault, 'EndRound').withArgs(0)
-    expect(await vault.processingDeposits()).to.be.equal(true)
+    expect(await vault.isProcessingDeposits()).to.be.equal(true)
     const depositProcessingTx = vault.connect(strategist).processQueuedDeposits(0, await vault.depositQueueSize())
     const expectedShares = assets
     await expect(depositProcessingTx).to.emit(vault, 'DepositProcessed').withArgs(user0Address, 1, assets, expectedShares)
