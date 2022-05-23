@@ -42,7 +42,7 @@
   },
   {
     "inputs": [],
-    "name": "TransferDidNotSucceed",
+    "name": "TransferUtils__TransferDidNotSucceed",
     "type": "error"
   },
   {

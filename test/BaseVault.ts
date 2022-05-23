@@ -38,6 +38,7 @@ describe('BaseVault', () => {
     await asset.connect(user1).approve(vault.address, ethers.constants.MaxUint256)
     await asset.connect(user2).approve(vault.address, ethers.constants.MaxUint256)
     await asset.connect(strategist).approve(vault.address, ethers.constants.MaxUint256)
+    expect(await vault.name()).to.be.equal('Base Vault')
   })
 
   beforeEach(async () => {
@@ -50,6 +51,7 @@ describe('BaseVault', () => {
 
   it('should add collateral and receive shares', async () => {
     const assets = ethers.utils.parseEther('10')
+    const expectedShares = assets
 
     await asset.connect(user0).mint(assets)
     expect(await asset.balanceOf(user0Address)).to.be.equal(assets)
@@ -67,7 +69,6 @@ describe('BaseVault', () => {
     const endRoundTx = vault.connect(strategist).endRound()
     await expect(endRoundTx).to.emit(vault, 'EndRound').withArgs(0)
     const depositProcessingTx = vault.connect(strategist).processQueuedDeposits(0, await vault.depositQueueSize())
-    const expectedShares = assets
     await expect(depositProcessingTx).to.emit(vault, 'DepositProcessed').withArgs(user0Address, 1, assets, expectedShares)
     expect(await vault.depositQueueSize()).to.be.equal(0)
     expect(await vault.sharesOf(user0Address)).to.be.equal(expectedShares)
@@ -135,12 +136,14 @@ describe('BaseVault', () => {
     await vault.connect(strategist).startRound()
 
     // User0 withdraws
+    expect(await vault.previewWithdraw(await vault.sharesOf(user0Address))).to.be.equal(assets.mul(2))
     await vault.connect(user0).withdraw()
     expect(await asset.balanceOf(user0Address)).to.be.equal(assets.mul(2))
     expect(await vault.sharesOf(user0Address)).to.be.equal(0)
     expect(await vault.idleAmountOf(user0Address)).to.be.equal(0)
 
     // User1 withdraws
+    expect(await vault.previewWithdraw(await vault.sharesOf(user1Address))).to.be.equal(assets)
     await vault.connect(user1).withdraw()
     expect(await asset.balanceOf(user1Address)).to.be.equal(assets)
     expect(await vault.sharesOf(user1Address)).to.be.equal(0)
@@ -170,6 +173,7 @@ describe('BaseVault', () => {
     // Accruing yield
     await vault.connect(strategist).endRound()
     await vault.connect(strategist).processQueuedDeposits(0, await vault.depositQueueSize())
+    // expect(await vault.previewShares(user0Address)).to.be.equal(expectedShares)
     await vault.connect(strategist).startRound()
 
     await yieldSource.generateInterest(ethers.utils.parseEther('200')) // Accruing yield

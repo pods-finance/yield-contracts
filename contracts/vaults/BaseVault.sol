@@ -212,9 +212,8 @@ contract BaseVault is IVault {
     // solhint-disable-next-line no-empty-blocks
     function _beforeWithdraw(uint256 shares, uint256 assets) internal virtual {}
 
-    function _afterRoundStart(uint assets) internal virtual {
-        asset.safeTransfer(strategist, assets);
-    }
+    // solhint-disable-next-line no-empty-blocks
+    function _afterRoundStart(uint assets) internal virtual {}
 
     // solhint-disable-next-line no-empty-blocks
     function _afterRoundEnd() internal virtual {}
