@@ -18,15 +18,15 @@ contract BaseVault is IVault {
 
     IERC20Metadata public immutable asset;
 
-    address strategist;
+    address public strategist;
 
-    uint256 currentRoundId;
+    uint256 public currentRoundId;
     mapping(address => uint256) userRounds;
 
     mapping(address => uint256) userShares;
-    uint256 totalShares;
+    uint256 public totalShares;
 
-    bool processingDeposits = false;
+    bool public isProcessingDeposits = false;
 
     DepositQueueLib.DepositQueue private depositQueue;
 
@@ -44,7 +44,7 @@ contract BaseVault is IVault {
      * @dev See {IVault-deposit}.
      */
     function deposit(uint256 amount) public virtual override {
-        if(processingDeposits) revert IVault__ForbiddenWhileProcessingDeposits();
+        if(isProcessingDeposits) revert IVault__ForbiddenWhileProcessingDeposits();
 
         asset.safeTransferFrom(msg.sender, address(this), amount);
         depositQueue.push(DepositQueueLib.DepositEntry(msg.sender, amount));
@@ -56,7 +56,7 @@ contract BaseVault is IVault {
      * @dev See {IVault-withdraw}.
      */
     function withdraw() public virtual override {
-        if(processingDeposits) revert IVault__ForbiddenWhileProcessingDeposits();
+        if(isProcessingDeposits) revert IVault__ForbiddenWhileProcessingDeposits();
 
         address owner = msg.sender;
 
@@ -138,7 +138,7 @@ contract BaseVault is IVault {
      * strategist where it should start accruing yield.
      */
     function startRound() public virtual onlyStrategist {
-        processingDeposits = false;
+        isProcessingDeposits = false;
 
         uint256 idleBalance = asset.balanceOf(address(this));
         _afterRoundStart(idleBalance);
@@ -151,7 +151,7 @@ contract BaseVault is IVault {
      * and opens the window for withdraws.
      */
     function endRound() public virtual onlyStrategist {
-        processingDeposits = true;
+        isProcessingDeposits = true;
         _afterRoundEnd();
 
         emit EndRound(currentRoundId++);
@@ -166,7 +166,7 @@ contract BaseVault is IVault {
      * @param endIndex The index of the first element to exclude from queue
      */
     function processQueuedDeposits(uint startIndex, uint endIndex) public {
-        if (!processingDeposits) revert IVault__NotProcessingDeposits();
+        if (!isProcessingDeposits) revert IVault__NotProcessingDeposits();
 
         uint processedDeposits;
         for(uint i = startIndex; i < endIndex; i++) {
