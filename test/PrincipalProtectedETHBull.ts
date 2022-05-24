@@ -1,9 +1,10 @@
 import { Contract } from '@ethersproject/contracts'
 import { expect } from 'chai'
 import hre, { ethers } from 'hardhat'
-import { BigNumber, Signer } from 'ethers'
+import { BigNumber } from 'ethers'
 import { describe } from 'mocha'
 import { HardhatNetworkConfig } from 'hardhat/src/types/config'
+import { SignerWithAddress } from '@nomiclabs/hardhat-ethers/signers'
 
 function describeIfForking (title: string, suite: () => void): Mocha.Suite {
   const localNetwork = (hre.network.config as HardhatNetworkConfig)
@@ -22,8 +23,7 @@ function negate (value: BigNumber): BigNumber {
 
 describeIfForking('PrincipalProtectedETHBull', () => {
   let asset: Contract, vault: Contract, yieldSource: Contract, investor: Contract
-  let user0: Signer, user1: Signer, user2: Signer, vaultController: Signer
-  let user0Address: string, user1Address: string
+  let user0: SignerWithAddress, user1: SignerWithAddress, user2: SignerWithAddress, vaultController: SignerWithAddress
   let snapshotId: BigNumber
 
   before(async () => {
@@ -42,10 +42,6 @@ describeIfForking('PrincipalProtectedETHBull', () => {
     user1 = await ethers.getSigner('0x15abb66bA754F05cBC0165A64A11cDed1543dE48')
 
     ;[, , , user2, vaultController] = await ethers.getSigners()
-    ;[user0Address, user1Address] = await Promise.all([
-      user0.getAddress(),
-      user1.getAddress()
-    ])
     const DepositQueueLib = await ethers.getContractFactory('DepositQueueLib')
     const depositQueueLib = await DepositQueueLib.deploy()
 
@@ -92,15 +88,15 @@ describeIfForking('PrincipalProtectedETHBull', () => {
         [negate(assetAmount), assetAmount]
       )
     expect(await vault.depositQueueSize()).to.be.equal(1)
-    expect(await vault.sharesOf(user0Address)).to.be.equal(0)
-    expect(await vault.idleAmountOf(user0Address)).to.be.equal(assetAmount)
+    expect(await vault.sharesOf(user0.address)).to.be.equal(0)
+    expect(await vault.idleAmountOf(user0.address)).to.be.equal(assetAmount)
 
     // Process deposits
     await vault.connect(vaultController).endRound()
     await vault.connect(vaultController).processQueuedDeposits(0, await vault.depositQueueSize())
     expect(await vault.depositQueueSize()).to.be.equal(0)
-    expect(await vault.sharesOf(user0Address)).to.be.equal(assetAmount)
-    expect(await vault.idleAmountOf(user0Address)).to.be.equal(0)
+    expect(await vault.sharesOf(user0.address)).to.be.equal(assetAmount)
+    expect(await vault.idleAmountOf(user0.address)).to.be.equal(0)
 
     // Start round
     await vault.connect(vaultController).startRound()
@@ -142,13 +138,13 @@ describeIfForking('PrincipalProtectedETHBull', () => {
     await vault.connect(user1).deposit(assetAmount)
 
     expect(await asset.balanceOf(vault.address)).to.be.equal(assetAmount.mul(3))
-    // expect(await asset.balanceOf(user0Address)).to.be.equal(0)
-    // expect(await asset.balanceOf(user1Address)).to.be.equal(0)
+    // expect(await asset.balanceOf(user0.address)).to.be.equal(0)
+    // expect(await asset.balanceOf(user1.address)).to.be.equal(0)
     expect(await vault.depositQueueSize()).to.be.equal(2)
-    expect(await vault.sharesOf(user0Address)).to.be.equal(0)
-    expect(await vault.idleAmountOf(user0Address)).to.be.equal(assetAmount.mul(2))
-    expect(await vault.sharesOf(user1Address)).to.be.equal(0)
-    expect(await vault.idleAmountOf(user1Address)).to.be.equal(assetAmount)
+    expect(await vault.sharesOf(user0.address)).to.be.equal(0)
+    expect(await vault.idleAmountOf(user0.address)).to.be.equal(assetAmount.mul(2))
+    expect(await vault.sharesOf(user1.address)).to.be.equal(0)
+    expect(await vault.idleAmountOf(user1.address)).to.be.equal(assetAmount)
 
     // Process deposits
     await vault.connect(vaultController).endRound()
@@ -160,15 +156,15 @@ describeIfForking('PrincipalProtectedETHBull', () => {
 
     // User0 withdraws
     await vault.connect(user0).withdraw()
-    // expect(await asset.balanceOf(user0Address)).to.be.equal(assetAmount.mul(2))
-    expect(await vault.sharesOf(user0Address)).to.be.equal(0)
-    expect(await vault.idleAmountOf(user0Address)).to.be.equal(0)
+    // expect(await asset.balanceOf(user0.address)).to.be.equal(assetAmount.mul(2))
+    expect(await vault.sharesOf(user0.address)).to.be.equal(0)
+    expect(await vault.idleAmountOf(user0.address)).to.be.equal(0)
 
     // User1 withdraws
     await vault.connect(user1).withdraw()
-    // expect(await asset.balanceOf(user1Address)).to.be.equal(assetAmount)
-    expect(await vault.sharesOf(user1Address)).to.be.equal(0)
-    expect(await vault.idleAmountOf(user1Address)).to.be.equal(0)
+    // expect(await asset.balanceOf(user1.address)).to.be.equal(assetAmount)
+    expect(await vault.sharesOf(user1.address)).to.be.equal(0)
+    expect(await vault.idleAmountOf(user1.address)).to.be.equal(0)
 
     // Vault is empty
     expect(await asset.balanceOf(vault.address)).to.be.equal(0)
@@ -208,13 +204,13 @@ describeIfForking('PrincipalProtectedETHBull', () => {
     const expectedUser0Amount = '1495424836601307189542'
     const expectedUser1Amount = '104575163398692810458'
 
-    expect(await asset.balanceOf(user0Address)).to.be.equal(expectedUser0Amount)
-    expect(await vault.sharesOf(user0Address)).to.be.equal(0)
-    expect(await vault.idleAmountOf(user0Address)).to.be.equal(0)
+    expect(await asset.balanceOf(user0.address)).to.be.equal(expectedUser0Amount)
+    expect(await vault.sharesOf(user0.address)).to.be.equal(0)
+    expect(await vault.idleAmountOf(user0.address)).to.be.equal(0)
 
-    expect(await asset.balanceOf(user1Address)).to.be.equal(expectedUser1Amount)
-    expect(await vault.sharesOf(user1Address)).to.be.equal(0)
-    expect(await vault.idleAmountOf(user1Address)).to.be.equal(0)
+    expect(await asset.balanceOf(user1.address)).to.be.equal(expectedUser1Amount)
+    expect(await vault.sharesOf(user1.address)).to.be.equal(0)
+    expect(await vault.idleAmountOf(user1.address)).to.be.equal(0)
 
     expect(await vault.totalAssets()).to.be.equal(0)
   })

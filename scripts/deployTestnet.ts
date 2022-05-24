@@ -33,6 +33,7 @@ async function main (): Promise<void> {
   const DepositQueueLib = await ethers.getContractFactory('DepositQueueLib')
   const depositQueueLib = await DepositQueueLib.deploy()
   await depositQueueLib.deployTransaction.wait(WAIT_CONFIRMATIONS)
+  await verifyContract(hre, depositQueueLib.address, [])
 
   const Vault = await ethers.getContractFactory('PrincipalProtectedMock', {
     libraries: {
