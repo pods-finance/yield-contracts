@@ -48,6 +48,9 @@ async function main (): Promise<void> {
   console.log(`\nVault deployed at: ${vault.address}\n`)
   await verifyContract(hre, vault.address, vaultConstructorArguments)
 
+  /* eslint-disable-next-line @typescript-eslint/no-floating-promises */
+  ;(await investor.approveVaultToPull(vault.address)).wait(WAIT_CONFIRMATIONS)
+
   console.table({
     Asset: asset.address,
     YieldSourceMock: yieldSource.address,

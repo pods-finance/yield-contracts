@@ -31,7 +31,7 @@ describe('PrincipalProtectedMock', () => {
     vault = await PrincipalProtectedETHBull.deploy(asset.address, await vaultController.getAddress(), investor.address, yieldSource.address)
 
     // Give approval upfront that the vault can pull money from the investor contract
-    await investor.approveVaultToPull(vault.address, ethers.constants.MaxUint256)
+    await investor.approveVaultToPull(vault.address)
 
     await asset.connect(user0).approve(vault.address, ethers.constants.MaxUint256)
     await asset.connect(user1).approve(vault.address, ethers.constants.MaxUint256)
