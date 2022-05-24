@@ -15,7 +15,7 @@ describe('PrincipalProtectedMock', () => {
     const depositQueueLib = await DepositQueueLib.deploy()
 
     const Asset = await ethers.getContractFactory('Asset')
-    asset = await Asset.deploy()
+    asset = await Asset.deploy('Asset', 'AST')
 
     const YieldSourceMock = await ethers.getContractFactory('YieldSourceMock')
     yieldSource = await YieldSourceMock.deploy(asset.address)

@@ -13,7 +13,7 @@ async function main (): Promise<void> {
   const deployerAddress = await deployer.getAddress()
 
   const Asset = await ethers.getContractFactory('Asset')
-  const asset = await Asset.deploy()
+  const asset = await Asset.deploy('Liquid staked Ether 2.0', 'stETH')
   await asset.deployTransaction.wait(WAIT_CONFIRMATIONS)
   console.log(`\n${await asset.symbol()} deployed at: ${asset.address}\n`)
   await verifyContract(hre, asset.address)
