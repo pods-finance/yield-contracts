@@ -8,7 +8,7 @@ import { ethers } from 'hardhat'
 const WAIT_CONFIRMATIONS = 5
 
 async function main (): Promise<void> {
-  const vaultAddress = process.env.VAULT ?? ''
+  const vaultAddress = process.env.VAULT ?? '0xAC028b8fcE00371c6F3179Fd2A4DE01C0DA92F9c'
   if (!ethers.utils.isAddress(vaultAddress)) {
     throw new Error('Invalid vault address')
   }
@@ -17,27 +17,25 @@ async function main (): Promise<void> {
   const vault = await ethers.getContractAt('PrincipalProtectedMock', vaultAddress)
   const asset = await ethers.getContractAt('Asset', await vault.asset())
 
-  /* eslint-disable @typescript-eslint/no-floating-promises */
-  ;(await asset.connect(user0).mint(ethers.utils.parseEther('250'))).wait(WAIT_CONFIRMATIONS)
-  ;(await asset.connect(user0).approve(vault.address, ethers.constants.MaxUint256)).wait(WAIT_CONFIRMATIONS)
-  ;(await vault.connect(user0).deposit(ethers.utils.parseEther('250'))).wait(WAIT_CONFIRMATIONS)
+  await (await asset.connect(user0).mint(ethers.utils.parseEther('250'))).wait(WAIT_CONFIRMATIONS)
+  await (await asset.connect(user0).approve(vault.address, ethers.constants.MaxUint256)).wait(WAIT_CONFIRMATIONS)
+  await (await vault.connect(user0).deposit(ethers.utils.parseEther('250'))).wait(WAIT_CONFIRMATIONS)
   console.log('User0 Deposited')
 
-  ;(await asset.connect(user1).mint(ethers.utils.parseEther('100'))).wait(WAIT_CONFIRMATIONS)
-  ;(await asset.connect(user1).approve(vault.address, ethers.constants.MaxUint256)).wait(WAIT_CONFIRMATIONS)
-  ;(await vault.connect(user1).deposit(ethers.utils.parseEther('100'))).wait(WAIT_CONFIRMATIONS)
+  await (await asset.connect(user1).mint(ethers.utils.parseEther('100'))).wait(WAIT_CONFIRMATIONS)
+  await (await asset.connect(user1).approve(vault.address, ethers.constants.MaxUint256)).wait(WAIT_CONFIRMATIONS)
+  await (await vault.connect(user1).deposit(ethers.utils.parseEther('100'))).wait(WAIT_CONFIRMATIONS)
   console.log('User1 Deposited')
 
-  ;(await vault.endRound()).wait(WAIT_CONFIRMATIONS)
+  await (await vault.endRound()).wait(WAIT_CONFIRMATIONS)
   console.log('Round Ended')
-  ;(await vault.processQueuedDeposits(0, 2)).wait(WAIT_CONFIRMATIONS)
+  await (await vault.processQueuedDeposits(0, 2)).wait(WAIT_CONFIRMATIONS)
   console.log('Payments processed')
-  ;(await vault.startRound()).wait(WAIT_CONFIRMATIONS)
+  await (await vault.startRound()).wait(WAIT_CONFIRMATIONS)
   console.log('Round Started')
 
-  ;(await vault.connect(user0).withdraw()).wait(WAIT_CONFIRMATIONS)
+  await (await vault.connect(user0).withdraw()).wait(WAIT_CONFIRMATIONS)
   console.log('User0 Withdrew')
-  /* eslint-enable @typescript-eslint/no-floating-promises */
 }
 
 // We recommend this pattern to be able to use async/await everywhere
