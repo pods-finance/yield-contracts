@@ -15,7 +15,7 @@ describe('PrincipalProtectedMock', () => {
     const depositQueueLib = await DepositQueueLib.deploy()
 
     const Asset = await ethers.getContractFactory('Asset')
-    asset = await Asset.deploy()
+    asset = await Asset.deploy('Asset', 'AST')
 
     const YieldSourceMock = await ethers.getContractFactory('YieldSourceMock')
     yieldSource = await YieldSourceMock.deploy(asset.address)
@@ -31,7 +31,7 @@ describe('PrincipalProtectedMock', () => {
     vault = await PrincipalProtectedETHBull.deploy(asset.address, await vaultController.getAddress(), investor.address, yieldSource.address)
 
     // Give approval upfront that the vault can pull money from the investor contract
-    await investor.approveVaultToPull(vault.address, ethers.constants.MaxUint256)
+    await investor.approveVaultToPull(vault.address)
 
     await asset.connect(user0).approve(vault.address, ethers.constants.MaxUint256)
     await asset.connect(user1).approve(vault.address, ethers.constants.MaxUint256)
@@ -176,6 +176,9 @@ describe('PrincipalProtectedMock', () => {
     await vault.connect(user0).withdraw()
     await vault.connect(user1).withdraw()
 
+    expect(await vault.totalShares()).to.be.equal(0)
+    expect(await vault.totalAssets()).to.be.equal(0)
+
     const expectedUser0Amount = '1495424836601307189542'
     const expectedUser1Amount = '104575163398692810458'
 
@@ -188,5 +191,8 @@ describe('PrincipalProtectedMock', () => {
     expect(await vault.idleAmountOf(user1.address)).to.be.equal(0)
 
     expect(await vault.totalAssets()).to.be.equal(0)
+
+    await vault.connect(vaultController).endRound()
+    await vault.connect(vaultController).startRound()
   })
 })

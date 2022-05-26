@@ -66,7 +66,7 @@ describeIfForking('PrincipalProtectedETHBull', () => {
     await asset.connect(user0).approve(vault.address, ethers.constants.MaxUint256)
     await asset.connect(user1).approve(vault.address, ethers.constants.MaxUint256)
     await asset.connect(user2).approve(vault.address, ethers.constants.MaxUint256)
-    await asset.connect(vaultController).approve(vault.address, ethers.constants.MaxUint256)
+    await asset.connect(vaultController).approve(vault.address)
   })
 
   beforeEach(async () => {

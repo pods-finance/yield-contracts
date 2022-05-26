@@ -14,8 +14,8 @@ describe('BaseVault', () => {
     const DepositQueueLib = await ethers.getContractFactory('DepositQueueLib')
     const depositQueueLib = await DepositQueueLib.deploy()
 
-    const MockAsset = await ethers.getContractFactory('Asset')
-    asset = await MockAsset.deploy()
+    const Asset = await ethers.getContractFactory('Asset')
+    asset = await Asset.deploy('Asset', 'AST')
 
     const YieldSourceMock = await ethers.getContractFactory('YieldSourceMock')
     yieldSource = await YieldSourceMock.deploy(asset.address)
