@@ -47,6 +47,8 @@ interface IVault {
      *
      * Returns a boolean value indicating whether the operation succeeded.
      *
+     * Note that approving `type(uint256).max` is considered unlimited approval and should not be spent.
+     *
      * Emits an {Approval} event.
      */
     function approve(address spender, uint256 amount) external returns (bool);
