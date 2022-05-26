@@ -19,10 +19,15 @@ contract BaseVault is IVault, ERC20 {
 
     IERC20Metadata public immutable asset;
 
-    address strategist;
-    uint256 currentRoundId;
+    address public strategist;
 
-    bool processingDeposits = false;
+    uint256 public currentRoundId;
+    mapping(address => uint256) userRounds;
+
+    mapping(address => uint256) userShares;
+    uint256 public totalShares;
+
+    bool public isProcessingDeposits = false;
 
     DepositQueueLib.DepositQueue private depositQueue;
 
@@ -39,25 +44,27 @@ contract BaseVault is IVault, ERC20 {
     /**
      * @dev See {IVault-deposit}.
      */
-    function deposit(uint256 amount) public virtual override {
-        if(processingDeposits) revert IVault__ForbiddenWhileProcessingDeposits();
+    function deposit(uint256 assets, address receiver) public virtual override {
+        if(isProcessingDeposits) revert IVault__ForbiddenWhileProcessingDeposits();
 
-        asset.safeTransferFrom(msg.sender, address(this), amount);
-        depositQueue.push(DepositQueueLib.DepositEntry(msg.sender, amount));
+        asset.safeTransferFrom(msg.sender, address(this), assets);
+        depositQueue.push(DepositQueueLib.DepositEntry(receiver, assets));
 
-        emit Deposit(msg.sender, amount);
+        emit Deposit(receiver, assets);
     }
 
     /**
      * @dev See {IVault-withdraw}.
      */
-    function withdraw() public virtual override {
-        if(processingDeposits) revert IVault__ForbiddenWhileProcessingDeposits();
-
-        address owner = msg.sender;
+    function withdraw(address owner) public virtual override {
+        if(isProcessingDeposits) revert IVault__ForbiddenWhileProcessingDeposits();
 
         uint256 shares = balanceOf(owner);
         uint256 assets = _burnShares(owner, shares);
+
+        if (msg.sender != owner) {
+            _useAllowance(owner, msg.sender, shares);
+        }
 
         // Apply custom withdraw logic
         _beforeWithdraw(shares, assets);
@@ -65,6 +72,13 @@ contract BaseVault is IVault, ERC20 {
         asset.safeTransfer(owner, assets);
 
         emit Withdraw(owner, shares, assets);
+    }
+
+    /**
+     * @dev Outputs the amount of shares and the locked shares for a given `owner` address.
+     */
+    function sharesOf(address owner) public virtual view returns (uint) {
+        return userShares[owner];
     }
 
     /**
@@ -108,7 +122,7 @@ contract BaseVault is IVault, ERC20 {
      * strategist where it should start accruing yield.
      */
     function startRound() public virtual onlyStrategist {
-        processingDeposits = false;
+        isProcessingDeposits = false;
 
         uint256 idleBalance = asset.balanceOf(address(this));
         _afterRoundStart(idleBalance);
@@ -121,7 +135,7 @@ contract BaseVault is IVault, ERC20 {
      * and opens the window for withdraws.
      */
     function endRound() public virtual onlyStrategist {
-        processingDeposits = true;
+        isProcessingDeposits = true;
         _afterRoundEnd();
 
         emit EndRound(currentRoundId++);
@@ -136,7 +150,7 @@ contract BaseVault is IVault, ERC20 {
      * @param endIndex The index of the first element to exclude from queue
      */
     function processQueuedDeposits(uint256 startIndex, uint256 endIndex) public {
-        if (!processingDeposits) revert IVault__NotProcessingDeposits();
+        if (!isProcessingDeposits) revert IVault__NotProcessingDeposits();
 
         uint256 processedDeposits;
         for(uint256 i = startIndex; i < endIndex; i++) {
@@ -176,6 +190,21 @@ contract BaseVault is IVault, ERC20 {
     function _burnShares(address owner, uint256 shares) internal virtual returns(uint256 claimableUnderlying) {
         claimableUnderlying = balanceOf(owner).mulDivDown(totalAssets(), totalSupply());
         _burn(owner, shares);
+    }
+
+    /**
+     * @dev Spend allowance on behalf of the shares owner.
+     * @param owner Address owner of the shares
+     * @param spender Address shares spender
+     * @param shares Amount of shares to spend
+     */
+    function _useAllowance(address owner, address spender, uint256 shares) internal {
+        uint256 allowed = allowance(owner, spender);
+        if (shares > allowed) revert IVault__SharesExceedAllowance();
+
+        if (allowed != type(uint256).max) {
+            _approve(owner, spender, allowed - shares);
+        }
     }
 
     /** Hooks **/

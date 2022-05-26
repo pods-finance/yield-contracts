@@ -14,7 +14,8 @@ contract PrincipalProtectedMock is BaseVault {
 
     uint256 public constant DENOMINATOR = 10000;
 
-    uint256 public lastRoundBalance;
+    uint256 public lastRoundAssets;
+    uint256 public lastSharePrice;
     uint256 public investorRatio = 5000;
     address public investor;
 
@@ -37,30 +38,34 @@ contract PrincipalProtectedMock is BaseVault {
             asset.approve(address(pool), assets);
             pool.deposit(assets, address(this));
         }
-        lastRoundBalance = totalAssets();
+        lastRoundAssets = totalAssets();
+        lastSharePrice = totalShares == 0 ? 0 : lastRoundAssets / totalShares;
     }
 
     function _afterRoundEnd() internal override {
-        uint256 underlyingBefore = asset.balanceOf(address(this));
-        // Marks the amount interest gained in the round
-        uint256 interest = totalAssets() - lastRoundBalance;
-        // Pulls the yields from investor
-        uint256 investmentYield = asset.balanceOf(investor);
-        if (investmentYield > 0) {
-            asset.safeTransferFrom(investor, address(this), investmentYield);
-        }
+        if (totalShares != 0) {
+            uint256 roundAccruedInterest = totalAssets() - lastRoundAssets;
+            uint256 idleAssets = asset.balanceOf(address(this));
 
-        uint256 toPosition = asset.balanceOf(address(this)) - underlyingBefore;
-        if (toPosition > 0) {
-            asset.approve(address(pool), toPosition);
-            pool.deposit(toPosition, address(this));
-        }
+            // Pulls the yields from investor
+            uint256 investmentYield = asset.balanceOf(investor);
+            if (investmentYield > 0) {
+                asset.safeTransferFrom(investor, address(this), investmentYield);
+            }
 
-        // Send round investment to investor
-        uint256 investment = (interest * investorRatio) / DENOMINATOR;
-        if (investment > 0) {
-            pool.withdraw(investment);
-            asset.safeTransfer(investor, investment);
+            // Redeposit to Yield source
+            uint256 redepositAmount = asset.balanceOf(address(this)) - idleAssets;
+            if (redepositAmount > 0) {
+                asset.approve(address(pool), redepositAmount);
+                pool.deposit(redepositAmount, address(this));
+            }
+
+            // Sends another batch to Investor
+            uint256 investmentAmount = (roundAccruedInterest * investorRatio) / DENOMINATOR;
+            if (investmentAmount > 0) {
+                pool.withdraw(investmentAmount);
+                asset.safeTransfer(investor, investmentAmount);
+            }
         }
     }
 
@@ -71,7 +76,8 @@ contract PrincipalProtectedMock is BaseVault {
         return pool.previewRedeem(pool.balanceOf(address(this)));
     }
 
-    function _beforeWithdraw(uint256, uint256 assets) internal override {
+    function _beforeWithdraw(uint256 shares, uint256 assets) internal override {
+        lastRoundAssets -= shares * lastSharePrice;
         pool.withdraw(assets);
     }
 }

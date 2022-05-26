@@ -12,11 +12,14 @@ async function main (): Promise<void> {
   const [deployer] = await ethers.getSigners()
   const deployerAddress = await deployer.getAddress()
 
+  const assetName = 'Liquid staked Ether 2.0'
+  const assetSymbol = 'stETH'
+
   const Asset = await ethers.getContractFactory('Asset')
-  const asset = await Asset.deploy()
+  const asset = await Asset.deploy(assetName, assetSymbol)
   await asset.deployTransaction.wait(WAIT_CONFIRMATIONS)
   console.log(`\n${await asset.symbol()} deployed at: ${asset.address}\n`)
-  await verifyContract(hre, asset.address)
+  await verifyContract(hre, asset.address, [assetName, assetSymbol])
 
   const YieldSource = await ethers.getContractFactory('YieldSourceMock')
   const yieldSource = await YieldSource.deploy(asset.address)
@@ -33,6 +36,7 @@ async function main (): Promise<void> {
   const DepositQueueLib = await ethers.getContractFactory('DepositQueueLib')
   const depositQueueLib = await DepositQueueLib.deploy()
   await depositQueueLib.deployTransaction.wait(WAIT_CONFIRMATIONS)
+  await verifyContract(hre, depositQueueLib.address, [])
 
   const Vault = await ethers.getContractFactory('PrincipalProtectedMock', {
     libraries: {
@@ -46,6 +50,9 @@ async function main (): Promise<void> {
   await vault.deployTransaction.wait(WAIT_CONFIRMATIONS)
   console.log(`\nVault deployed at: ${vault.address}\n`)
   await verifyContract(hre, vault.address, vaultConstructorArguments)
+
+  /* eslint-disable-next-line @typescript-eslint/no-floating-promises */
+  await (await investor.approveVaultToPull(vault.address)).wait(WAIT_CONFIRMATIONS)
 
   console.table({
     Asset: asset.address,
