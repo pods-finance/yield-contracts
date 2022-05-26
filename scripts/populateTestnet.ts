@@ -34,7 +34,7 @@ async function main (): Promise<void> {
   await (await vault.startRound()).wait(WAIT_CONFIRMATIONS)
   console.log('Round Started')
 
-  await (await vault.connect(user0).withdraw()).wait(WAIT_CONFIRMATIONS)
+  await (await vault.connect(user0).withdraw(user0.address)).wait(WAIT_CONFIRMATIONS)
   console.log('User0 Withdrew')
 }
 

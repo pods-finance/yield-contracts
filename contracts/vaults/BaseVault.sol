@@ -30,6 +30,8 @@ contract BaseVault is IVault {
 
     DepositQueueLib.DepositQueue private depositQueue;
 
+    mapping(address => mapping(address => uint256)) private _allowances;
+
     constructor(address _asset, address _strategist) {
         asset = IERC20Metadata(_asset);
         strategist = _strategist;
@@ -55,13 +57,15 @@ contract BaseVault is IVault {
     /**
      * @dev See {IVault-withdraw}.
      */
-    function withdraw() public virtual override {
+    function withdraw(address owner) public virtual override {
         if(isProcessingDeposits) revert IVault__ForbiddenWhileProcessingDeposits();
-
-        address owner = msg.sender;
 
         uint256 shares = sharesOf(owner);
         uint256 assets = _burnShares(owner, shares);
+
+        if (msg.sender != owner) {
+            _useAllowance(owner, msg.sender, shares);
+        }
 
         // Apply custom withdraw logic
         _beforeWithdraw(shares, assets);
@@ -76,6 +80,24 @@ contract BaseVault is IVault {
      */
     function name() external virtual override pure returns(string memory) {
         return "Base Vault";
+    }
+
+    /**
+     * @dev See {IVault-allowance}.
+     */
+    function allowance(address owner, address spender) public view returns(uint256) {
+        return _allowances[owner][spender];
+    }
+
+    /**
+     * @dev See {IVault-approve}.
+     */
+    function approve(address spender, uint256 amount) external returns (bool) {
+        if (spender == address(0)) revert IVault__ApprovalToAddressZero();
+
+        _allowances[msg.sender][spender] = amount;
+        emit Approval(msg.sender, spender, amount);
+        return true;
     }
 
     /**
@@ -205,6 +227,21 @@ contract BaseVault is IVault {
         claimableUnderlying = userShares[owner].mulDivDown(totalAssets(), totalShares);
         userShares[owner] -= shares;
         totalShares -= shares;
+    }
+
+    /**
+     * @dev Spend allowance on behalf of the shares owner.
+     * @param owner Address owner of the shares
+     * @param spender Address shares spender
+     * @param shares Amount of shares to spend
+     */
+    function _useAllowance(address owner, address spender, uint256 shares) internal {
+        uint256 allowed = _allowances[owner][spender];
+        if (shares > allowed) revert IVault__SharesExceedAllowance();
+
+        if (allowed != type(uint256).max) {
+            _allowances[owner][spender] = allowed - shares;
+        }
     }
 
     /** Hooks **/

@@ -110,7 +110,9 @@ describeIfForking('PrincipalProtectedETHBull', () => {
     await vault.connect(vaultController).endRound()
     await vault.connect(vaultController).processQueuedDeposits(0, await vault.depositQueueSize())
 
-    await expect(vault.connect(user0).withdraw()).to.be.revertedWith('IVault__ForbiddenDuringProcessDeposits()')
+    await expect(
+      vault.connect(user0).withdraw(user0.address)
+    ).to.be.revertedWith('IVault__ForbiddenDuringProcessDeposits()')
   })
 
   it('cannot deposit between a round\'s end and the beginning of the next', async () => {
@@ -157,13 +159,13 @@ describeIfForking('PrincipalProtectedETHBull', () => {
     await vault.connect(vaultController).startRound()
 
     // User0 withdraws
-    await vault.connect(user0).withdraw()
+    await vault.connect(user0).withdraw(user0.address)
     // expect(await asset.balanceOf(user0.address)).to.be.equal(assetAmount.mul(2))
     expect(await vault.sharesOf(user0.address)).to.be.equal(0)
     expect(await vault.idleAmountOf(user0.address)).to.be.equal(0)
 
     // User1 withdraws
-    await vault.connect(user1).withdraw()
+    await vault.connect(user1).withdraw(user1.address)
     // expect(await asset.balanceOf(user1.address)).to.be.equal(assetAmount)
     expect(await vault.sharesOf(user1.address)).to.be.equal(0)
     expect(await vault.idleAmountOf(user1.address)).to.be.equal(0)
@@ -200,8 +202,8 @@ describeIfForking('PrincipalProtectedETHBull', () => {
     await vault.connect(vaultController).startRound()
     await yieldSource.generateInterest(ethers.utils.parseEther('70'))
 
-    await vault.connect(user0).withdraw()
-    await vault.connect(user1).withdraw()
+    await vault.connect(user0).withdraw(user0.address)
+    await vault.connect(user1).withdraw(user1.address)
 
     const expectedUser0Amount = '1495424836601307189542'
     const expectedUser1Amount = '104575163398692810458'
