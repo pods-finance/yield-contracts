@@ -43,13 +43,13 @@ contract BaseVault is IVault {
     /**
      * @dev See {IVault-deposit}.
      */
-    function deposit(uint256 amount) public virtual override {
+    function deposit(uint256 assets, address receiver) public virtual override {
         if(isProcessingDeposits) revert IVault__ForbiddenWhileProcessingDeposits();
 
-        asset.safeTransferFrom(msg.sender, address(this), amount);
-        depositQueue.push(DepositQueueLib.DepositEntry(msg.sender, amount));
+        asset.safeTransferFrom(msg.sender, address(this), assets);
+        depositQueue.push(DepositQueueLib.DepositEntry(receiver, assets));
 
-        emit Deposit(msg.sender, amount);
+        emit Deposit(receiver, assets);
     }
 
     /**

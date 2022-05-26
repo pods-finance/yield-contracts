@@ -20,9 +20,10 @@ interface IVault {
 
     /**
      * @dev Deposits underlying tokens, generating shares.
-     * @param amount The amount of underlying tokens to deposit
+     * @param assets The amount of asset token to deposit
+     * @param receiver The address to be owner of the shares
      */
-    function deposit(uint amount) external;
+    function deposit(uint256 assets, address receiver) external;
 
     /**
      * @dev Burn shares, withdrawing underlying tokens.

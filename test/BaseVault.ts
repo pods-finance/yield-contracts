@@ -51,7 +51,7 @@ describe('BaseVault', () => {
     expect(await asset.balanceOf(user0.address)).to.be.equal(assets)
 
     // User0 deposits to vault
-    await vault.connect(user0).deposit(assets)
+    await vault.connect(user0).deposit(assets, user0.address)
     expect(await vault.depositQueueSize()).to.be.equal(1)
     expect(await asset.balanceOf(user0.address)).to.be.equal(0)
     expect(await asset.balanceOf(vault.address)).to.be.equal(assets)
@@ -81,7 +81,7 @@ describe('BaseVault', () => {
     const assets = ethers.utils.parseEther('10')
 
     await asset.connect(user0).mint(assets)
-    await vault.connect(user0).deposit(assets)
+    await vault.connect(user0).deposit(assets, user0.address)
     await vault.connect(strategist).endRound()
     await vault.connect(strategist).processQueuedDeposits(0, await vault.depositQueueSize())
 
@@ -93,14 +93,16 @@ describe('BaseVault', () => {
 
     await asset.connect(user0).mint(assets)
     await vault.connect(strategist).endRound()
-    await expect(vault.connect(user0).deposit(assets)).to.be.revertedWith('IVault__ForbiddenWhileProcessingDeposits()')
+    await expect(
+      vault.connect(user0).deposit(assets, user0.address)
+    ).to.be.revertedWith('IVault__ForbiddenWhileProcessingDeposits()')
   })
 
   it('cannot processQueue After round started', async () => {
     const assets = ethers.utils.parseEther('10')
 
     await asset.connect(user0).mint(assets)
-    await vault.connect(user0).deposit(assets)
+    await vault.connect(user0).deposit(assets, user0.address)
     await vault.connect(strategist).endRound()
     await vault.connect(strategist).startRound()
     await expect(vault.connect(strategist).processQueuedDeposits(0, await vault.depositQueueSize())).to.be.revertedWith('IVault__NotProcessingDeposits()')
@@ -113,9 +115,9 @@ describe('BaseVault', () => {
     await asset.connect(user1).mint(assets)
 
     // Users deposits to vault
-    await vault.connect(user0).deposit(assets)
-    await vault.connect(user0).deposit(assets)
-    await vault.connect(user1).deposit(assets)
+    await vault.connect(user0).deposit(assets, user0.address)
+    await vault.connect(user0).deposit(assets, user0.address)
+    await vault.connect(user1).deposit(assets, user1.address)
     expect(await asset.balanceOf(vault.address)).to.be.equal(assets.mul(3))
     expect(await asset.balanceOf(user0.address)).to.be.equal(0)
     expect(await asset.balanceOf(user1.address)).to.be.equal(0)
@@ -161,15 +163,15 @@ describe('BaseVault', () => {
 
     expect(await asset.balanceOf(yieldSource.address)).to.be.equal(0)
     // Round 0
-    await vault.connect(user0).deposit(assets)
-    await vault.connect(user1).deposit(assets)
+    await vault.connect(user0).deposit(assets, user0.address)
+    await vault.connect(user1).deposit(assets, user1.address)
     await vault.connect(strategist).endRound()
     await vault.connect(strategist).processQueuedDeposits(0, await vault.depositQueueSize())
 
     // Round 1
     await vault.connect(strategist).startRound()
     await yieldSource.generateInterest(ethers.utils.parseEther('100'))
-    await vault.connect(user0).deposit(assets)
+    await vault.connect(user0).deposit(assets, user0.address)
 
     // Accruing yield
     await vault.connect(strategist).endRound()
