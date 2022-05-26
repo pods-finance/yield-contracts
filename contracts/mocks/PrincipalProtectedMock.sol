@@ -3,7 +3,7 @@ pragma solidity >=0.8.6;
 
 import "../vaults/BaseVault.sol";
 import "../mocks/YieldSourceMock.sol";
-import "hardhat/console.sol";
+
 /**
  * @title A Vault that use variable weekly yields to buy calls
  * @author Pods Finance
@@ -39,21 +39,15 @@ contract PrincipalProtectedMock is BaseVault {
     }
 
     function _afterRoundStart(uint256 assets) internal override {
-        console.log("After Round Start");
         if (assets > 0) {
             asset.approve(address(pool), assets);
             pool.deposit(assets, address(this));
         }
         lastRoundAssets = totalAssets();
         lastSharePrice = totalShares == 0 ? 0 : lastRoundAssets / totalShares;
-        console.log("* lastSharePrice  ", lastSharePrice);
     }
 
     function _afterRoundEnd() internal override {
-        console.log("After Round End");
-        console.log("* totalAssets     ", totalAssets());
-        console.log("* lastRoundBalance", lastRoundAssets);
-
         if (totalShares != 0) {
             uint256 roundAccruedInterest = totalAssets() - lastRoundAssets;
             uint256 idleAssets = asset.balanceOf(address(this));
@@ -88,9 +82,6 @@ contract PrincipalProtectedMock is BaseVault {
     }
 
     function _beforeWithdraw(uint256 shares, uint256 assets) internal override {
-        console.log("Before Withdraw");
-        console.log("* lastRoundBalance", lastRoundAssets);
-        console.log("* Reduced         ", shares * lastSharePrice);
         lastRoundAssets -= shares * lastSharePrice;
         pool.withdraw(assets);
     }
