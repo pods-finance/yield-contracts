@@ -19,12 +19,12 @@ async function main (): Promise<void> {
 
   await (await asset.connect(user0).mint(ethers.utils.parseEther('250'))).wait(WAIT_CONFIRMATIONS)
   await (await asset.connect(user0).approve(vault.address, ethers.constants.MaxUint256)).wait(WAIT_CONFIRMATIONS)
-  await (await vault.connect(user0).deposit(ethers.utils.parseEther('250'))).wait(WAIT_CONFIRMATIONS)
+  await (await vault.connect(user0).deposit(ethers.utils.parseEther('250'), user0.address)).wait(WAIT_CONFIRMATIONS)
   console.log('User0 Deposited')
 
   await (await asset.connect(user1).mint(ethers.utils.parseEther('100'))).wait(WAIT_CONFIRMATIONS)
   await (await asset.connect(user1).approve(vault.address, ethers.constants.MaxUint256)).wait(WAIT_CONFIRMATIONS)
-  await (await vault.connect(user1).deposit(ethers.utils.parseEther('100'))).wait(WAIT_CONFIRMATIONS)
+  await (await vault.connect(user1).deposit(ethers.utils.parseEther('100'), user1.address)).wait(WAIT_CONFIRMATIONS)
   console.log('User1 Deposited')
 
   await (await vault.endRound()).wait(WAIT_CONFIRMATIONS)
@@ -34,7 +34,7 @@ async function main (): Promise<void> {
   await (await vault.startRound()).wait(WAIT_CONFIRMATIONS)
   console.log('Round Started')
 
-  await (await vault.connect(user0).withdraw()).wait(WAIT_CONFIRMATIONS)
+  await (await vault.connect(user0).withdraw(user0.address)).wait(WAIT_CONFIRMATIONS)
   console.log('User0 Withdrew')
 }
 
