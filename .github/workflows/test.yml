@@ -9,32 +9,38 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: checkout
-        uses: actions/checkout@v1
+        uses: actions/checkout@v2
+
       - name: setup-node
-        uses: actions/setup-node@v1
+        uses: actions/setup-node@v2
         with:
+          cache: "yarn"
           node-version: '16.14.0'
-      - name: install yarn
-        run: npm install yarn
+
       - name: install packages
         run: yarn
+
       - name: lint
         run: yarn solhint
+
       - name: compile
         run: yarn compile
         env:
           INFURA_PROJECT_ID: ${{ secrets.INFURA_PROJECT_ID }}
           DEV_MNEMONIC: ${{ secrets.DEV_MNEMONIC }}
+
       - name: test
         run: yarn test --no-compile
         env:
           INFURA_PROJECT_ID: ${{ secrets.INFURA_PROJECT_ID }}
           DEV_MNEMONIC: ${{ secrets.DEV_MNEMONIC }}
+
       - name: coverage
         run: npx hardhat coverage
         env:
           INFURA_PROJECT_ID: ${{ secrets.INFURA_PROJECT_ID }}
           DEV_MNEMONIC: ${{ secrets.DEV_MNEMONIC }}
+
       - name: "Upload report to Coveralls"
         uses: "coverallsapp/github-action@master"
         with:
