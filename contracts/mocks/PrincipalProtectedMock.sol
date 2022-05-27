@@ -35,7 +35,7 @@ contract PrincipalProtectedMock is BaseVault {
      * @dev See {IVault-name}.
      */
     function name() external pure override returns (string memory) {
-        return "Principal Protected ETH Bull";
+        return "Principal Protected Mock";
     }
 
     function _afterRoundStart(uint256 assets) internal override {
