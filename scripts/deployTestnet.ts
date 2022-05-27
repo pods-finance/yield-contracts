@@ -10,7 +10,6 @@ const WAIT_CONFIRMATIONS = 5
 
 async function main (): Promise<void> {
   const [deployer] = await ethers.getSigners()
-  const deployerAddress = await deployer.getAddress()
 
   const assetName = 'Liquid staked Ether 2.0'
   const assetSymbol = 'stETH'
@@ -44,7 +43,7 @@ async function main (): Promise<void> {
     }
   })
 
-  const vaultConstructorArguments = [asset.address, deployerAddress, deployerAddress, yieldSource.address] as const
+  const vaultConstructorArguments = [asset.address, deployer.address, investor.address, yieldSource.address] as const
 
   const vault = await Vault.deploy(...vaultConstructorArguments)
   await vault.deployTransaction.wait(WAIT_CONFIRMATIONS)

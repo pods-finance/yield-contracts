@@ -8,7 +8,7 @@ import { ethers } from 'hardhat'
 const WAIT_CONFIRMATIONS = 5
 
 async function main (): Promise<void> {
-  const vaultAddress = process.env.VAULT ?? '0xAC028b8fcE00371c6F3179Fd2A4DE01C0DA92F9c'
+  const vaultAddress = process.env.VAULT ?? '0x3B4bBe9c0A48AD148c5C54221c66DEE42668Cfef'
   if (!ethers.utils.isAddress(vaultAddress)) {
     throw new Error('Invalid vault address')
   }
