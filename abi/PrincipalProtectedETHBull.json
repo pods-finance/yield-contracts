@@ -18,7 +18,7 @@
       },
       {
         "internalType": "address",
-        "name": "_pool",
+        "name": "_yieldSource",
         "type": "address"
       }
     ],

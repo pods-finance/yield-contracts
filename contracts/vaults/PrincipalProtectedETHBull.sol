@@ -31,10 +31,10 @@ contract PrincipalProtectedETHBull is BaseVault {
         address _underlying,
         address _strategist,
         address _investor,
-        address _pool
+        address _yieldSource
     ) BaseVault(_underlying, _strategist) {
         investor = _investor;
-        vault = IYearnVault(_pool);
+        vault = IYearnVault(_yieldSource);
     }
 
     /**
