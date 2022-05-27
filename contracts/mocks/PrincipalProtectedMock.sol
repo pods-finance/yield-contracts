@@ -19,29 +19,29 @@ contract PrincipalProtectedMock is BaseVault {
     uint256 public investorRatio = 5000;
     address public investor;
 
-    YieldSourceMock public pool;
+    YieldSourceMock public yieldSource;
 
     constructor(
         address _underlying,
         address _strategist,
         address _investor,
-        address _pool
+        address _yieldSource
     ) BaseVault(_underlying, _strategist) {
         investor = _investor;
-        pool = YieldSourceMock(_pool);
+        yieldSource = YieldSourceMock(_yieldSource);
     }
 
     /**
      * @dev See {IVault-name}.
      */
     function name() external pure override returns (string memory) {
-        return "Principal Protected ETH Bull";
+        return "Principal Protected Mock";
     }
 
     function _afterRoundStart(uint256 assets) internal override {
         if (assets > 0) {
-            asset.approve(address(pool), assets);
-            pool.deposit(assets, address(this));
+            asset.approve(address(yieldSource), assets);
+            yieldSource.deposit(assets, address(this));
         }
         lastRoundAssets = totalAssets();
         lastSharePrice = totalShares == 0 ? 0 : lastRoundAssets / totalShares;
@@ -61,14 +61,14 @@ contract PrincipalProtectedMock is BaseVault {
             // Redeposit to Yield source
             uint256 redepositAmount = asset.balanceOf(address(this)) - idleAssets;
             if (redepositAmount > 0) {
-                asset.approve(address(pool), redepositAmount);
-                pool.deposit(redepositAmount, address(this));
+                asset.approve(address(yieldSource), redepositAmount);
+                yieldSource.deposit(redepositAmount, address(this));
             }
 
             // Sends another batch to Investor
             uint256 investmentAmount = (roundAccruedInterest * investorRatio) / DENOMINATOR;
             if (investmentAmount > 0) {
-                pool.withdraw(investmentAmount);
+                yieldSource.withdraw(investmentAmount);
                 asset.safeTransfer(investor, investmentAmount);
             }
         }
@@ -78,11 +78,11 @@ contract PrincipalProtectedMock is BaseVault {
      * @dev See {BaseVault-totalAssets}.
      */
     function totalAssets() public view override returns (uint256) {
-        return pool.previewRedeem(pool.balanceOf(address(this)));
+        return yieldSource.previewRedeem(yieldSource.balanceOf(address(this)));
     }
 
     function _beforeWithdraw(uint256 shares, uint256 assets) internal override {
         lastRoundAssets -= shares * lastSharePrice;
-        pool.withdraw(assets);
+        yieldSource.withdraw(assets);
     }
 }

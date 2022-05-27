@@ -21,7 +21,7 @@ function negate (value: BigNumber): BigNumber {
   return ethers.utils.parseUnits('0').sub(value)
 }
 
-describeIfForking('PrincipalProtectedETHBull', () => {
+describeIfForking('YearnETHVault', () => {
   let asset: Contract, vault: Contract, yieldSource: Contract, investor: Contract
   let user0: SignerWithAddress, user1: SignerWithAddress, user2: SignerWithAddress, vaultController: SignerWithAddress
   let snapshotId: BigNumber
@@ -53,7 +53,7 @@ describeIfForking('PrincipalProtectedETHBull', () => {
     const InvestorActorMock = await ethers.getContractFactory('InvestorActorMock')
     investor = await InvestorActorMock.deploy(asset.address)
 
-    const PrincipalProtectedETHBull = await ethers.getContractFactory('PrincipalProtectedETHBull', {
+    const PrincipalProtectedETHBull = await ethers.getContractFactory('YearnETHVault', {
       libraries: {
         DepositQueueLib: depositQueueLib.address
       }
