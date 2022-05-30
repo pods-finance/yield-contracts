@@ -21,6 +21,8 @@ contract PrincipalProtectedMock is BaseVault {
 
     YieldSourceMock public yieldSource;
 
+    event RoundData(uint256 indexed roundId, uint256 roundAccruedInterest, uint256 investmentYield, uint256 idleAssets);
+
     constructor(
         address _underlying,
         address _strategist,
@@ -48,12 +50,14 @@ contract PrincipalProtectedMock is BaseVault {
     }
 
     function _afterRoundEnd() internal override {
+        uint256 roundAccruedInterest;
+        uint256 investmentYield = asset.balanceOf(investor);
+        uint256 idleAssets = asset.balanceOf(address(this));
+
         if (totalShares != 0) {
-            uint256 roundAccruedInterest = totalAssets() - lastRoundAssets;
-            uint256 idleAssets = asset.balanceOf(address(this));
+            roundAccruedInterest = totalAssets() - lastRoundAssets;
 
             // Pulls the yields from investor
-            uint256 investmentYield = asset.balanceOf(investor);
             if (investmentYield > 0) {
                 asset.safeTransferFrom(investor, address(this), investmentYield);
             }
@@ -72,6 +76,8 @@ contract PrincipalProtectedMock is BaseVault {
                 asset.safeTransfer(investor, investmentAmount);
             }
         }
+
+        emit RoundData(currentRoundId, roundAccruedInterest, investmentYield, idleAssets);
     }
 
     /**
