@@ -99,17 +99,24 @@ describe('BaseVault', () => {
 
     await vault.connect(strategist).endRound()
     await vault.connect(strategist).processQueuedDeposits(0, await vault.depositQueueSize())
-    expect(await vault.totalShares()).to.be.equal(expectedShares)
-    expect(await vault.depositQueueSize()).to.be.equal(0)
-    expect(await vault.sharesOf(user0.address)).to.be.equal(expectedShares)
-    expect(await vault.idleAmountOf(user0.address)).to.be.equal(0)
 
     await vault.connect(strategist).startRound()
     expect(await vault.allowance(user0.address, proxy.address)).to.be.equal(0)
+    const snapshotId = await ethers.provider.send('evm_snapshot', [])
+
+    // Spending allowance
     await vault.connect(user0).approve(proxy.address, expectedShares)
     expect(await vault.allowance(user0.address, proxy.address)).to.be.equal(expectedShares)
     await vault.connect(proxy).withdraw(user0.address)
     expect(await vault.allowance(user0.address, proxy.address)).to.be.equal(0)
+    expect(await asset.balanceOf(user0.address)).to.be.equal(assets)
+
+    // If MaxUint256 allowance was given, it should not be spent
+    await ethers.provider.send('evm_revert', [snapshotId])
+    await vault.connect(user0).approve(proxy.address, ethers.constants.MaxUint256)
+    expect(await vault.allowance(user0.address, proxy.address)).to.be.equal(ethers.constants.MaxUint256)
+    await vault.connect(proxy).withdraw(user0.address)
+    expect(await vault.allowance(user0.address, proxy.address)).to.be.equal(ethers.constants.MaxUint256)
     expect(await asset.balanceOf(user0.address)).to.be.equal(assets)
   })
 
