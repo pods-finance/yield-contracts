@@ -21,7 +21,7 @@ contract InvestorActorMock {
         asset.burn(ownBalance);
     }
 
-    function approveVaultToPull(address vaultAddress, uint256 amount) external {
-        asset.approve(vaultAddress, amount);
+    function approveVaultToPull(address vaultAddress) external {
+        asset.approve(vaultAddress, type(uint256).max);
     }
 }

@@ -14,7 +14,7 @@ interface IYearnVault is IERC20 {
  * @title A Vault that use variable weekly yields to buy calls
  * @author Pods Finance
  */
-contract PrincipalProtectedETHBull is BaseVault {
+contract YearnETHVault is BaseVault {
     using TransferUtils for IERC20Metadata;
     using FixedPointMath for uint256;
 
@@ -31,17 +31,17 @@ contract PrincipalProtectedETHBull is BaseVault {
         address _underlying,
         address _strategist,
         address _investor,
-        address _pool
+        address _yieldSource
     ) BaseVault(_underlying, _strategist) {
         investor = _investor;
-        vault = IYearnVault(_pool);
+        vault = IYearnVault(_yieldSource);
     }
 
     /**
      * @dev See {IVault-name}.
      */
     function name() external pure override returns (string memory) {
-        return "Principal Protected ETH Bull";
+        return "Yearn ETH Vault";
     }
 
     function _afterRoundStart(uint256 assets) internal override {
