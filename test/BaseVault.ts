@@ -105,8 +105,11 @@ describe('BaseVault', () => {
     expect(await vault.idleAmountOf(user0.address)).to.be.equal(0)
 
     await vault.connect(strategist).startRound()
-    await vault.connect(user0).approve(proxy.address, ethers.constants.MaxUint256)
+    expect(await vault.allowance(user0.address, proxy.address)).to.be.equal(0)
+    await vault.connect(user0).approve(proxy.address, expectedShares)
+    expect(await vault.allowance(user0.address, proxy.address)).to.be.equal(expectedShares)
     await vault.connect(proxy).withdraw(user0.address)
+    expect(await vault.allowance(user0.address, proxy.address)).to.be.equal(0)
     expect(await asset.balanceOf(user0.address)).to.be.equal(assets)
   })
 
