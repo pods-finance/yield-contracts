@@ -6,11 +6,12 @@ import { SignerWithAddress } from '@nomiclabs/hardhat-ethers/signers'
 
 describe('PrincipalProtectedMock', () => {
   let asset: Contract, vault: Contract, yieldSource: Contract, investor: Contract
-  let user0: SignerWithAddress, user1: SignerWithAddress, user2: SignerWithAddress, vaultController: SignerWithAddress
+  let user0: SignerWithAddress, user1: SignerWithAddress, user2: SignerWithAddress, user3: SignerWithAddress,
+  user4: SignerWithAddress, vaultController: SignerWithAddress
   let snapshotId: BigNumber
 
   before(async () => {
-    ;[, user0, user1, user2, vaultController] = await ethers.getSigners()
+    ;[, user0, user1, user2, vaultController, user3, user4] = await ethers.getSigners()
     const DepositQueueLib = await ethers.getContractFactory('DepositQueueLib')
     const depositQueueLib = await DepositQueueLib.deploy()
 
@@ -199,5 +200,86 @@ describe('PrincipalProtectedMock', () => {
 
     await vault.connect(vaultController).endRound()
     await vault.connect(vaultController).startRound()
+  })
+
+  it('underflow testcase', async () => {
+  // This test will only work if InvestRatio = 50%
+  const user0InitialBalance = ethers.utils.parseEther('500')
+  const user1InitialBalance = ethers.utils.parseEther('100')
+  const user2InitialBalance = ethers.utils.parseEther('6')
+  const user3InitialBalance = ethers.utils.parseEther('10')
+  const user4InitialBalance = ethers.utils.parseEther('8')
+
+  await asset.connect(user0).mint(user0InitialBalance)
+  await asset.connect(user0).approve(vault.address, ethers.constants.MaxUint256)
+  await vault.connect(user0).deposit(user0InitialBalance.div(2), user0.address)
+
+  await vault.connect(user0).deposit(user0InitialBalance.div(2), user0.address)
+
+  await asset.connect(user1).mint(user1InitialBalance)
+  await asset.connect(user1).approve(vault.address, ethers.constants.MaxUint256)
+  await vault.connect(user1).deposit(user1InitialBalance, user1.address)
+
+  await vault.connect(vaultController).endRound()
+  await vault.connect(vaultController).processQueuedDeposits(0, 2)
+  await vault.connect(vaultController).startRound()
+
+  await vault.connect(user0).withdraw(user0.address)
+
+  await asset.connect(user2).mint(user2InitialBalance)
+  await asset.connect(user2).approve(vault.address, ethers.constants.MaxUint256)
+  await vault.connect(user2).deposit(user2InitialBalance.div(3), user2.address)
+
+  await asset.connect(user3).mint(user3InitialBalance)
+  await asset.connect(user3).approve(vault.address, ethers.constants.MaxUint256)
+  await vault.connect(user3).deposit(user3InitialBalance, user3.address)
+
+  await vault.connect(user2).deposit(user2InitialBalance.div(3).mul(2), user2.address)
+
+  await vault.connect(vaultController).endRound()
+  await vault.connect(vaultController).processQueuedDeposits(0, 2)
+  await vault.connect(vaultController).startRound()
+
+  await yieldSource.generateInterest(ethers.utils.parseEther('2'))
+
+  await vault.connect(vaultController).endRound()
+  await vault.connect(vaultController).startRound()
+
+  await vault.connect(user2).withdraw(user2.address)
+
+  await asset.connect(user4).mint(user4InitialBalance)
+  await asset.connect(user4).approve(vault.address, ethers.constants.MaxUint256)
+  await vault.connect(user4).deposit(user4InitialBalance, user4.address)
+
+  await vault.connect(vaultController).endRound()
+  await vault.connect(vaultController).processQueuedDeposits(0, 1)
+  await vault.connect(vaultController).startRound()
+
+  await vault.connect(user1).withdraw(user1.address)
+  await vault.connect(user3).withdraw(user3.address)
+  await vault.connect(user4).withdraw(user4.address)
+  
+  // Vault checks
+  expect(await vault.totalAssets()).to.be.equal(0)
+  expect(await vault.totalShares()).to.be.equal(0)
+
+  // User checks
+  expect(await asset.balanceOf(user0.address)).to.be.gte(user0InitialBalance)
+  expect(await asset.balanceOf(user1.address)).to.be.gte(user1InitialBalance)
+  expect(await asset.balanceOf(user2.address)).to.be.gte(user2InitialBalance)
+  expect(await asset.balanceOf(user3.address)).to.be.gte(user3InitialBalance)
+  expect(await asset.balanceOf(user4.address)).to.be.gte(user4InitialBalance)
+
+  expect(await vault.sharesOf(user0.address)).to.be.equal(0)
+  expect(await vault.sharesOf(user1.address)).to.be.equal(0)
+  expect(await vault.sharesOf(user2.address)).to.be.equal(0)
+  expect(await vault.sharesOf(user3.address)).to.be.equal(0)
+  expect(await vault.sharesOf(user4.address)).to.be.equal(0)
+
+  expect(await vault.idleAmountOf(user0.address)).to.be.equal(0)
+  expect(await vault.idleAmountOf(user1.address)).to.be.equal(0)
+  expect(await vault.idleAmountOf(user2.address)).to.be.equal(0)
+  expect(await vault.idleAmountOf(user3.address)).to.be.equal(0)
+  expect(await vault.idleAmountOf(user4.address)).to.be.equal(0)
   })
 })
