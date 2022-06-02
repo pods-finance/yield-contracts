@@ -63,7 +63,7 @@ contract BaseVault is IVault, ERC20 {
         uint256 assets = previewWithdraw(shares);
 
         if (msg.sender != owner) {
-            _useAllowance(owner, msg.sender, shares);
+            _spendAllowance(owner, msg.sender, shares);
         }
 
         _burn(owner, shares);
@@ -173,21 +173,6 @@ contract BaseVault is IVault, ERC20 {
         uint256 shares = processedDeposits == 0 ? depositEntry.amount : depositEntry.amount.mulDivUp(totalSupply(), processedDeposits);
         _mint(depositEntry.owner, shares);
         emit DepositProcessed(depositEntry.owner, currentRoundId, depositEntry.amount, shares);
-    }
-
-    /**
-     * @dev Spend allowance on behalf of the shares owner.
-     * @param owner Address owner of the shares
-     * @param spender Address shares spender
-     * @param shares Amount of shares to spend
-     */
-    function _useAllowance(address owner, address spender, uint256 shares) internal {
-        uint256 allowed = allowance(owner, spender);
-        if (shares > allowed) revert IVault__SharesExceedAllowance();
-
-        if (allowed != type(uint256).max) {
-            _approve(owner, spender, allowed - shares);
-        }
     }
 
     /** Hooks **/

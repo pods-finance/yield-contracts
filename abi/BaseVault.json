@@ -47,11 +47,6 @@
   },
   {
     "inputs": [],
-    "name": "IVault__SharesExceedAllowance",
-    "type": "error"
-  },
-  {
-    "inputs": [],
     "name": "TransferDidNotSucceed",
     "type": "error"
   },

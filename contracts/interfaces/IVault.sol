@@ -7,7 +7,6 @@ interface IVault is IERC20Metadata {
     error IVault__CallerIsNotTheStrategist();
     error IVault__NotProcessingDeposits();
     error IVault__ForbiddenWhileProcessingDeposits();
-    error IVault__SharesExceedAllowance();
 
     event Deposit(address indexed owner, uint amountDeposited);
     event Withdraw(address indexed owner, uint sharesBurnt, uint amountWithdrawn);

@@ -141,7 +141,7 @@ describe('BaseVault', () => {
     await vault.connect(strategist).startRound()
     await expect(
       vault.connect(proxy).withdraw(user0.address)
-    ).to.be.revertedWith('IVault__SharesExceedAllowance()')
+    ).to.be.revertedWith('ERC20: insufficient allowance')
   })
 
   it('cannot withdraw between a round\'s end and the beginning of the next', async () => {
