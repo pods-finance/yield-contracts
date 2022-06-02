@@ -147,12 +147,11 @@ contract BaseVault is IVault, ERC20 {
     function processQueuedDeposits(uint256 startIndex, uint256 endIndex) public {
         if (!isProcessingDeposits) revert IVault__NotProcessingDeposits();
 
-        uint256 processedDeposits;
+        uint256 processedDeposits = totalAssets();
         for(uint256 i = startIndex; i < endIndex; i++) {
             DepositQueueLib.DepositEntry memory depositEntry = depositQueue.get(i);
-            uint256 shares = _mintShares(depositEntry.owner, depositEntry.amount, processedDeposits);
+            _processDeposit(depositEntry, processedDeposits);
             processedDeposits += depositEntry.amount;
-            emit DepositProcessed(depositEntry.owner, currentRoundId, depositEntry.amount, shares);
         }
         depositQueue.remove(startIndex, endIndex);
     }
@@ -169,12 +168,10 @@ contract BaseVault is IVault, ERC20 {
     /**
      * @dev Mint new shares, effectively representing user participation in the Vault.
      */
-    function _mintShares(address owner, uint256 assets, uint256 processedDeposits) internal virtual returns(uint256 shares) {
-        uint256 supply = totalSupply();
-        processedDeposits += totalAssets();
-
-        shares = supply == 0 ? assets : assets.mulDivUp(supply, processedDeposits);
-        _mint(owner, shares);
+    function _processDeposit(DepositQueueLib.DepositEntry memory depositEntry, uint256 processedDeposits) internal virtual {
+        uint256 shares = processedDeposits == 0 ? depositEntry.amount : depositEntry.amount.mulDivUp(totalSupply(), processedDeposits);
+        _mint(depositEntry.owner, shares);
+        emit DepositProcessed(depositEntry.owner, currentRoundId, depositEntry.amount, shares);
     }
 
     /**
