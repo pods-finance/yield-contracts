@@ -88,7 +88,8 @@ contract BaseVault is IVault, ERC20 {
      * @dev Outputs the amount of asset tokens would be withdrawn burning a given amount of shares.
      */
     function previewWithdraw(uint256 shares) public virtual view returns (uint256) {
-        return shares.mulDivDown(totalAssets(), totalSupply());
+        uint256 supply = totalSupply();
+        return supply == 0 ? 0 : shares.mulDivDown(totalAssets(), supply);
     }
 
     /**
