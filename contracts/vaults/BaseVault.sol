@@ -60,11 +60,13 @@ contract BaseVault is IVault, ERC20 {
         if(isProcessingDeposits) revert IVault__ForbiddenWhileProcessingDeposits();
 
         uint256 shares = balanceOf(owner);
-        uint256 assets = _burnShares(owner, shares);
+        uint256 assets = previewWithdraw(shares);
 
         if (msg.sender != owner) {
             _useAllowance(owner, msg.sender, shares);
         }
+
+        _burn(owner, shares);
 
         // Apply custom withdraw logic
         _beforeWithdraw(shares, assets);
@@ -173,16 +175,6 @@ contract BaseVault is IVault, ERC20 {
 
         shares = supply == 0 ? assets : assets.mulDivUp(supply, processedDeposits);
         _mint(owner, shares);
-    }
-
-    /**
-     * @dev Burn shares.
-     * @param owner Address owner of the shares
-     * @param shares Amount of shares to lock
-     */
-    function _burnShares(address owner, uint256 shares) internal virtual returns(uint256 assets) {
-        assets = balanceOf(owner).mulDivDown(totalAssets(), totalSupply());
-        _burn(owner, shares);
     }
 
     /**
