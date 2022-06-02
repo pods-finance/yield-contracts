@@ -42,7 +42,8 @@ contract PrincipalProtectedMock is BaseVault {
             yieldSource.deposit(assets, address(this));
         }
         lastRoundAssets = totalAssets();
-        lastSharePrice = totalShares == 0 ? 0 : lastRoundAssets / totalShares;
+        uint256 supply = totalSupply();
+        lastSharePrice = supply == 0 ? 0 : lastRoundAssets / supply;
         emit SharePrice(currentRoundId, lastSharePrice);
     }
 
@@ -51,9 +52,10 @@ contract PrincipalProtectedMock is BaseVault {
         uint256 sharePrice;
         uint256 investmentYield = asset.balanceOf(investor);
         uint256 idleAssets = asset.balanceOf(address(this));
+        uint256 supply = totalSupply();
 
-        if (totalShares != 0) {
-            sharePrice = (totalAssets() + investmentYield) / totalShares;
+        if (supply != 0) {
+            sharePrice = (totalAssets() + investmentYield) / supply;
             roundAccruedInterest = totalAssets() - lastRoundAssets;
 
             // Pulls the yields from investor
