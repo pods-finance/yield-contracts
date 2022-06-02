@@ -15,6 +15,14 @@ contract YieldSourceMock is ERC20("Interest Pool", "INTP") {
         asset = Asset(_asset);
     }
 
+    function name() public view override returns (string memory) {
+        return string(abi.encodePacked(super.name(), " ", asset.symbol()));
+    }
+
+    function symbol() public view override returns (string memory) {
+        return string(abi.encodePacked("INTP-", asset.symbol()));
+    }
+
     function generateInterest(uint256 amount) external {
         asset.mint(amount);
     }
