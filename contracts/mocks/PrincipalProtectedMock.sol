@@ -27,11 +27,11 @@ contract PrincipalProtectedMock is BaseVault {
     constructor(
         string memory name,
         string memory symbol,
-        address _underlying,
+        address asset,
         address _strategist,
         address _investor,
         address _yieldSource
-    ) BaseVault(name, symbol, _underlying, _strategist) {
+    ) BaseVault(name, symbol, asset, _strategist) {
         investor = _investor;
         yieldSource = YieldSourceMock(_yieldSource);
     }

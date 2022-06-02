@@ -30,11 +30,11 @@ contract YearnETHVault is BaseVault {
     constructor(
         string memory name,
         string memory symbol,
-        address _underlying,
+        address asset,
         address _strategist,
         address _investor,
         address _yieldSource
-    ) BaseVault(name, symbol, _underlying, _strategist) {
+    ) BaseVault(name, symbol, asset, _strategist) {
         investor = _investor;
         vault = IYearnVault(_yieldSource);
     }
@@ -48,7 +48,7 @@ contract YearnETHVault is BaseVault {
     }
 
     function _afterRoundEnd() internal override {
-        uint256 underlyingBefore = asset.balanceOf(address(this));
+        uint256 assetsBefore = asset.balanceOf(address(this));
         // Marks the amount interest gained in the round
         uint256 interest = totalAssets() - lastRoundBalance;
         // Pulls the yields from investor
@@ -57,7 +57,7 @@ contract YearnETHVault is BaseVault {
             asset.safeTransferFrom(investor, address(this), investmentYield);
         }
 
-        uint256 toPosition = asset.balanceOf(address(this)) - underlyingBefore;
+        uint256 toPosition = asset.balanceOf(address(this)) - assetsBefore;
         if (toPosition > 0) {
             asset.approve(address(vault), toPosition);
             vault.deposit(toPosition);

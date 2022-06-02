@@ -26,7 +26,7 @@ contract CurveTest {
     uint256 public slip = 100;
 
     // solhint-disable const-name-snakecase
-    IERC20Metadata public constant underlying = IERC20Metadata(0x2791Bca1f2de4661ED88A30C99A7a9449Aa84174);
+    IERC20Metadata public constant asset = IERC20Metadata(0x2791Bca1f2de4661ED88A30C99A7a9449Aa84174);
     ICurvePool public constant curvePool = ICurvePool(0x445FE580eF8d70FF569aB36e80c647af338db351);
     ICurveGauge public constant curveGaugeToken = ICurveGauge(0x19793B454D3AfC7b454F206Ffe95aDE26cA6912c);
     IERC20Metadata immutable curveLPToken;
@@ -51,11 +51,11 @@ contract CurveTest {
     }
 
     function deposit(uint256 amount) external onlyOwner {
-        require(underlying.transferFrom(msg.sender, address(this), amount), "Transfer failed");
+        require(asset.transferFrom(msg.sender, address(this), amount), "Transfer failed");
 
         // Deposit into Curve
-        underlying.approve(address(curvePool), 0);
-        underlying.approve(address(curvePool), amount);
+        asset.approve(address(curvePool), 0);
+        asset.approve(address(curvePool), amount);
 
         uint256 curveValue = amount * 1e30 / curvePool.get_virtual_price();
         uint256 curveValueWithSlippage = curveValue * (DENOMINATOR - slip) / DENOMINATOR;
@@ -78,7 +78,7 @@ contract CurveTest {
         uint256 curveValueWithSlippage = this.position() * (DENOMINATOR - slip) / DENOMINATOR;
         curvePool.remove_liquidity_one_coin(curveLPBalance, 1, curveValueWithSlippage, true);
 
-        require(underlying.transfer(msg.sender, underlying.balanceOf(address(this))), "Transfer failed");
+        require(asset.transfer(msg.sender, asset.balanceOf(address(this))), "Transfer failed");
     }
 
     function claimRewards() external onlyOwner {
@@ -86,7 +86,7 @@ contract CurveTest {
     }
 
     function drain() external onlyOwner {
-        underlying.transfer(msg.sender, underlying.balanceOf(address(this)));
+        asset.transfer(msg.sender, asset.balanceOf(address(this)));
         curveLPToken.transfer(msg.sender, curveLPToken.balanceOf(address(this)));
         curveGaugeToken.transfer(msg.sender, curveGaugeToken.balanceOf(address(this)));
     }

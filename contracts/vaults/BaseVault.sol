@@ -90,14 +90,14 @@ contract BaseVault is IVault, ERC20 {
     }
 
     /**
-     * @dev Outputs the amount of underlying tokens would be withdrawn with a given amount of shares.
+     * @dev Outputs the amount of asset tokens would be withdrawn burning a given amount of shares.
      */
     function previewWithdraw(uint256 shares) public virtual view returns (uint256) {
         return shares.mulDivDown(totalAssets(), totalSupply());
     }
 
     /**
-     * @dev Outputs the amount of underlying tokens of an `owner` is idle, waiting for the next round.
+     * @dev Outputs the amount of asset tokens of an `owner` is idle, waiting for the next round.
      */
     function idleAmountOf(address owner) public virtual view returns(uint256) {
         return depositQueue.balanceOf(owner);
@@ -187,8 +187,8 @@ contract BaseVault is IVault, ERC20 {
      * @param owner Address owner of the shares
      * @param shares Amount of shares to lock
      */
-    function _burnShares(address owner, uint256 shares) internal virtual returns(uint256 claimableUnderlying) {
-        claimableUnderlying = balanceOf(owner).mulDivDown(totalAssets(), totalSupply());
+    function _burnShares(address owner, uint256 shares) internal virtual returns(uint256 assets) {
+        assets = balanceOf(owner).mulDivDown(totalAssets(), totalSupply());
         _burn(owner, shares);
     }
 
