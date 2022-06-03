@@ -3,8 +3,8 @@ import { expect } from 'chai'
 import hre, { ethers } from 'hardhat'
 import { BigNumber } from 'ethers'
 import { SignerWithAddress } from '@nomiclabs/hardhat-ethers/signers'
-import describeIfForking from './utils/describeIfForking'
-import minus from './utils/minus'
+import describeIfForking from '../utils/describeIfForking'
+import minus from '../utils/minus'
 
 describeIfForking('YearnETHVault', () => {
   let asset: Contract, vault: Contract, yieldSource: Contract, investor: Contract
