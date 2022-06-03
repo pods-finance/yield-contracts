@@ -17,7 +17,7 @@
   },
   {
     "inputs": [],
-    "name": "FixedPointMath__DivZero",
+    "name": "FixedPointMath__DivByZero",
     "type": "error"
   },
   {
@@ -52,7 +52,7 @@
   },
   {
     "inputs": [],
-    "name": "TransferDidNotSucceed",
+    "name": "TransferUtils__TransferDidNotSucceed",
     "type": "error"
   },
   {
