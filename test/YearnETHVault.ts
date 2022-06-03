@@ -2,24 +2,9 @@ import { Contract } from '@ethersproject/contracts'
 import { expect } from 'chai'
 import hre, { ethers } from 'hardhat'
 import { BigNumber } from 'ethers'
-import { describe } from 'mocha'
-import { HardhatNetworkConfig } from 'hardhat/src/types/config'
 import { SignerWithAddress } from '@nomiclabs/hardhat-ethers/signers'
-
-function describeIfForking (title: string, suite: () => void): Mocha.Suite {
-  const localNetwork = (hre.network.config as HardhatNetworkConfig)
-  const isForking = localNetwork?.forking?.enabled ?? false
-
-  if (isForking) {
-    return describe.only(title, suite)
-  } else {
-    return describe.skip(title, suite) as Mocha.Suite
-  }
-}
-
-function negate (value: BigNumber): BigNumber {
-  return ethers.utils.parseUnits('0').sub(value)
-}
+import describeIfForking from './utils/describeIfForking'
+import minus from './utils/minus'
 
 describeIfForking('YearnETHVault', () => {
   let asset: Contract, vault: Contract, yieldSource: Contract, investor: Contract
@@ -85,7 +70,7 @@ describeIfForking('YearnETHVault', () => {
       .to.changeTokenBalances(
         asset,
         [user0, vault],
-        [negate(assetAmount), assetAmount]
+        [minus(assetAmount), assetAmount]
       )
     expect(await vault.depositQueueSize()).to.be.equal(1)
     expect(await vault.sharesOf(user0.address)).to.be.equal(0)
