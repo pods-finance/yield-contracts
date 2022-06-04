@@ -14,8 +14,11 @@ contract PrincipalProtectedMock is BaseVault {
 
     uint256 public constant DENOMINATOR = 10000;
 
+    FixedPointMath.Fraction public lastSharePrice;
+    uint8 public sharePriceDecimals = 18;
+
     uint256 public lastRoundAssets;
-    uint256 public lastSharePrice;
+
     uint256 public investorRatio = 5000;
     address public investor;
 
@@ -47,8 +50,15 @@ contract PrincipalProtectedMock is BaseVault {
             yieldSource.deposit(assets, address(this));
         }
         lastRoundAssets = totalAssets();
-        lastSharePrice = totalShares == 0 ? 0 : lastRoundAssets / totalShares;
-        emit SharePrice(currentRoundId, lastSharePrice);
+
+        lastSharePrice.numerator = totalShares == 0 ? 0 : lastRoundAssets;
+        lastSharePrice.denominator = totalShares;
+
+        uint256 sharePriceInUint = lastSharePrice.denominator == 0
+            ? 0
+            : (lastSharePrice.numerator * 10**sharePriceDecimals) / lastSharePrice.denominator;
+
+        emit SharePrice(currentRoundId, sharePriceInUint);
     }
 
     function _afterRoundEnd() internal override {
@@ -58,7 +68,7 @@ contract PrincipalProtectedMock is BaseVault {
         uint256 idleAssets = asset.balanceOf(address(this));
 
         if (totalShares != 0) {
-            sharePrice = (totalAssets() + investmentYield) / totalShares;
+            sharePrice = ((totalAssets() + investmentYield) * 10**sharePriceDecimals) / totalShares;
             roundAccruedInterest = totalAssets() - lastRoundAssets;
 
             // Pulls the yields from investor
@@ -93,7 +103,7 @@ contract PrincipalProtectedMock is BaseVault {
     }
 
     function _beforeWithdraw(uint256 shares, uint256 assets) internal override {
-        lastRoundAssets -= shares * lastSharePrice;
+        lastRoundAssets -= shares.mulDivDown(lastSharePrice);
         yieldSource.withdraw(assets);
     }
 }
