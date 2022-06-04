@@ -128,6 +128,13 @@ contract BaseVault is IVault {
     }
 
     /**
+     * @dev Calculate the total amount of assets under management.
+     */
+    function totalAssets() public view virtual returns (uint256) {
+        return asset.balanceOf(address(this));
+    }
+
+    /**
      * @dev Outputs the amount of underlying tokens of an `owner` is idle, waiting for the next round.
      */
     function idleAmountOf(address owner) public view virtual returns (uint256) {
@@ -196,13 +203,6 @@ contract BaseVault is IVault {
     /** Internals **/
 
     /**
-     * @dev Calculate the total amount of assets under management.
-     */
-    function totalAssets() public view virtual returns (uint256) {
-        return asset.balanceOf(strategist);
-    }
-
-    /**
      * @dev Mint new shares, effectively representing user participation in the Vault.
      */
     function _mintShares(
@@ -257,9 +257,8 @@ contract BaseVault is IVault {
     // solhint-disable-next-line no-empty-blocks
     function _beforeWithdraw(uint256 shares, uint256 assets) internal virtual {}
 
-    function _afterRoundStart(uint256 assets) internal virtual {
-        asset.safeTransfer(strategist, assets);
-    }
+    // solhint-disable-next-line no-empty-blocks
+    function _afterRoundStart(uint256 assets) internal virtual {}
 
     // solhint-disable-next-line no-empty-blocks
     function _afterRoundEnd() internal virtual {}
