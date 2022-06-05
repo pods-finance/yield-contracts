@@ -4,7 +4,7 @@ pragma solidity >=0.8.6;
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 
 library TransferUtils {
-    error TransferDidNotSucceed();
+    error TransferUtils__TransferDidNotSucceed();
 
     function safeTransfer(IERC20 token, address to, uint value) internal {
         _callOptionalReturn(token, abi.encodeWithSelector(token.transfer.selector, to, value));
@@ -20,7 +20,7 @@ library TransferUtils {
         if (!success || result.length > 0) {
             // Return data is optional
             bool transferSucceeded = abi.decode(result, (bool));
-            if (!transferSucceeded) revert TransferDidNotSucceed();
+            if (!transferSucceeded) revert TransferUtils__TransferDidNotSucceed();
         }
     }
 }
