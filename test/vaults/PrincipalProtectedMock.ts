@@ -64,7 +64,7 @@ describe('PrincipalProtectedMock', () => {
 
     // Process deposits
     const endRoundTx = vault.connect(vaultController).endRound()
-    await expect(endRoundTx).to.emit(vault, 'RoundData').withArgs(0, 0, 0, assetAmount)
+    await expect(endRoundTx).to.emit(vault, 'EndRoundData').withArgs(0, 0, 0, assetAmount)
     await vault.connect(vaultController).processQueuedDeposits(0, await vault.depositQueueSize())
     expect(await vault.depositQueueSize()).to.be.equal(0)
     expect(await vault.sharesOf(user0.address)).to.be.equal(assetAmount)
