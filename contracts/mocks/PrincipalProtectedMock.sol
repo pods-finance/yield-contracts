@@ -11,11 +11,12 @@ import "../mocks/YieldSourceMock.sol";
 contract PrincipalProtectedMock is BaseVault {
     using TransferUtils for IERC20Metadata;
     using FixedPointMath for uint256;
+    using FixedPointMath for FixedPointMath.Fractional;
 
     uint256 public constant DENOMINATOR = 10000;
 
-    FixedPointMath.Fraction public lastSharePrice;
-    uint8 public sharePriceDecimals = 18;
+    FixedPointMath.Fractional public lastSharePrice;
+    uint8 public immutable sharePriceDecimals;
 
     uint256 public lastRoundAssets;
 
@@ -35,6 +36,7 @@ contract PrincipalProtectedMock is BaseVault {
     ) BaseVault(_underlying, _strategist) {
         investor = _investor;
         yieldSource = YieldSourceMock(_yieldSource);
+        sharePriceDecimals = asset.decimals();
     }
 
     /**
@@ -50,15 +52,13 @@ contract PrincipalProtectedMock is BaseVault {
             yieldSource.deposit(assets, address(this));
         }
         lastRoundAssets = totalAssets();
+        lastSharePrice = FixedPointMath.Fractional({
+            numerator: totalShares == 0 ? 0 : lastRoundAssets,
+            denominator: totalShares
+        });
 
-        lastSharePrice.numerator = totalShares == 0 ? 0 : lastRoundAssets;
-        lastSharePrice.denominator = totalShares;
-
-        uint256 sharePriceInUint = lastSharePrice.denominator == 0
-            ? 0
-            : (lastSharePrice.numerator * 10**sharePriceDecimals) / lastSharePrice.denominator;
-
-        emit SharePrice(currentRoundId, sharePriceInUint);
+        uint256 sharePrice = lastSharePrice.denominator == 0 ? 0 : lastSharePrice.mulDivDown(10**sharePriceDecimals);
+        emit SharePrice(currentRoundId, sharePrice);
     }
 
     function _afterRoundEnd() internal override {
@@ -68,7 +68,7 @@ contract PrincipalProtectedMock is BaseVault {
         uint256 idleAssets = asset.balanceOf(address(this));
 
         if (totalShares != 0) {
-            sharePrice = ((totalAssets() + investmentYield) * 10**sharePriceDecimals) / totalShares;
+            sharePrice = (totalAssets() + investmentYield).mulDivDown(10**sharePriceDecimals, totalShares);
             roundAccruedInterest = totalAssets() - lastRoundAssets;
 
             // Pulls the yields from investor
