@@ -5,7 +5,7 @@ library FixedPointMath {
     error FixedPointMath__DivByZero();
     using FixedPointMath for uint256;
 
-    struct Fraction {
+    struct Fractional {
         uint256 numerator;
         uint256 denominator;
     }
@@ -56,19 +56,27 @@ library FixedPointMath {
         }
     }
 
-    function mulDivUp(uint256 x, Fraction memory y) internal pure returns (uint256 z) {
+    function mulDivUp(uint256 x, Fractional memory y) internal pure returns (uint256 z) {
         return x.mulDivUp(y.numerator, y.denominator);
     }
 
-    function mulDivDown(uint256 x, Fraction memory y) internal pure returns (uint256 z) {
+    function mulDivDown(uint256 x, Fractional memory y) internal pure returns (uint256 z) {
         return x.mulDivDown(y.numerator, y.denominator);
     }
 
-    function fractionRoundUp(Fraction memory x) internal pure returns (uint256 z) {
+    function mulDivUp(Fractional memory x, uint256 y) internal pure returns (uint256 z) {
+        return x.numerator.mulDivUp(y, x.denominator);
+    }
+
+    function mulDivDown(Fractional memory x, uint256 y) internal pure returns (uint256 z) {
+        return x.numerator.mulDivDown(y, x.denominator);
+    }
+
+    function fractionRoundUp(Fractional memory x) internal pure returns (uint256 z) {
         return x.numerator.mulDivUp(1, x.denominator);
     }
 
-    function fractionRoundDown(Fraction memory x) internal pure returns (uint256 z) {
+    function fractionRoundDown(Fractional memory x) internal pure returns (uint256 z) {
         return x.numerator.mulDivDown(1, x.denominator);
     }
 }

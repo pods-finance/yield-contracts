@@ -31,7 +31,8 @@ const config: HardhatUserConfig = {
     hardhat: {
       forking: {
         url: process.env.ALCHEMY_MAINNET_URL ?? '',
-        enabled: process.env.MAINNET_FORK === 'true'
+        enabled: process.env.MAINNET_FORK_ENABLED === 'true',
+        blockNumber: parseInt(process.env.MAINNET_FORK_BLOCKNUMBER ?? '14899831')
       }
     }
   },

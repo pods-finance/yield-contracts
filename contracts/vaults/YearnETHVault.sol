@@ -6,7 +6,13 @@ import "hardhat/console.sol";
 
 interface IYearnVault is IERC20 {
     function deposit(uint256 amount) external returns (uint256);
-    function withdraw(uint256 maxShares, address recipient, uint256 maxLoss) external returns (uint256);
+
+    function withdraw(
+        uint256 maxShares,
+        address recipient,
+        uint256 maxLoss
+    ) external returns (uint256);
+
     function pricePerShare() external view returns (uint256);
 }
 
@@ -80,9 +86,9 @@ contract YearnETHVault is BaseVault {
      * @dev See {BaseVault-totalAssets}.
      */
     function totalAssets() public view override returns (uint256) {
-        uint yearnBalance = vault.balanceOf(address(this));
+        uint256 yearnBalance = vault.balanceOf(address(this));
 
-        return yearnBalance == 0 ? 0 : yearnBalance * vault.pricePerShare() / 10**uint(asset.decimals());
+        return yearnBalance == 0 ? 0 : (yearnBalance * vault.pricePerShare()) / 10**uint256(asset.decimals());
     }
 
     function _beforeWithdraw(uint256, uint256 assets) internal override {
@@ -93,7 +99,7 @@ contract YearnETHVault is BaseVault {
         console.log("After ", asset.balanceOf(address(this)));
     }
 
-    function _assetsToShares(uint assets) internal view returns(uint) {
+    function _assetsToShares(uint256 assets) internal view returns (uint256) {
         return assets.mulDivDown(1, vault.pricePerShare());
     }
 }
