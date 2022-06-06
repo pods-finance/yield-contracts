@@ -21,8 +21,14 @@ contract STETHVault is BaseVault {
     uint256 public investorRatio = 5000;
     address public investor;
 
-    event RoundData(uint256 indexed roundId, uint256 roundAccruedInterest, uint256 investmentYield, uint256 idleAssets);
-    event SharePrice(uint256 indexed roundId, uint256 sharePrice);
+    event StartRoundData(uint256 indexed roundId, uint256 lastRoundAssets, uint256 sharePrice);
+    event EndRoundData(
+        uint256 indexed roundId,
+        uint256 roundAccruedInterest,
+        uint256 investmentYield,
+        uint256 idleAssets
+    );
+    event SharePrice(uint256 indexed roundId, uint256 startSharePrice, uint256 endSharePrice);
 
     constructor(
         address _asset,
@@ -48,17 +54,17 @@ contract STETHVault is BaseVault {
         });
 
         uint256 sharePrice = lastSharePrice.denominator == 0 ? 0 : lastSharePrice.mulDivDown(10**sharePriceDecimals);
-        emit SharePrice(currentRoundId, sharePrice);
+        emit StartRoundData(currentRoundId, lastRoundAssets, sharePrice);
     }
 
     function _afterRoundEnd() internal override {
         uint256 roundAccruedInterest;
-        uint256 sharePrice;
+        uint256 endSharePrice;
         uint256 investmentYield = asset.balanceOf(investor);
         uint256 idleAssets = asset.balanceOf(address(this));
 
         if (totalShares != 0) {
-            sharePrice = (totalAssets() + investmentYield).mulDivDown(10**sharePriceDecimals, totalShares);
+            endSharePrice = (totalAssets() + investmentYield).mulDivDown(10**sharePriceDecimals, totalShares);
             roundAccruedInterest = totalAssets() - lastRoundAssets;
 
             // Pulls the yields from investor
@@ -72,9 +78,12 @@ contract STETHVault is BaseVault {
                 asset.safeTransfer(investor, investmentAmount);
             }
         }
+        uint256 startSharePrice = lastSharePrice.denominator == 0
+            ? 0
+            : lastSharePrice.mulDivDown(10**sharePriceDecimals);
 
-        emit RoundData(currentRoundId, roundAccruedInterest, investmentYield, idleAssets);
-        emit SharePrice(currentRoundId, sharePrice);
+        emit EndRoundData(currentRoundId, roundAccruedInterest, investmentYield, idleAssets);
+        emit SharePrice(currentRoundId, startSharePrice, endSharePrice);
     }
 
     function _beforeWithdraw(uint256 shares, uint256) internal override {
