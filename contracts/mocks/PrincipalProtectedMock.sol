@@ -15,10 +15,9 @@ contract PrincipalProtectedMock is BaseVault {
 
     uint256 public constant DENOMINATOR = 10000;
 
-    FixedPointMath.Fractional public lastSharePrice;
     uint8 public immutable sharePriceDecimals;
-
     uint256 public lastRoundAssets;
+    FixedPointMath.Fractional public lastSharePrice;
 
     uint256 public investorRatio = 5000;
     address public investor;
