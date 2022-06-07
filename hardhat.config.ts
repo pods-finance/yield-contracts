@@ -27,13 +27,6 @@ const config: HardhatUserConfig = {
       accounts: {
         mnemonic: process.env.DEV_MNEMONIC ?? ''
       }
-    },
-    hardhat: {
-      forking: {
-        url: `https://mainnet.infura.io/v3/${process.env.INFURA_PROJECT_ID ?? ''}`,
-        enabled: process.env.MAINNET_FORK_ENABLED === 'true',
-        blockNumber: parseInt(process.env.MAINNET_FORK_BLOCKNUMBER ?? '14899831')
-      }
     }
   },
   gasReporter: {
