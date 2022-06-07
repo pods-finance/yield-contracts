@@ -27,13 +27,6 @@ const config: HardhatUserConfig = {
       accounts: {
         mnemonic: process.env.DEV_MNEMONIC ?? ''
       }
-    },
-    hardhat: {
-      forking: {
-        url: process.env.ALCHEMY_MAINNET_URL ?? '',
-        enabled: process.env.MAINNET_FORK_ENABLED === 'true',
-        blockNumber: parseInt(process.env.MAINNET_FORK_BLOCKNUMBER ?? '14899831')
-      }
     }
   },
   gasReporter: {
@@ -53,7 +46,8 @@ const config: HardhatUserConfig = {
     pretty: false,
     only: [
       'BaseVault',
-      'PrincipalProtectedETHBull'
+      'PrincipalProtectedMock',
+      'STETHVault'
     ]
   }
 }
