@@ -87,11 +87,37 @@ contract BaseVault is IVault, ERC20 {
         return supply == 0 ? 0 : shares.mulDivDown(totalAssets(), supply);
     }
 
+    function convertToShares(uint256 assets) public view virtual returns (uint256) {
+        uint256 supply = totalSupply();
+        return supply == 0 ? assets : assets.mulDivDown(supply, totalAssets());
+    }
+
+    function convertToAssets(uint256 shares) public view virtual returns (uint256) {
+        uint256 supply = totalSupply();
+        return supply == 0 ? shares : shares.mulDivDown(totalAssets(), supply);
+    }
+
     /**
      * @dev Calculate the total amount of assets under management.
      */
     function totalAssets() public view virtual returns (uint256) {
         return asset.balanceOf(address(this));
+    }
+
+    function maxDeposit(address) public view virtual returns (uint256) {
+        return type(uint256).max;
+    }
+
+    function maxMint(address) public view virtual returns (uint256) {
+        return type(uint256).max;
+    }
+
+    function maxWithdraw(address owner) public view virtual returns (uint256) {
+        return convertToAssets(balanceOf(owner));
+    }
+
+    function maxRedeem(address owner) public view virtual returns (uint256) {
+        return balanceOf(owner);
     }
 
     /**
