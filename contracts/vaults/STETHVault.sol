@@ -1,14 +1,13 @@
 //SPDX-License-Identifier: UNLICENSED
 pragma solidity >=0.8.6;
 
-import "../vaults/BaseVault.sol";
-import "../mocks/YieldSourceMock.sol";
+import "./BaseVault.sol";
 
 /**
  * @title A Vault that use variable weekly yields to buy calls
  * @author Pods Finance
  */
-contract PrincipalProtectedMock is BaseVault {
+contract STETHVault is BaseVault {
     using TransferUtils for IERC20Metadata;
     using FixedPointMath for uint256;
     using FixedPointMath for FixedPointMath.Fractional;
@@ -22,8 +21,6 @@ contract PrincipalProtectedMock is BaseVault {
     uint256 public investorRatio = 5000;
     address public investor;
 
-    YieldSourceMock public yieldSource;
-
     event StartRoundData(uint256 indexed roundId, uint256 lastRoundAssets, uint256 sharePrice);
     event EndRoundData(
         uint256 indexed roundId,
@@ -34,23 +31,15 @@ contract PrincipalProtectedMock is BaseVault {
     event SharePrice(uint256 indexed roundId, uint256 startSharePrice, uint256 endSharePrice);
 
     constructor(
-        string memory name,
-        string memory symbol,
         address _asset,
         address _strategist,
-        address _investor,
-        address _yieldSource
-    ) BaseVault(name, symbol, _asset, _strategist) {
+        address _investor
+    ) BaseVault("stETH Vault", "pstETH", _asset, _strategist) {
         investor = _investor;
-        yieldSource = YieldSourceMock(_yieldSource);
         sharePriceDecimals = asset.decimals();
     }
 
-    function _afterRoundStart(uint256 assets) internal override {
-        if (assets > 0) {
-            asset.approve(address(yieldSource), assets);
-            yieldSource.deposit(assets, address(this));
-        }
+    function _afterRoundStart(uint256) internal override {
         uint256 supply = totalSupply();
 
         lastRoundAssets = totalAssets();
@@ -79,21 +68,12 @@ contract PrincipalProtectedMock is BaseVault {
                 asset.safeTransferFrom(investor, address(this), investmentYield);
             }
 
-            // Redeposit to Yield source
-            uint256 redepositAmount = asset.balanceOf(address(this)) - idleAssets;
-            if (redepositAmount > 0) {
-                asset.approve(address(yieldSource), redepositAmount);
-                yieldSource.deposit(redepositAmount, address(this));
-            }
-
             // Sends another batch to Investor
             uint256 investmentAmount = (roundAccruedInterest * investorRatio) / DENOMINATOR;
             if (investmentAmount > 0) {
-                yieldSource.withdraw(investmentAmount);
                 asset.safeTransfer(investor, investmentAmount);
             }
         }
-
         uint256 startSharePrice = lastSharePrice.denominator == 0
             ? 0
             : lastSharePrice.mulDivDown(10**sharePriceDecimals);
@@ -102,15 +82,14 @@ contract PrincipalProtectedMock is BaseVault {
         emit SharePrice(currentRoundId, startSharePrice, endSharePrice);
     }
 
+    function _beforeWithdraw(uint256 shares, uint256) internal override {
+        lastRoundAssets -= shares.mulDivDown(lastSharePrice);
+    }
+
     /**
      * @dev See {BaseVault-totalAssets}.
      */
     function totalAssets() public view override returns (uint256) {
-        return yieldSource.previewRedeem(yieldSource.balanceOf(address(this)));
-    }
-
-    function _beforeWithdraw(uint256 shares, uint256 assets) internal override {
-        lastRoundAssets -= shares.mulDivDown(lastSharePrice);
-        yieldSource.withdraw(assets);
+        return asset.balanceOf(address(this));
     }
 }

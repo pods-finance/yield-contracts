@@ -2,77 +2,58 @@ import { Contract } from '@ethersproject/contracts'
 import { expect } from 'chai'
 import hre, { ethers } from 'hardhat'
 import { BigNumber } from 'ethers'
-import { describe } from 'mocha'
-import { HardhatNetworkConfig } from 'hardhat/src/types/config'
 import { SignerWithAddress } from '@nomiclabs/hardhat-ethers/signers'
+import minus from '../utils/minus'
 
-function describeIfForking (title: string, suite: () => void): Mocha.Suite {
-  const localNetwork = (hre.network.config as HardhatNetworkConfig)
-  const isForking = localNetwork?.forking?.enabled ?? false
-
-  if (isForking) {
-    return describe.only(title, suite)
-  } else {
-    return describe.skip(title, suite) as Mocha.Suite
-  }
-}
-
-function negate (value: BigNumber): BigNumber {
-  return ethers.utils.parseUnits('0').sub(value)
-}
-
-describeIfForking('YearnETHVault', () => {
-  let asset: Contract, vault: Contract, yieldSource: Contract, investor: Contract
-  let user0: SignerWithAddress, user1: SignerWithAddress, user2: SignerWithAddress, vaultController: SignerWithAddress
+describe.skip('STETHVault', () => {
+  let asset: Contract, vault: Contract, investor: Contract
+  let user0: SignerWithAddress, user1: SignerWithAddress, yieldGenerator: SignerWithAddress, vaultController: SignerWithAddress
   let snapshotId: BigNumber
 
   before(async () => {
     await hre.network.provider.request({
       method: 'hardhat_impersonateAccount',
-      params: ['0xCFFAd3200574698b78f32232aa9D63eABD290703']
+      params: ['0x06601571aa9d3e8f5f7cdd5b993192618964bab5']
     })
 
-    user0 = await ethers.getSigner('0xCFFAd3200574698b78f32232aa9D63eABD290703')
+    user0 = await ethers.getSigner('0x06601571aa9d3e8f5f7cdd5b993192618964bab5')
 
     await hre.network.provider.request({
       method: 'hardhat_impersonateAccount',
-      params: ['0x15abb66bA754F05cBC0165A64A11cDed1543dE48']
+      params: ['0x6cf9aa65ebad7028536e353393630e2340ca6049']
     })
 
-    user1 = await ethers.getSigner('0x15abb66bA754F05cBC0165A64A11cDed1543dE48')
+    user1 = await ethers.getSigner('0x6cf9aa65ebad7028536e353393630e2340ca6049')
 
-    ;[, , , user2, vaultController] = await ethers.getSigners()
+    await hre.network.provider.request({
+      method: 'hardhat_impersonateAccount',
+      params: ['0xcebb2d6335ffa869f86f04a169015f9b613c2c04']
+    })
+
+    yieldGenerator = await ethers.getSigner('0xcebb2d6335ffa869f86f04a169015f9b613c2c04')
+
+    ;[, , , , vaultController] = await ethers.getSigners()
     const DepositQueueLib = await ethers.getContractFactory('DepositQueueLib')
     const depositQueueLib = await DepositQueueLib.deploy()
 
-    asset = await ethers.getContractAt('ERC20', '0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48')
-
-    const YieldSourceMock = await ethers.getContractFactory('YieldSourceMock')
-    yieldSource = await YieldSourceMock.deploy(asset.address)
+    // Lido's stEth
+    asset = await ethers.getContractAt('ERC20', '0xae7ab96520DE3A18E5e111B5EaAb095312D7fE84')
 
     const InvestorActorMock = await ethers.getContractFactory('InvestorActorMock')
     investor = await InvestorActorMock.deploy(asset.address)
 
-    const PrincipalProtectedETHBull = await ethers.getContractFactory('YearnETHVault', {
+    const STETHVault = await ethers.getContractFactory('STETHVault', {
       libraries: {
         DepositQueueLib: depositQueueLib.address
       }
     })
-    vault = await PrincipalProtectedETHBull.deploy(
-      'Principal Protected ETH Bull',
-      'PPETH',
-      asset.address,
-      await vaultController.getAddress(),
-      investor.address,
-      '0xa354F35829Ae975e850e23e9615b11Da1B3dC4DE'
-    )
+    vault = await STETHVault.deploy(asset.address, vaultController.address, investor.address)
 
     // Give approval upfront that the vault can pull money from the investor contract
     await investor.approveVaultToPull(vault.address)
 
     await asset.connect(user0).approve(vault.address, ethers.constants.MaxUint256)
     await asset.connect(user1).approve(vault.address, ethers.constants.MaxUint256)
-    await asset.connect(user2).approve(vault.address, ethers.constants.MaxUint256)
     await asset.connect(vaultController).approve(vault.address, ethers.constants.MaxUint256)
   })
 
@@ -85,33 +66,33 @@ describeIfForking('YearnETHVault', () => {
   })
 
   it('should add collateral and receive shares', async () => {
-    const assetAmount = ethers.utils.parseUnits('100', 6)
+    const assetAmount = ethers.utils.parseEther('10')
+    const assetAmountEffective = assetAmount.sub(1)
 
     // User0 deposits to vault
     await expect(() => vault.connect(user0).deposit(assetAmount, user0.address))
       .to.changeTokenBalances(
         asset,
         [user0, vault],
-        [negate(assetAmount), assetAmount]
+        [minus(assetAmountEffective), assetAmountEffective]
       )
     expect(await vault.depositQueueSize()).to.be.equal(1)
-    expect(await vault.balanceOf(user0.address)).to.be.equal(0)
+    expect(await vault.sharesOf(user0.address)).to.be.equal(0)
     expect(await vault.idleAmountOf(user0.address)).to.be.equal(assetAmount)
 
     // Process deposits
     await vault.connect(vaultController).endRound()
     await vault.connect(vaultController).processQueuedDeposits(0, await vault.depositQueueSize())
     expect(await vault.depositQueueSize()).to.be.equal(0)
-    expect(await vault.balanceOf(user0.address)).to.be.equal(assetAmount)
+    expect(await vault.sharesOf(user0.address)).to.be.equal(assetAmount)
     expect(await vault.idleAmountOf(user0.address)).to.be.equal(0)
 
     // Start round
     await vault.connect(vaultController).startRound()
-    expect(await asset.balanceOf(vault.address)).to.be.equal(0)
   })
 
   it('cannot withdraw between a round\'s end and the beginning of the next', async () => {
-    const assetAmount = ethers.utils.parseUnits('100', 6)
+    const assetAmount = ethers.utils.parseEther('100')
 
     await vault.connect(user0).deposit(assetAmount, user0.address)
     await vault.connect(vaultController).endRound()
@@ -119,20 +100,20 @@ describeIfForking('YearnETHVault', () => {
 
     await expect(
       vault.connect(user0).withdraw(user0.address)
-    ).to.be.revertedWith('IVault__ForbiddenDuringProcessDeposits()')
+    ).to.be.revertedWith('IVault__ForbiddenWhileProcessingDeposits()')
   })
 
   it('cannot deposit between a round\'s end and the beginning of the next', async () => {
-    const assetAmount = ethers.utils.parseUnits('10', 6)
+    const assetAmount = ethers.utils.parseEther('10')
 
     await vault.connect(vaultController).endRound()
     await expect(
       vault.connect(user0).deposit(assetAmount, user0.address)
-    ).to.be.revertedWith('IVault__ForbiddenDuringProcessDeposits()')
+    ).to.be.revertedWith('IVault__ForbiddenWhileProcessingDeposits()')
   })
 
   it('cannot processQueue After round started', async () => {
-    const assetAmount = ethers.utils.parseUnits('100', 6)
+    const assetAmount = ethers.utils.parseEther('10')
 
     await vault.connect(user0).deposit(assetAmount, user0.address)
     await vault.connect(vaultController).endRound()
@@ -141,21 +122,33 @@ describeIfForking('YearnETHVault', () => {
   })
 
   it('withdraws proportionally', async () => {
-    const assetAmount = ethers.utils.parseUnits('100', 6)
+    const assetAmount = ethers.utils.parseEther('10')
+    const assetAmountUser0 = assetAmount.mul(2)
+    const assetAmountUser0Effective = assetAmountUser0.sub(1)
+    const assetAmountUser1 = assetAmount
+    const assetAmountUser1Effective = assetAmountUser1
+    const effectiveTotal = assetAmountUser0Effective.add(assetAmountUser1Effective)
 
     // Users deposits to vault
-    await vault.connect(user0).deposit(assetAmount, user0.address)
-    await vault.connect(user0).deposit(assetAmount, user0.address)
-    await vault.connect(user1).deposit(assetAmount, user1.address)
+    await expect(() => vault.connect(user0).deposit(assetAmountUser0, user0.address))
+      .to.changeTokenBalances(
+        asset,
+        [user0, vault],
+        [minus(assetAmountUser0Effective), assetAmountUser0Effective]
+      )
+    await expect(() => vault.connect(user1).deposit(assetAmountUser1, user1.address))
+      .to.changeTokenBalances(
+        asset,
+        [user1, vault],
+        [minus(assetAmountUser1Effective), assetAmountUser1Effective]
+      )
 
-    expect(await asset.balanceOf(vault.address)).to.be.equal(assetAmount.mul(3))
-    // expect(await asset.balanceOf(user0.address)).to.be.equal(0)
-    // expect(await asset.balanceOf(user1.address)).to.be.equal(0)
+    expect(await asset.balanceOf(vault.address)).to.be.equal(effectiveTotal)
     expect(await vault.depositQueueSize()).to.be.equal(2)
-    expect(await vault.balanceOf(user0.address)).to.be.equal(0)
-    expect(await vault.idleAmountOf(user0.address)).to.be.equal(assetAmount.mul(2))
-    expect(await vault.balanceOf(user1.address)).to.be.equal(0)
-    expect(await vault.idleAmountOf(user1.address)).to.be.equal(assetAmount)
+    expect(await vault.sharesOf(user0.address)).to.be.equal(0)
+    expect(await vault.idleAmountOf(user0.address)).to.be.equal(assetAmountUser0)
+    expect(await vault.sharesOf(user1.address)).to.be.equal(0)
+    expect(await vault.idleAmountOf(user1.address)).to.be.equal(assetAmountUser1)
 
     // Process deposits
     await vault.connect(vaultController).endRound()
@@ -167,25 +160,18 @@ describeIfForking('YearnETHVault', () => {
 
     // User0 withdraws
     await vault.connect(user0).withdraw(user0.address)
-    // expect(await asset.balanceOf(user0.address)).to.be.equal(assetAmount.mul(2))
-    expect(await vault.balanceOf(user0.address)).to.be.equal(0)
+    expect(await vault.sharesOf(user0.address)).to.be.equal(0)
     expect(await vault.idleAmountOf(user0.address)).to.be.equal(0)
 
     // User1 withdraws
     await vault.connect(user1).withdraw(user1.address)
-    // expect(await asset.balanceOf(user1.address)).to.be.equal(assetAmount)
-    expect(await vault.balanceOf(user1.address)).to.be.equal(0)
+    expect(await vault.sharesOf(user1.address)).to.be.equal(0)
     expect(await vault.idleAmountOf(user1.address)).to.be.equal(0)
-
-    // Vault is empty
-    expect(await asset.balanceOf(vault.address)).to.be.equal(0)
   })
 
   it('full cycle test case', async () => {
     // This test will only work if InvestRatio = 50%
-    const assetAmount = ethers.utils.parseUnits('100', 6)
-    await asset.connect(user0).mint(assetAmount)
-    await asset.connect(user1).mint(assetAmount)
+    const assetAmount = ethers.utils.parseEther('100')
 
     // Round 0
     await vault.connect(user0).deposit(assetAmount, user0.address)
@@ -194,35 +180,42 @@ describeIfForking('YearnETHVault', () => {
 
     // Round 1
     await vault.connect(vaultController).startRound()
-    await yieldSource.generateInterest(ethers.utils.parseEther('20'))
+    await asset.connect(yieldGenerator).transfer(vault.address, ethers.utils.parseEther('20'))
     await vault.connect(vaultController).endRound()
 
     // Round 2
     await vault.connect(vaultController).startRound()
     await vault.connect(user1).deposit(assetAmount, user1.address)
-    await yieldSource.generateInterest(ethers.utils.parseEther('20'))
-    await investor.generatePremium(ethers.utils.parseEther('1300'))
+    // await asset.connect(yieldGenerator).transfer(vault.address, ethers.utils.parseEther('20'))
+    // await investor.generatePremium(ethers.utils.parseEther('1300'))
+    await asset.connect(yieldGenerator).transfer(vault.address, ethers.utils.parseEther('1320'))
     await vault.connect(vaultController).endRound()
     await vault.connect(vaultController).processQueuedDeposits(0, await vault.depositQueueSize())
 
     // Round 3
     await vault.connect(vaultController).startRound()
-    await yieldSource.generateInterest(ethers.utils.parseEther('70'))
+    await asset.connect(yieldGenerator).transfer(vault.address, ethers.utils.parseEther('70'))
 
-    await vault.connect(user0).withdraw(user0.address)
-    await vault.connect(user1).withdraw(user1.address)
+    const expectedUser0Amount = BigNumber.from('803225806451612903218')
+    const expectedUser1Amount = BigNumber.from('96774193548387096779')
 
-    const expectedUser0Amount = '1495424836601307189542'
-    const expectedUser1Amount = '104575163398692810458'
+    await expect(() => vault.connect(user0).withdraw(user0.address))
+      .to.changeTokenBalances(
+        asset,
+        [vault, user0],
+        [minus(expectedUser0Amount), expectedUser0Amount]
+      )
+    await expect(() => vault.connect(user1).withdraw(user1.address))
+      .to.changeTokenBalances(
+        asset,
+        [vault, user1],
+        [minus(expectedUser1Amount).add(1), expectedUser1Amount]
+      )
 
-    expect(await asset.balanceOf(user0.address)).to.be.equal(expectedUser0Amount)
-    expect(await vault.balanceOf(user0.address)).to.be.equal(0)
+    expect(await vault.sharesOf(user0.address)).to.be.equal(0)
     expect(await vault.idleAmountOf(user0.address)).to.be.equal(0)
 
-    expect(await asset.balanceOf(user1.address)).to.be.equal(expectedUser1Amount)
-    expect(await vault.balanceOf(user1.address)).to.be.equal(0)
+    expect(await vault.sharesOf(user1.address)).to.be.equal(0)
     expect(await vault.idleAmountOf(user1.address)).to.be.equal(0)
-
-    expect(await vault.totalAssets()).to.be.equal(0)
   })
 })

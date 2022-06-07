@@ -1,21 +1,35 @@
 import { Contract } from '@ethersproject/contracts'
 import { expect } from 'chai'
-import { ethers } from 'hardhat'
+import hre, { ethers } from 'hardhat'
 import { BigNumber } from 'ethers'
 import { SignerWithAddress } from '@nomiclabs/hardhat-ethers/signers'
+import minus from '../utils/minus'
 
-describe('PrincipalProtectedMock', () => {
+describe.skip('YearnETHVault', () => {
   let asset: Contract, vault: Contract, yieldSource: Contract, investor: Contract
   let user0: SignerWithAddress, user1: SignerWithAddress, user2: SignerWithAddress, vaultController: SignerWithAddress
   let snapshotId: BigNumber
 
   before(async () => {
-    ;[, user0, user1, user2, vaultController] = await ethers.getSigners()
+    await hre.network.provider.request({
+      method: 'hardhat_impersonateAccount',
+      params: ['0xCFFAd3200574698b78f32232aa9D63eABD290703']
+    })
+
+    user0 = await ethers.getSigner('0xCFFAd3200574698b78f32232aa9D63eABD290703')
+
+    await hre.network.provider.request({
+      method: 'hardhat_impersonateAccount',
+      params: ['0x15abb66bA754F05cBC0165A64A11cDed1543dE48']
+    })
+
+    user1 = await ethers.getSigner('0x15abb66bA754F05cBC0165A64A11cDed1543dE48')
+
+    ;[, , , user2, vaultController] = await ethers.getSigners()
     const DepositQueueLib = await ethers.getContractFactory('DepositQueueLib')
     const depositQueueLib = await DepositQueueLib.deploy()
 
-    const Asset = await ethers.getContractFactory('Asset')
-    asset = await Asset.deploy('Asset', 'AST')
+    asset = await ethers.getContractAt('ERC20', '0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48')
 
     const YieldSourceMock = await ethers.getContractFactory('YieldSourceMock')
     yieldSource = await YieldSourceMock.deploy(asset.address)
@@ -23,7 +37,7 @@ describe('PrincipalProtectedMock', () => {
     const InvestorActorMock = await ethers.getContractFactory('InvestorActorMock')
     investor = await InvestorActorMock.deploy(asset.address)
 
-    const PrincipalProtectedETHBull = await ethers.getContractFactory('PrincipalProtectedMock', {
+    const PrincipalProtectedETHBull = await ethers.getContractFactory('YearnETHVault', {
       libraries: {
         DepositQueueLib: depositQueueLib.address
       }
@@ -34,7 +48,7 @@ describe('PrincipalProtectedMock', () => {
       asset.address,
       await vaultController.getAddress(),
       investor.address,
-      yieldSource.address
+      '0xa354F35829Ae975e850e23e9615b11Da1B3dC4DE'
     )
 
     // Give approval upfront that the vault can pull money from the investor contract
@@ -55,22 +69,21 @@ describe('PrincipalProtectedMock', () => {
   })
 
   it('should add collateral and receive shares', async () => {
-    const assetAmount = ethers.utils.parseEther('100')
-
-    await asset.connect(user0).mint(assetAmount)
-    expect(await asset.balanceOf(user0.address)).to.be.equal(assetAmount)
+    const assetAmount = ethers.utils.parseUnits('100', 6)
 
     // User0 deposits to vault
-    await vault.connect(user0).deposit(assetAmount, user0.address)
+    await expect(() => vault.connect(user0).deposit(assetAmount, user0.address))
+      .to.changeTokenBalances(
+        asset,
+        [user0, vault],
+        [minus(assetAmount), assetAmount]
+      )
     expect(await vault.depositQueueSize()).to.be.equal(1)
-    expect(await asset.balanceOf(user0.address)).to.be.equal(0)
-    expect(await asset.balanceOf(vault.address)).to.be.equal(assetAmount)
     expect(await vault.balanceOf(user0.address)).to.be.equal(0)
     expect(await vault.idleAmountOf(user0.address)).to.be.equal(assetAmount)
 
     // Process deposits
-    const endRoundTx = vault.connect(vaultController).endRound()
-    await expect(endRoundTx).to.emit(vault, 'RoundData').withArgs(0, 0, 0, assetAmount)
+    await vault.connect(vaultController).endRound()
     await vault.connect(vaultController).processQueuedDeposits(0, await vault.depositQueueSize())
     expect(await vault.depositQueueSize()).to.be.equal(0)
     expect(await vault.balanceOf(user0.address)).to.be.equal(assetAmount)
@@ -82,32 +95,29 @@ describe('PrincipalProtectedMock', () => {
   })
 
   it('cannot withdraw between a round\'s end and the beginning of the next', async () => {
-    const assetAmount = ethers.utils.parseEther('100')
+    const assetAmount = ethers.utils.parseUnits('100', 6)
 
-    await asset.connect(user0).mint(assetAmount)
     await vault.connect(user0).deposit(assetAmount, user0.address)
     await vault.connect(vaultController).endRound()
     await vault.connect(vaultController).processQueuedDeposits(0, await vault.depositQueueSize())
 
     await expect(
       vault.connect(user0).withdraw(user0.address)
-    ).to.be.revertedWith('IVault__ForbiddenWhileProcessingDeposits()')
+    ).to.be.revertedWith('IVault__ForbiddenDuringProcessDeposits()')
   })
 
   it('cannot deposit between a round\'s end and the beginning of the next', async () => {
-    const assetAmount = ethers.utils.parseEther('10')
+    const assetAmount = ethers.utils.parseUnits('10', 6)
 
-    await asset.connect(user0).mint(assetAmount)
     await vault.connect(vaultController).endRound()
     await expect(
       vault.connect(user0).deposit(assetAmount, user0.address)
-    ).to.be.revertedWith('IVault__ForbiddenWhileProcessingDeposits()')
+    ).to.be.revertedWith('IVault__ForbiddenDuringProcessDeposits()')
   })
 
   it('cannot processQueue After round started', async () => {
-    const assetAmount = ethers.utils.parseEther('100')
+    const assetAmount = ethers.utils.parseUnits('100', 6)
 
-    await asset.connect(user0).mint(assetAmount)
     await vault.connect(user0).deposit(assetAmount, user0.address)
     await vault.connect(vaultController).endRound()
     await vault.connect(vaultController).startRound()
@@ -115,18 +125,16 @@ describe('PrincipalProtectedMock', () => {
   })
 
   it('withdraws proportionally', async () => {
-    const assetAmount = ethers.utils.parseEther('100')
-
-    await asset.connect(user0).mint(assetAmount.mul(2))
-    await asset.connect(user1).mint(assetAmount)
+    const assetAmount = ethers.utils.parseUnits('100', 6)
 
     // Users deposits to vault
     await vault.connect(user0).deposit(assetAmount, user0.address)
     await vault.connect(user0).deposit(assetAmount, user0.address)
     await vault.connect(user1).deposit(assetAmount, user1.address)
+
     expect(await asset.balanceOf(vault.address)).to.be.equal(assetAmount.mul(3))
-    expect(await asset.balanceOf(user0.address)).to.be.equal(0)
-    expect(await asset.balanceOf(user1.address)).to.be.equal(0)
+    // expect(await asset.balanceOf(user0.address)).to.be.equal(0)
+    // expect(await asset.balanceOf(user1.address)).to.be.equal(0)
     expect(await vault.depositQueueSize()).to.be.equal(2)
     expect(await vault.balanceOf(user0.address)).to.be.equal(0)
     expect(await vault.idleAmountOf(user0.address)).to.be.equal(assetAmount.mul(2))
@@ -143,13 +151,13 @@ describe('PrincipalProtectedMock', () => {
 
     // User0 withdraws
     await vault.connect(user0).withdraw(user0.address)
-    expect(await asset.balanceOf(user0.address)).to.be.equal(assetAmount.mul(2))
+    // expect(await asset.balanceOf(user0.address)).to.be.equal(assetAmount.mul(2))
     expect(await vault.balanceOf(user0.address)).to.be.equal(0)
     expect(await vault.idleAmountOf(user0.address)).to.be.equal(0)
 
     // User1 withdraws
     await vault.connect(user1).withdraw(user1.address)
-    expect(await asset.balanceOf(user1.address)).to.be.equal(assetAmount)
+    // expect(await asset.balanceOf(user1.address)).to.be.equal(assetAmount)
     expect(await vault.balanceOf(user1.address)).to.be.equal(0)
     expect(await vault.idleAmountOf(user1.address)).to.be.equal(0)
 
@@ -159,7 +167,7 @@ describe('PrincipalProtectedMock', () => {
 
   it('full cycle test case', async () => {
     // This test will only work if InvestRatio = 50%
-    const assetAmount = ethers.utils.parseEther('100')
+    const assetAmount = ethers.utils.parseUnits('100', 6)
     await asset.connect(user0).mint(assetAmount)
     await asset.connect(user1).mint(assetAmount)
 
@@ -188,9 +196,6 @@ describe('PrincipalProtectedMock', () => {
     await vault.connect(user0).withdraw(user0.address)
     await vault.connect(user1).withdraw(user1.address)
 
-    expect(await vault.totalSupply()).to.be.equal(0)
-    expect(await vault.totalAssets()).to.be.equal(0)
-
     const expectedUser0Amount = '1495424836601307189542'
     const expectedUser1Amount = '104575163398692810458'
 
@@ -203,8 +208,5 @@ describe('PrincipalProtectedMock', () => {
     expect(await vault.idleAmountOf(user1.address)).to.be.equal(0)
 
     expect(await vault.totalAssets()).to.be.equal(0)
-
-    await vault.connect(vaultController).endRound()
-    await vault.connect(vaultController).startRound()
   })
 })
