@@ -6,7 +6,7 @@ export async function startMainnetFork (): Promise<void> {
     params: [
       {
         forking: {
-          jsonRpcUrl: process.env.ALCHEMY_MAINNET_URL ?? '',
+          jsonRpcUrl: `https://mainnet.infura.io/v3/${process.env.INFURA_PROJECT_ID ?? ''}`,
           blockNumber: parseInt(process.env.MAINNET_FORK_BLOCKNUMBER ?? '14899831')
         }
       }
