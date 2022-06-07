@@ -4,13 +4,16 @@ import hre, { ethers } from 'hardhat'
 import { BigNumber } from 'ethers'
 import { SignerWithAddress } from '@nomiclabs/hardhat-ethers/signers'
 import minus from '../utils/minus'
+// import { startMainnetFork, stopMainnetFork } from '../utils/mainnetFork'
 
-describe.skip('YearnETHVault', () => {
+describe('YearnETHVault', () => {
   let asset: Contract, vault: Contract, yieldSource: Contract, investor: Contract
   let user0: SignerWithAddress, user1: SignerWithAddress, user2: SignerWithAddress, vaultController: SignerWithAddress
   let snapshotId: BigNumber
 
   before(async () => {
+    // await startMainnetFork()
+
     await hre.network.provider.request({
       method: 'hardhat_impersonateAccount',
       params: ['0xCFFAd3200574698b78f32232aa9D63eABD290703']
@@ -59,6 +62,10 @@ describe.skip('YearnETHVault', () => {
 
   afterEach(async () => {
     await ethers.provider.send('evm_revert', [snapshotId])
+  })
+
+  after(async () => {
+    // await stopMainnetFork()
   })
 
   it('should add collateral and receive shares', async () => {
