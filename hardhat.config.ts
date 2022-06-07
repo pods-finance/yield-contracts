@@ -53,7 +53,8 @@ const config: HardhatUserConfig = {
     pretty: false,
     only: [
       'BaseVault',
-      'PrincipalProtectedETHBull'
+      'PrincipalProtectedMock',
+      'STETHVault'
     ]
   }
 }
