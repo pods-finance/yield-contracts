@@ -16,6 +16,12 @@ dotenv.config()
 const config: HardhatUserConfig = {
   solidity: '0.8.8',
   networks: {
+    mainnet: {
+      url: `https://mainnet.infura.io/v3/${process.env.INFURA_PROJECT_ID ?? ''}`,
+      accounts: {
+        mnemonic: process.env.DEV_MNEMONIC ?? ''
+      }
+    },
     kovan: {
       url: `https://kovan.infura.io/v3/${process.env.INFURA_PROJECT_ID ?? ''}`,
       accounts: {
@@ -42,6 +48,7 @@ const config: HardhatUserConfig = {
   },
   etherscan: {
     apiKey: {
+      mainnet: process.env.ETHERSCAN_API_KEY,
       kovan: process.env.ETHERSCAN_API_KEY,
       rinkeby: process.env.ETHERSCAN_API_KEY
     }
