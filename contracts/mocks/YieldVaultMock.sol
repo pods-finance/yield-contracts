@@ -7,7 +7,12 @@ import "./YieldSourceMock.sol";
 contract YieldVaultMock is BaseVault {
     YieldSourceMock public yieldSource;
 
-    constructor(address _asset, address _strategist, address _yieldSource) BaseVault(_asset, _strategist) {
+    constructor(
+        IConfigurationManager _configuration,
+        address _asset,
+        address _strategist,
+        address _yieldSource
+    ) BaseVault(_configuration, _asset, _strategist) {
         yieldSource = YieldSourceMock(_yieldSource);
     }
 

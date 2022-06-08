@@ -5,9 +5,10 @@ import { BigNumber } from 'ethers'
 import { SignerWithAddress } from '@nomiclabs/hardhat-ethers/signers'
 import minus from '../utils/minus'
 import { startMainnetFork, stopMainnetFork } from '../utils/mainnetFork'
+import createConfigurationManager from '../utils/createConfigurationManager'
 
 describe('STETHVault', () => {
-  let asset: Contract, vault: Contract, investor: Contract
+  let asset: Contract, vault: Contract, investor: Contract, configuration: Contract
   let user0: SignerWithAddress, user1: SignerWithAddress, yieldGenerator: SignerWithAddress, vaultController: SignerWithAddress
   let snapshotId: BigNumber
 
@@ -36,6 +37,8 @@ describe('STETHVault', () => {
     yieldGenerator = await ethers.getSigner('0xcebb2d6335ffa869f86f04a169015f9b613c2c04')
 
     ;[, , , , vaultController] = await ethers.getSigners()
+    configuration = await createConfigurationManager()
+
     const DepositQueueLib = await ethers.getContractFactory('DepositQueueLib')
     const depositQueueLib = await DepositQueueLib.deploy()
 
@@ -50,7 +53,12 @@ describe('STETHVault', () => {
         DepositQueueLib: depositQueueLib.address
       }
     })
-    vault = await STETHVault.deploy(asset.address, vaultController.address, investor.address)
+    vault = await STETHVault.deploy(
+      configuration.address,
+      asset.address,
+      vaultController.address,
+      investor.address
+    )
 
     // Give approval upfront that the vault can pull money from the investor contract
     await investor.approveVaultToPull(vault.address)

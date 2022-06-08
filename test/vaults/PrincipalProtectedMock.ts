@@ -3,15 +3,18 @@ import { expect } from 'chai'
 import { ethers } from 'hardhat'
 import { BigNumber } from 'ethers'
 import { SignerWithAddress } from '@nomiclabs/hardhat-ethers/signers'
+import createConfigurationManager from '../utils/createConfigurationManager'
 
 describe('PrincipalProtectedMock', () => {
-  let asset: Contract, vault: Contract, yieldSource: Contract, investor: Contract
+  let asset: Contract, vault: Contract, yieldSource: Contract, investor: Contract, configuration: Contract
   let user0: SignerWithAddress, user1: SignerWithAddress, user2: SignerWithAddress, user3: SignerWithAddress,
     user4: SignerWithAddress, vaultController: SignerWithAddress
   let snapshotId: BigNumber
 
   before(async () => {
     ;[, user0, user1, user2, vaultController, user3, user4] = await ethers.getSigners()
+    configuration = await createConfigurationManager()
+
     const DepositQueueLib = await ethers.getContractFactory('DepositQueueLib')
     const depositQueueLib = await DepositQueueLib.deploy()
 
@@ -29,7 +32,13 @@ describe('PrincipalProtectedMock', () => {
         DepositQueueLib: depositQueueLib.address
       }
     })
-    vault = await PrincipalProtectedETHBull.deploy(asset.address, await vaultController.getAddress(), investor.address, yieldSource.address)
+    vault = await PrincipalProtectedETHBull.deploy(
+      configuration.address,
+      asset.address,
+      await vaultController.getAddress(),
+      investor.address,
+      yieldSource.address
+    )
 
     // Give approval upfront that the vault can pull money from the investor contract
     await investor.approveVaultToPull(vault.address)

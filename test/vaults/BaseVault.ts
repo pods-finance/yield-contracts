@@ -3,15 +3,18 @@ import { expect } from 'chai'
 import { ethers } from 'hardhat'
 import { BigNumber } from 'ethers'
 import { SignerWithAddress } from '@nomiclabs/hardhat-ethers/signers'
+import createConfigurationManager from '../utils/createConfigurationManager'
 
 describe('BaseVault', () => {
-  let asset: Contract, vault: Contract, yieldSource: Contract
+  let asset: Contract, vault: Contract, yieldSource: Contract, configuration: Contract
   let user0: SignerWithAddress, user1: SignerWithAddress,
     user2: SignerWithAddress, strategist: SignerWithAddress, proxy: SignerWithAddress
   let snapshotId: BigNumber
 
   before(async () => {
     ;[, user0, user1, user2, strategist, proxy] = await ethers.getSigners()
+    configuration = await createConfigurationManager()
+
     const DepositQueueLib = await ethers.getContractFactory('DepositQueueLib')
     const depositQueueLib = await DepositQueueLib.deploy()
 
@@ -26,7 +29,12 @@ describe('BaseVault', () => {
         DepositQueueLib: depositQueueLib.address
       }
     })
-    vault = await Vault.deploy(asset.address, await strategist.getAddress(), yieldSource.address)
+    vault = await Vault.deploy(
+      configuration.address,
+      asset.address,
+      await strategist.getAddress(),
+      yieldSource.address
+    )
 
     await expect(vault.deployTransaction)
       .to.emit(vault, 'StartRound').withArgs(0, 0)

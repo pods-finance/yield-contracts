@@ -2,6 +2,7 @@
 pragma solidity >=0.8.6;
 
 import "@openzeppelin/contracts/token/ERC20/extensions/IERC20Metadata.sol";
+import "../interfaces/IConfigurationManager.sol";
 import "../interfaces/IVault.sol";
 import "../libs/TransferUtils.sol";
 import "../libs/FixedPointMath.sol";
@@ -16,6 +17,7 @@ contract BaseVault is IVault {
     using FixedPointMath for uint256;
     using DepositQueueLib for DepositQueueLib.DepositQueue;
 
+    IConfigurationManager public immutable configuration;
     IERC20Metadata public immutable asset;
 
     address public strategist;
@@ -32,7 +34,8 @@ contract BaseVault is IVault {
 
     mapping(address => mapping(address => uint256)) private _allowances;
 
-    constructor(address _asset, address _strategist) {
+    constructor(IConfigurationManager _configuration, address _asset, address _strategist) {
+        configuration = _configuration;
         asset = IERC20Metadata(_asset);
         strategist = _strategist;
 

@@ -2,6 +2,11 @@
   {
     "inputs": [
       {
+        "internalType": "contract IConfigurationManager",
+        "name": "_configuration",
+        "type": "address"
+      },
+      {
         "internalType": "address",
         "name": "_asset",
         "type": "address"
@@ -340,6 +345,19 @@
     "outputs": [
       {
         "internalType": "contract IERC20Metadata",
+        "name": "",
+        "type": "address"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [],
+    "name": "configuration",
+    "outputs": [
+      {
+        "internalType": "contract IConfigurationManager",
         "name": "",
         "type": "address"
       }
