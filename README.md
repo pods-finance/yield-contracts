@@ -19,7 +19,7 @@ That way, you don't ever touch the principal and only take risks with the profit
  # Operation Flowchart
 Red -> Any address can call this function
 
-Black -> Only the Vault contoller
+Black -> Only the Vault Controller
 
 ```mermaid
 flowchart LR
