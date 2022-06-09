@@ -2,6 +2,11 @@
   {
     "inputs": [
       {
+        "internalType": "contract IConfigurationManager",
+        "name": "_configuration",
+        "type": "address"
+      },
+      {
         "internalType": "address",
         "name": "_asset",
         "type": "address"
@@ -14,6 +19,22 @@
     ],
     "stateMutability": "nonpayable",
     "type": "constructor"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "uint256",
+        "name": "amount",
+        "type": "uint256"
+      },
+      {
+        "internalType": "uint256",
+        "name": "available",
+        "type": "uint256"
+      }
+    ],
+    "name": "Capped__AmountExceedsCap",
+    "type": "error"
   },
   {
     "inputs": [],
@@ -255,6 +276,32 @@
   },
   {
     "inputs": [],
+    "name": "availableCap",
+    "outputs": [
+      {
+        "internalType": "uint256",
+        "name": "",
+        "type": "uint256"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [],
+    "name": "configuration",
+    "outputs": [
+      {
+        "internalType": "contract IConfigurationManager",
+        "name": "",
+        "type": "address"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [],
     "name": "currentRoundId",
     "outputs": [
       {
@@ -414,6 +461,19 @@
       }
     ],
     "name": "sharesOf",
+    "outputs": [
+      {
+        "internalType": "uint256",
+        "name": "",
+        "type": "uint256"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [],
+    "name": "spentCap",
     "outputs": [
       {
         "internalType": "uint256",

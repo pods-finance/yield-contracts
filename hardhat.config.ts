@@ -54,7 +54,8 @@ const config: HardhatUserConfig = {
     only: [
       'BaseVault',
       'PrincipalProtectedMock',
-      'STETHVault'
+      'STETHVault',
+      'ConfigurationManager'
     ]
   }
 }
