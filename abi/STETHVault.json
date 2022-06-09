@@ -26,6 +26,22 @@
     "type": "constructor"
   },
   {
+    "inputs": [
+      {
+        "internalType": "uint256",
+        "name": "amount",
+        "type": "uint256"
+      },
+      {
+        "internalType": "uint256",
+        "name": "available",
+        "type": "uint256"
+      }
+    ],
+    "name": "Capped__amountExceedsCap",
+    "type": "error"
+  },
+  {
     "inputs": [],
     "name": "FixedPointMath__DivByZero",
     "type": "error"
@@ -354,6 +370,19 @@
   },
   {
     "inputs": [],
+    "name": "availableCap",
+    "outputs": [
+      {
+        "internalType": "uint256",
+        "name": "",
+        "type": "uint256"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [],
     "name": "configuration",
     "outputs": [
       {
@@ -596,6 +625,19 @@
       }
     ],
     "name": "sharesOf",
+    "outputs": [
+      {
+        "internalType": "uint256",
+        "name": "",
+        "type": "uint256"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [],
+    "name": "spentCap",
     "outputs": [
       {
         "internalType": "uint256",

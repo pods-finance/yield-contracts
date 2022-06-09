@@ -7,12 +7,13 @@ import "../interfaces/IVault.sol";
 import "../libs/TransferUtils.sol";
 import "../libs/FixedPointMath.sol";
 import "../libs/DepositQueueLib.sol";
+import "../mixins/Capped.sol";
 
 /**
  * @title A Vault that tokenize shares of strategy
  * @author Pods Finance
  */
-contract BaseVault is IVault {
+contract BaseVault is IVault, Capped {
     using TransferUtils for IERC20Metadata;
     using FixedPointMath for uint256;
     using DepositQueueLib for DepositQueueLib.DepositQueue;
@@ -21,9 +22,8 @@ contract BaseVault is IVault {
     IERC20Metadata public immutable asset;
 
     address public strategist;
-
     uint256 public currentRoundId;
-    mapping(address => uint256) userRounds;
+
 
     mapping(address => uint256) userShares;
     uint256 public totalShares;
@@ -34,7 +34,7 @@ contract BaseVault is IVault {
 
     mapping(address => mapping(address => uint256)) private _allowances;
 
-    constructor(IConfigurationManager _configuration, address _asset, address _strategist) {
+    constructor(IConfigurationManager _configuration, address _asset, address _strategist) Capped(_configuration) {
         configuration = _configuration;
         asset = IERC20Metadata(_asset);
         strategist = _strategist;
@@ -50,6 +50,7 @@ contract BaseVault is IVault {
      */
     function deposit(uint256 assets, address receiver) public virtual override {
         if (isProcessingDeposits) revert IVault__ForbiddenWhileProcessingDeposits();
+        _spendCap(previewShares(assets));
 
         asset.safeTransferFrom(msg.sender, address(this), assets);
         depositQueue.push(DepositQueueLib.DepositEntry(receiver, assets));
@@ -69,6 +70,8 @@ contract BaseVault is IVault {
         if (msg.sender != owner) {
             _useAllowance(owner, msg.sender, shares);
         }
+
+        _restoreCap(shares);
 
         // Apply custom withdraw logic
         _beforeWithdraw(shares, assets);
