@@ -32,6 +32,11 @@
   },
   {
     "inputs": [],
+    "name": "IVault__AlreadyProcessingDeposits",
+    "type": "error"
+  },
+  {
+    "inputs": [],
     "name": "IVault__ApprovalToAddressZero",
     "type": "error"
   },

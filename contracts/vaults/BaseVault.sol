@@ -160,6 +160,8 @@ contract BaseVault is IVault {
      * strategist where it should start accruing yield.
      */
     function startRound() public virtual onlyStrategist {
+        if (!isProcessingDeposits) revert IVault__NotProcessingDeposits();
+
         isProcessingDeposits = false;
 
         uint256 idleBalance = asset.balanceOf(address(this));
@@ -173,6 +175,8 @@ contract BaseVault is IVault {
      * and opens the window for withdraws.
      */
     function endRound() public virtual onlyStrategist {
+        if(isProcessingDeposits) revert IVault__AlreadyProcessingDeposits();
+
         isProcessingDeposits = true;
         _afterRoundEnd();
 
