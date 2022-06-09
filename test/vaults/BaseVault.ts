@@ -182,6 +182,16 @@ describe('BaseVault', () => {
     await expect(vault.connect(strategist).processQueuedDeposits(0, await vault.depositQueueSize())).to.be.revertedWith('IVault__NotProcessingDeposits()')
   })
 
+  it('cannot start or end rounds twice', async () => {
+    await vault.connect(strategist).endRound()
+    await expect(vault.connect(strategist).endRound())
+      .to.be.revertedWith('IVault__AlreadyProcessingDeposits()')
+
+    await vault.connect(strategist).startRound()
+    await expect(vault.connect(strategist).startRound())
+      .to.be.revertedWith('IVault__NotProcessingDeposits()')
+  })
+
   it('withdraws proportionally', async () => {
     const assets = ethers.utils.parseEther('10')
 

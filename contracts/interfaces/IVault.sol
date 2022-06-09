@@ -5,6 +5,7 @@ interface IVault {
     error IVault__CallerHasNotEnoughShares();
     error IVault__CallerIsNotTheStrategist();
     error IVault__NotProcessingDeposits();
+    error IVault__AlreadyProcessingDeposits();
     error IVault__ForbiddenWhileProcessingDeposits();
     error IVault__ApprovalToAddressZero();
     error IVault__SharesExceedAllowance();
