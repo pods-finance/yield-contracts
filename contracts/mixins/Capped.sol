@@ -3,11 +3,11 @@ pragma solidity >=0.8.6;
 
 import "../interfaces/IConfigurationManager.sol";
 
-contract Capped {
+abstract contract Capped {
     IConfigurationManager private immutable _configuration;
     uint256 public spentCap;
 
-    error Capped__amountExceedsCap(uint256 amount, uint256 available);
+    error Capped__AmountExceedsCap(uint256 amount, uint256 available);
 
     constructor(IConfigurationManager _configuration_) {
         _configuration = _configuration_;
@@ -21,13 +21,23 @@ contract Capped {
         return cap == 0 ? type(uint256).max : cap - spentCap;
     }
 
+    /**
+     * @dev Returns the amount that could be used.
+     * @param amount The amount to be spent
+     */
     function _spendCap(uint256 amount) internal {
         uint256 available = availableCap();
-        if (amount > available) revert Capped__amountExceedsCap(amount, available);
+        if (amount > available) revert Capped__AmountExceedsCap(amount, available);
         spentCap += amount;
     }
 
+    /**
+     * @dev Restores the cap.
+     * @param amount The amount to be restored
+     */
     function _restoreCap(uint256 amount) internal {
-        spentCap -= amount;
+        if (availableCap() != type(uint256).max) {
+            spentCap -= amount;
+        }
     }
 }
