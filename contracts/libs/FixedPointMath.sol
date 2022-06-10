@@ -2,8 +2,9 @@
 pragma solidity >=0.8.6;
 
 library FixedPointMath {
-    error FixedPointMath__DivByZero();
     using FixedPointMath for uint256;
+
+    error FixedPointMath__DivByZero();
 
     struct Fractional {
         uint256 numerator;
@@ -14,69 +15,42 @@ library FixedPointMath {
         uint256 x,
         uint256 y,
         uint256 denominator
-    ) internal pure returns (uint256 z) {
+    ) internal pure returns (uint256) {
         if (denominator == 0) revert FixedPointMath__DivByZero();
-
-        // solhint-disable-next-line no-inline-assembly
-        assembly {
-            // Store x * y in z for now.
-            z := mul(x, y)
-
-            // Equivalent to require(x == 0 || (x * y) / x == y)
-            if iszero(or(iszero(x), eq(div(z, x), y))) {
-                revert(0, 0)
-            }
-
-            // Divide z by the denominator.
-            z := div(z, denominator)
-        }
+        return (x * y) / denominator;
     }
 
     function mulDivUp(
         uint256 x,
         uint256 y,
         uint256 denominator
-    ) internal pure returns (uint256 z) {
+    ) internal pure returns (uint256) {
         if (denominator == 0) revert FixedPointMath__DivByZero();
-
-        // solhint-disable-next-line no-inline-assembly
-        assembly {
-            // Store x * y in z for now.
-            z := mul(x, y)
-
-            // Equivalent to require(denominator != 0 && (x == 0 || (x * y) / x == y))
-            if iszero(or(iszero(x), eq(div(z, x), y))) {
-                revert(0, 0)
-            }
-
-            // First, divide z - 1 by the denominator and add 1.
-            // We allow z - 1 to underflow if z is 0, because we multiply the
-            // end result by 0 if z is zero, ensuring we return 0 if z is zero.
-            z := mul(iszero(iszero(z)), add(div(sub(z, 1), denominator), 1))
-        }
+        uint256 numerator = x * y;
+        return numerator / denominator + (numerator % denominator > 0 ? 1 : 0);
     }
 
-    function mulDivUp(uint256 x, Fractional memory y) internal pure returns (uint256 z) {
+    function mulDivUp(uint256 x, Fractional memory y) internal pure returns (uint256) {
         return x.mulDivUp(y.numerator, y.denominator);
     }
 
-    function mulDivDown(uint256 x, Fractional memory y) internal pure returns (uint256 z) {
+    function mulDivDown(uint256 x, Fractional memory y) internal pure returns (uint256) {
         return x.mulDivDown(y.numerator, y.denominator);
     }
 
-    function mulDivUp(Fractional memory x, uint256 y) internal pure returns (uint256 z) {
+    function mulDivUp(Fractional memory x, uint256 y) internal pure returns (uint256) {
         return x.numerator.mulDivUp(y, x.denominator);
     }
 
-    function mulDivDown(Fractional memory x, uint256 y) internal pure returns (uint256 z) {
+    function mulDivDown(Fractional memory x, uint256 y) internal pure returns (uint256) {
         return x.numerator.mulDivDown(y, x.denominator);
     }
 
-    function fractionRoundUp(Fractional memory x) internal pure returns (uint256 z) {
+    function fractionRoundUp(Fractional memory x) internal pure returns (uint256) {
         return x.numerator.mulDivUp(1, x.denominator);
     }
 
-    function fractionRoundDown(Fractional memory x) internal pure returns (uint256 z) {
+    function fractionRoundDown(Fractional memory x) internal pure returns (uint256) {
         return x.numerator.mulDivDown(1, x.denominator);
     }
 }
