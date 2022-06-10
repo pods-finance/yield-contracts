@@ -53,7 +53,7 @@
   },
   {
     "inputs": [],
-    "name": "IVault__CallerIsNotTheStrategist",
+    "name": "IVault__CallerIsNotTheController",
     "type": "error"
   },
   {
@@ -297,6 +297,19 @@
   },
   {
     "inputs": [],
+    "name": "controller",
+    "outputs": [
+      {
+        "internalType": "address",
+        "name": "",
+        "type": "address"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [],
     "name": "currentRoundId",
     "outputs": [
       {
@@ -484,19 +497,6 @@
     "name": "startRound",
     "outputs": [],
     "stateMutability": "nonpayable",
-    "type": "function"
-  },
-  {
-    "inputs": [],
-    "name": "strategist",
-    "outputs": [
-      {
-        "internalType": "address",
-        "name": "",
-        "type": "address"
-      }
-    ],
-    "stateMutability": "view",
     "type": "function"
   },
   {

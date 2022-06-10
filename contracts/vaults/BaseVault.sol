@@ -152,22 +152,25 @@ contract BaseVault is IVault, Capped {
         return depositQueue.size();
     }
 
-    /** Strategist **/
+    /** Vault Controller **/
 
-    modifier onlyStrategist() {
-        if (msg.sender != strategist()) revert IVault__CallerIsNotTheStrategist();
+    modifier onlyController() {
+        if (msg.sender != controller()) revert IVault__CallerIsNotTheController();
         _;
     }
 
-    function strategist() public view returns(address) {
+    /**
+     * @dev See {IVault-controller}.
+     */
+    function controller() public view returns(address) {
         return configuration.getParameter("VAULT_CONTROLLER").toAddress();
     }
 
     /**
      * @dev Starts the next round, sending the idle funds to the
-     * strategist where it should start accruing yield.
+     * strategy where it should start accruing yield.
      */
-    function startRound() public virtual onlyStrategist {
+    function startRound() public virtual onlyController {
         if (!isProcessingDeposits) revert IVault__NotProcessingDeposits();
 
         isProcessingDeposits = false;
@@ -182,7 +185,7 @@ contract BaseVault is IVault, Capped {
      * @dev Closes the round, allowing deposits to the next round be processed.
      * and opens the window for withdraws.
      */
-    function endRound() public virtual onlyStrategist {
+    function endRound() public virtual onlyController {
         if(isProcessingDeposits) revert IVault__AlreadyProcessingDeposits();
 
         isProcessingDeposits = true;
