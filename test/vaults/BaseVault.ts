@@ -13,7 +13,7 @@ describe('BaseVault', () => {
 
   before(async () => {
     ;[, user0, user1, user2, strategist, proxy] = await ethers.getSigners()
-    configuration = await createConfigurationManager()
+    configuration = await createConfigurationManager({ controller: strategist.address })
 
     const DepositQueueLib = await ethers.getContractFactory('DepositQueueLib')
     const depositQueueLib = await DepositQueueLib.deploy()
@@ -32,7 +32,6 @@ describe('BaseVault', () => {
     vault = await Vault.deploy(
       configuration.address,
       asset.address,
-      await strategist.getAddress(),
       yieldSource.address
     )
 

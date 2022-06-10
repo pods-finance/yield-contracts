@@ -10,11 +10,6 @@
         "internalType": "address",
         "name": "_asset",
         "type": "address"
-      },
-      {
-        "internalType": "address",
-        "name": "_strategist",
-        "type": "address"
       }
     ],
     "stateMutability": "nonpayable",

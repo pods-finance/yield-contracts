@@ -13,11 +13,6 @@
       },
       {
         "internalType": "address",
-        "name": "_strategist",
-        "type": "address"
-      },
-      {
-        "internalType": "address",
         "name": "_investor",
         "type": "address"
       },

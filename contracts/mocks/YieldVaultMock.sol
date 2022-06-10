@@ -10,9 +10,8 @@ contract YieldVaultMock is BaseVault {
     constructor(
         IConfigurationManager _configuration,
         address _asset,
-        address _strategist,
         address _yieldSource
-    ) BaseVault(_configuration, _asset, _strategist) {
+    ) BaseVault(_configuration, _asset) {
         yieldSource = YieldSourceMock(_yieldSource);
     }
 

@@ -37,7 +37,7 @@ describe('STETHVault', () => {
     yieldGenerator = await ethers.getSigner('0xcebb2d6335ffa869f86f04a169015f9b613c2c04')
 
     ;[, , , , vaultController] = await ethers.getSigners()
-    configuration = await createConfigurationManager()
+    configuration = await createConfigurationManager({ controller: vaultController.address })
 
     const DepositQueueLib = await ethers.getContractFactory('DepositQueueLib')
     const depositQueueLib = await DepositQueueLib.deploy()
@@ -56,7 +56,6 @@ describe('STETHVault', () => {
     vault = await STETHVault.deploy(
       configuration.address,
       asset.address,
-      vaultController.address,
       investor.address
     )
 

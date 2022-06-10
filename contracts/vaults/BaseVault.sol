@@ -8,6 +8,7 @@ import "../libs/TransferUtils.sol";
 import "../libs/FixedPointMath.sol";
 import "../libs/DepositQueueLib.sol";
 import "../mixins/Capped.sol";
+import "../libs/CastUint.sol";
 
 /**
  * @title A Vault that tokenize shares of strategy
@@ -16,15 +17,13 @@ import "../mixins/Capped.sol";
 contract BaseVault is IVault, Capped {
     using TransferUtils for IERC20Metadata;
     using FixedPointMath for uint256;
+    using CastUint for uint256;
     using DepositQueueLib for DepositQueueLib.DepositQueue;
 
     IConfigurationManager public immutable configuration;
     IERC20Metadata public immutable asset;
 
-    address public strategist;
     uint256 public currentRoundId;
-
-
     mapping(address => uint256) userShares;
     uint256 public totalShares;
 
@@ -34,10 +33,9 @@ contract BaseVault is IVault, Capped {
 
     mapping(address => mapping(address => uint256)) private _allowances;
 
-    constructor(IConfigurationManager _configuration, address _asset, address _strategist) Capped(_configuration) {
+    constructor(IConfigurationManager _configuration, address _asset) Capped(_configuration) {
         configuration = _configuration;
         asset = IERC20Metadata(_asset);
-        strategist = _strategist;
 
         // Vault starts in `start` state
         emit StartRound(currentRoundId, 0);
@@ -157,8 +155,12 @@ contract BaseVault is IVault, Capped {
     /** Strategist **/
 
     modifier onlyStrategist() {
-        if (msg.sender != strategist) revert IVault__CallerIsNotTheStrategist();
+        if (msg.sender != strategist()) revert IVault__CallerIsNotTheStrategist();
         _;
+    }
+
+    function strategist() public view returns(address) {
+        return configuration.getParameter("VAULT_CONTROLLER").toAddress();
     }
 
     /**
