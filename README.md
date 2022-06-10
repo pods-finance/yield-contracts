@@ -1,6 +1,20 @@
-# Pods - Yield
+<p align="center"> Pods - Yield </p>
 
-# Overview - Context
+
+<p align="center">
+  <a href="https://github.com/pods-finance/lisbon/actions?query=workflow:test">
+    <img src="https://github.com/pods-finance/contracts/workflows/lint+compile+test/badge.svg" alt="test"/>
+  </a>
+  
+  <a href='https://coveralls.io/github/pods-finance/lisbon?branch=main'>
+    <img src='https://coveralls.io/repos/github/pods-finance/lisbon/badge.svg?branch=main&t=WGkNnv' alt='Coverage Status' />
+  </a>
+
+  <a href="http://gplv3.fsf.org/">
+    <img src="https://img.shields.io/badge/license-AGPL--3-blue" alt="License AGPL-3">
+  </a>
+
+# Overview / Context
 
 In this new project, Pods team is launching a 1-click strategy product. This strategy will consist of:
 
