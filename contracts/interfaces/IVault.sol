@@ -6,6 +6,7 @@ import "@openzeppelin/contracts/token/ERC20/extensions/IERC20Metadata.sol";
 interface IVault is IERC20Metadata {
     error IVault__CallerIsNotTheStrategist();
     error IVault__NotProcessingDeposits();
+    error IVault__AlreadyProcessingDeposits();
     error IVault__ForbiddenWhileProcessingDeposits();
 
     event Deposit(address indexed owner, uint amountDeposited);

@@ -31,10 +31,11 @@ contract STETHVault is BaseVault {
     event SharePrice(uint256 indexed roundId, uint256 startSharePrice, uint256 endSharePrice);
 
     constructor(
+        IConfigurationManager _configuration,
         address _asset,
         address _strategist,
         address _investor
-    ) BaseVault("stETH Vault", "pstETH", _asset, _strategist) {
+    ) BaseVault("stETH Vault", "pstETH", _configuration, _asset, _strategist) {
         investor = _investor;
         sharePriceDecimals = asset.decimals();
     }

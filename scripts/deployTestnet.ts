@@ -11,6 +11,12 @@ const WAIT_CONFIRMATIONS = 5
 async function main (): Promise<void> {
   const [deployer] = await ethers.getSigners()
 
+  const ConfigurationManager = await ethers.getContractFactory('ConfigurationManager')
+  const configurationManager = await ConfigurationManager.deploy()
+  await configurationManager.deployTransaction.wait(WAIT_CONFIRMATIONS)
+  console.log(`\nConfigurationManager deployed at: ${configurationManager.address}\n`)
+  await verifyContract(hre, configurationManager.address, [])
+
   const assetName = 'Liquid staked Ether 2.0'
   const assetSymbol = 'stETH'
 
@@ -43,7 +49,13 @@ async function main (): Promise<void> {
     }
   })
 
-  const vaultConstructorArguments = [asset.address, deployer.address, investor.address, yieldSource.address] as const
+  const vaultConstructorArguments = [
+    configurationManager.address,
+    asset.address,
+    deployer.address,
+    investor.address,
+    yieldSource.address
+  ] as const
 
   const vault = await Vault.deploy(...vaultConstructorArguments)
   await vault.deployTransaction.wait(WAIT_CONFIRMATIONS)
@@ -54,6 +66,7 @@ async function main (): Promise<void> {
   await (await investor.approveVaultToPull(vault.address)).wait(WAIT_CONFIRMATIONS)
 
   console.table({
+    ConfigurationManager: configurationManager.address,
     Asset: asset.address,
     YieldSourceMock: yieldSource.address,
     InvestorActorMock: investor.address,
