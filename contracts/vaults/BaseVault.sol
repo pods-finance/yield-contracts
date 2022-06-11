@@ -8,6 +8,7 @@ import "../libs/TransferUtils.sol";
 import "../libs/FixedPointMath.sol";
 import "../libs/DepositQueueLib.sol";
 import "../mixins/Capped.sol";
+import "../libs/CastUint.sol";
 
 /**
  * @title A Vault that tokenize shares of strategy
@@ -16,15 +17,13 @@ import "../mixins/Capped.sol";
 contract BaseVault is IVault, Capped {
     using TransferUtils for IERC20Metadata;
     using FixedPointMath for uint256;
+    using CastUint for uint256;
     using DepositQueueLib for DepositQueueLib.DepositQueue;
 
     IConfigurationManager public immutable configuration;
     IERC20Metadata public immutable asset;
 
-    address public strategist;
     uint256 public currentRoundId;
-
-
     mapping(address => uint256) userShares;
     uint256 public totalShares;
 
@@ -34,10 +33,9 @@ contract BaseVault is IVault, Capped {
 
     mapping(address => mapping(address => uint256)) private _allowances;
 
-    constructor(IConfigurationManager _configuration, address _asset, address _strategist) Capped(_configuration) {
+    constructor(IConfigurationManager _configuration, address _asset) Capped(_configuration) {
         configuration = _configuration;
         asset = IERC20Metadata(_asset);
-        strategist = _strategist;
 
         // Vault starts in `start` state
         emit StartRound(currentRoundId, 0);
@@ -154,18 +152,25 @@ contract BaseVault is IVault, Capped {
         return depositQueue.size();
     }
 
-    /** Strategist **/
+    /** Vault Controller **/
 
-    modifier onlyStrategist() {
-        if (msg.sender != strategist) revert IVault__CallerIsNotTheStrategist();
+    modifier onlyController() {
+        if (msg.sender != controller()) revert IVault__CallerIsNotTheController();
         _;
     }
 
     /**
-     * @dev Starts the next round, sending the idle funds to the
-     * strategist where it should start accruing yield.
+     * @dev See {IVault-controller}.
      */
-    function startRound() public virtual onlyStrategist {
+    function controller() public view returns(address) {
+        return configuration.getParameter("VAULT_CONTROLLER").toAddress();
+    }
+
+    /**
+     * @dev Starts the next round, sending the idle funds to the
+     * strategy where it should start accruing yield.
+     */
+    function startRound() public virtual onlyController {
         if (!isProcessingDeposits) revert IVault__NotProcessingDeposits();
 
         isProcessingDeposits = false;
@@ -180,7 +185,7 @@ contract BaseVault is IVault, Capped {
      * @dev Closes the round, allowing deposits to the next round be processed.
      * and opens the window for withdraws.
      */
-    function endRound() public virtual onlyStrategist {
+    function endRound() public virtual onlyController {
         if(isProcessingDeposits) revert IVault__AlreadyProcessingDeposits();
 
         isProcessingDeposits = true;

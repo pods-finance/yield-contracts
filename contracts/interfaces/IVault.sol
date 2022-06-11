@@ -3,7 +3,7 @@ pragma solidity >=0.8.6;
 
 interface IVault {
     error IVault__CallerHasNotEnoughShares();
-    error IVault__CallerIsNotTheStrategist();
+    error IVault__CallerIsNotTheController();
     error IVault__NotProcessingDeposits();
     error IVault__AlreadyProcessingDeposits();
     error IVault__ForbiddenWhileProcessingDeposits();
@@ -21,6 +21,11 @@ interface IVault {
      * @dev Returns the name of the Vault.
      */
     function name() external view returns(string memory);
+
+    /**
+     * @dev Returns the vault controller
+     */
+    function controller() external view returns(address);
 
     /**
      * @dev Deposits underlying tokens, generating shares.

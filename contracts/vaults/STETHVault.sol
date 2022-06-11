@@ -33,9 +33,8 @@ contract STETHVault is BaseVault {
     constructor(
         IConfigurationManager _configuration,
         address _asset,
-        address _strategist,
         address _investor
-    ) BaseVault(_configuration, _asset, _strategist) {
+    ) BaseVault(_configuration, _asset) {
         investor = _investor;
         sharePriceDecimals = asset.decimals();
     }
