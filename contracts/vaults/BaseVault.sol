@@ -9,6 +9,7 @@ import "../libs/TransferUtils.sol";
 import "../libs/FixedPointMath.sol";
 import "../libs/DepositQueueLib.sol";
 import "../mixins/Capped.sol";
+import "../libs/CastUint.sol";
 
 /**
  * @title A Vault that tokenize shares of strategy
@@ -17,12 +18,12 @@ import "../mixins/Capped.sol";
 contract BaseVault is IVault, ERC20, Capped {
     using TransferUtils for IERC20Metadata;
     using FixedPointMath for uint256;
+    using CastUint for uint256;
     using DepositQueueLib for DepositQueueLib.DepositQueue;
 
     IConfigurationManager public immutable configuration;
     IERC20Metadata public immutable asset;
 
-    address public strategist;
     uint256 public currentRoundId;
     bool public isProcessingDeposits = false;
 
@@ -32,12 +33,10 @@ contract BaseVault is IVault, ERC20, Capped {
         string memory name,
         string memory symbol,
         IConfigurationManager _configuration,
-        address _asset,
-        address _strategist
+        address _asset
     ) ERC20(name, symbol) Capped(_configuration) {
         configuration = _configuration;
         asset = IERC20Metadata(_asset);
-        strategist = _strategist;
 
         // Vault starts in `start` state
         emit StartRound(currentRoundId, 0);
@@ -88,7 +87,7 @@ contract BaseVault is IVault, ERC20, Capped {
      */
     function previewShares(uint256 assets) public view virtual returns (uint256) {
         uint256 supply = totalSupply();
-        return supply == 0 ? 0 : assets.mulDivUp(supply, totalAssets());
+        return supply == 0 ? assets : assets.mulDivUp(supply, totalAssets());
     }
 
     /**
@@ -146,18 +145,25 @@ contract BaseVault is IVault, ERC20, Capped {
         return depositQueue.size();
     }
 
-    /** Strategist **/
+    /** Vault Controller **/
 
-    modifier onlyStrategist() {
-        if (msg.sender != strategist) revert IVault__CallerIsNotTheStrategist();
+    modifier onlyController() {
+        if (msg.sender != controller()) revert IVault__CallerIsNotTheController();
         _;
     }
 
     /**
-     * @dev Starts the next round, sending the idle funds to the
-     * strategist where it should start accruing yield.
+     * @dev See {IVault-controller}.
      */
-    function startRound() public virtual onlyStrategist {
+    function controller() public view returns(address) {
+        return configuration.getParameter("VAULT_CONTROLLER").toAddress();
+    }
+
+    /**
+     * @dev Starts the next round, sending the idle funds to the
+     * strategy where it should start accruing yield.
+     */
+    function startRound() public virtual onlyController {
         if (!isProcessingDeposits) revert IVault__NotProcessingDeposits();
 
         isProcessingDeposits = false;
@@ -172,7 +178,7 @@ contract BaseVault is IVault, ERC20, Capped {
      * @dev Closes the round, allowing deposits to the next round be processed.
      * and opens the window for withdraws.
      */
-    function endRound() public virtual onlyStrategist {
+    function endRound() public virtual onlyController {
         if(isProcessingDeposits) revert IVault__AlreadyProcessingDeposits();
 
         isProcessingDeposits = true;
@@ -207,9 +213,11 @@ contract BaseVault is IVault, ERC20, Capped {
      * @dev Mint new shares, effectively representing user participation in the Vault.
      */
     function _processDeposit(DepositQueueLib.DepositEntry memory depositEntry, uint256 processedDeposits) internal virtual {
-        uint256 shares = processedDeposits == 0 ? depositEntry.amount : depositEntry.amount.mulDivUp(totalSupply(), processedDeposits);
+        uint256 supply = totalSupply();
+        uint256 assets = depositEntry.amount;
+        uint256 shares = processedDeposits == 0 || supply == 0 ? assets : assets.mulDivUp(supply, processedDeposits);
         _mint(depositEntry.owner, shares);
-        emit DepositProcessed(depositEntry.owner, currentRoundId, depositEntry.amount, shares);
+        emit DepositProcessed(depositEntry.owner, currentRoundId, assets, shares);
     }
 
     /** Hooks **/

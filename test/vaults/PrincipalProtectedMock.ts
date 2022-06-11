@@ -13,7 +13,7 @@ describe('PrincipalProtectedMock', () => {
 
   before(async () => {
     ;[, user0, user1, user2, vaultController, user3, user4] = await ethers.getSigners()
-    configuration = await createConfigurationManager()
+    configuration = await createConfigurationManager({ controller: vaultController.address })
 
     const DepositQueueLib = await ethers.getContractFactory('DepositQueueLib')
     const depositQueueLib = await DepositQueueLib.deploy()
@@ -37,7 +37,6 @@ describe('PrincipalProtectedMock', () => {
       'PPETH',
       configuration.address,
       asset.address,
-      await vaultController.getAddress(),
       investor.address,
       yieldSource.address
     )

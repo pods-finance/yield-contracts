@@ -37,7 +37,7 @@ describe('STETHVault', () => {
     yieldGenerator = await ethers.getSigner('0xcebb2d6335ffa869f86f04a169015f9b613c2c04')
 
     ;[, , , , vaultController] = await ethers.getSigners()
-    configuration = await createConfigurationManager()
+    configuration = await createConfigurationManager({ controller: vaultController.address })
 
     const DepositQueueLib = await ethers.getContractFactory('DepositQueueLib')
     const depositQueueLib = await DepositQueueLib.deploy()
@@ -56,7 +56,6 @@ describe('STETHVault', () => {
     vault = await STETHVault.deploy(
       configuration.address,
       asset.address,
-      vaultController.address,
       investor.address
     )
 
@@ -92,14 +91,14 @@ describe('STETHVault', () => {
         [minus(assetAmountEffective), assetAmountEffective]
       )
     expect(await vault.depositQueueSize()).to.be.equal(1)
-    expect(await vault.sharesOf(user0.address)).to.be.equal(0)
+    expect(await vault.balanceOf(user0.address)).to.be.equal(0)
     expect(await vault.idleAmountOf(user0.address)).to.be.equal(assetAmount)
 
     // Process deposits
     await vault.connect(vaultController).endRound()
     await vault.connect(vaultController).processQueuedDeposits(0, await vault.depositQueueSize())
     expect(await vault.depositQueueSize()).to.be.equal(0)
-    expect(await vault.sharesOf(user0.address)).to.be.equal(assetAmount)
+    expect(await vault.balanceOf(user0.address)).to.be.equal(assetAmount)
     expect(await vault.idleAmountOf(user0.address)).to.be.equal(0)
 
     // Start round
@@ -160,9 +159,9 @@ describe('STETHVault', () => {
 
     expect(await asset.balanceOf(vault.address)).to.be.equal(effectiveTotal)
     expect(await vault.depositQueueSize()).to.be.equal(2)
-    expect(await vault.sharesOf(user0.address)).to.be.equal(0)
+    expect(await vault.balanceOf(user0.address)).to.be.equal(0)
     expect(await vault.idleAmountOf(user0.address)).to.be.equal(assetAmountUser0)
-    expect(await vault.sharesOf(user1.address)).to.be.equal(0)
+    expect(await vault.balanceOf(user1.address)).to.be.equal(0)
     expect(await vault.idleAmountOf(user1.address)).to.be.equal(assetAmountUser1)
 
     // Process deposits
@@ -175,12 +174,12 @@ describe('STETHVault', () => {
 
     // User0 withdraws
     await vault.connect(user0).withdraw(user0.address)
-    expect(await vault.sharesOf(user0.address)).to.be.equal(0)
+    expect(await vault.balanceOf(user0.address)).to.be.equal(0)
     expect(await vault.idleAmountOf(user0.address)).to.be.equal(0)
 
     // User1 withdraws
     await vault.connect(user1).withdraw(user1.address)
-    expect(await vault.sharesOf(user1.address)).to.be.equal(0)
+    expect(await vault.balanceOf(user1.address)).to.be.equal(0)
     expect(await vault.idleAmountOf(user1.address)).to.be.equal(0)
   })
 
@@ -227,10 +226,10 @@ describe('STETHVault', () => {
         [minus(expectedUser1Amount).add(1), expectedUser1Amount]
       )
 
-    expect(await vault.sharesOf(user0.address)).to.be.equal(0)
+    expect(await vault.balanceOf(user0.address)).to.be.equal(0)
     expect(await vault.idleAmountOf(user0.address)).to.be.equal(0)
 
-    expect(await vault.sharesOf(user1.address)).to.be.equal(0)
+    expect(await vault.balanceOf(user1.address)).to.be.equal(0)
     expect(await vault.idleAmountOf(user1.address)).to.be.equal(0)
   })
 })

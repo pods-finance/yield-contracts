@@ -12,9 +12,8 @@ contract YieldVaultMock is BaseVault {
         string memory symbol,
         IConfigurationManager _configuration,
         address _asset,
-        address _strategist,
         address _yieldSource
-    ) BaseVault(name, symbol, _configuration, _asset, _strategist) {
+    ) BaseVault(name, symbol, _configuration, _asset) {
         yieldSource = YieldSourceMock(_yieldSource);
     }
 

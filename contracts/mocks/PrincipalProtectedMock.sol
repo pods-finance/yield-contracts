@@ -38,10 +38,9 @@ contract PrincipalProtectedMock is BaseVault {
         string memory symbol,
         IConfigurationManager _configuration,
         address _asset,
-        address _strategist,
         address _investor,
         address _yieldSource
-    ) BaseVault(name, symbol, _configuration, _asset, _strategist) {
+    ) BaseVault(name, symbol, _configuration, _asset) {
         investor = _investor;
         yieldSource = YieldSourceMock(_yieldSource);
         sharePriceDecimals = asset.decimals();

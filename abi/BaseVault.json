@@ -20,11 +20,6 @@
         "internalType": "address",
         "name": "_asset",
         "type": "address"
-      },
-      {
-        "internalType": "address",
-        "name": "_strategist",
-        "type": "address"
       }
     ],
     "stateMutability": "nonpayable",
@@ -58,7 +53,7 @@
   },
   {
     "inputs": [],
-    "name": "IVault__CallerIsNotTheStrategist",
+    "name": "IVault__CallerIsNotTheController",
     "type": "error"
   },
   {
@@ -332,6 +327,19 @@
     "outputs": [
       {
         "internalType": "contract IConfigurationManager",
+        "name": "",
+        "type": "address"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [],
+    "name": "controller",
+    "outputs": [
+      {
+        "internalType": "address",
         "name": "",
         "type": "address"
       }
@@ -684,19 +692,6 @@
     "name": "startRound",
     "outputs": [],
     "stateMutability": "nonpayable",
-    "type": "function"
-  },
-  {
-    "inputs": [],
-    "name": "strategist",
-    "outputs": [
-      {
-        "internalType": "address",
-        "name": "",
-        "type": "address"
-      }
-    ],
-    "stateMutability": "view",
     "type": "function"
   },
   {
