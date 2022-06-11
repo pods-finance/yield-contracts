@@ -3,9 +3,10 @@ import { expect } from 'chai'
 import { ethers } from 'hardhat'
 import { BigNumber } from 'ethers'
 import { SignerWithAddress } from '@nomiclabs/hardhat-ethers/signers'
+import createConfigurationManager from '../utils/createConfigurationManager'
 
 describe('BaseVault', () => {
-  let asset: Contract, vault: Contract, yieldSource: Contract
+  let asset: Contract, vault: Contract, yieldSource: Contract, configuration: Contract
   let user0: SignerWithAddress, user1: SignerWithAddress,
     user2: SignerWithAddress, strategist: SignerWithAddress, proxy: SignerWithAddress
   let snapshotId: BigNumber
@@ -14,6 +15,8 @@ describe('BaseVault', () => {
 
   before(async () => {
     ;[, user0, user1, user2, strategist, proxy] = await ethers.getSigners()
+    configuration = await createConfigurationManager()
+
     const DepositQueueLib = await ethers.getContractFactory('DepositQueueLib')
     const depositQueueLib = await DepositQueueLib.deploy()
 
@@ -31,6 +34,7 @@ describe('BaseVault', () => {
     vault = await Vault.deploy(
       name,
       symbol,
+      configuration.address,
       asset.address,
       await strategist.getAddress(),
       yieldSource.address
@@ -188,6 +192,56 @@ describe('BaseVault', () => {
     ).to.be.revertedWith('IVault__ForbiddenWhileProcessingDeposits()')
   })
 
+  describe('Cap', () => {
+    it('cannot exceed cap', async () => {
+      const cap = ethers.utils.parseEther('5')
+      const assets = ethers.utils.parseEther('10')
+
+      await configuration.setCap(vault.address, cap)
+      await asset.connect(user0).mint(assets)
+      await expect(vault.connect(user0).deposit(assets, user0.address))
+        .to.be.revertedWith('Capped__AmountExceedsCap')
+    })
+
+    it('restores cap after withdrawing', async () => {
+      const assets = ethers.utils.parseEther('10')
+      await asset.connect(user0).mint(assets)
+
+      // Using vault with cap
+      const cap = ethers.utils.parseEther('10')
+      await configuration.setCap(vault.address, cap)
+
+      await vault.connect(user0).deposit(assets, user0.address)
+
+      expect(await vault.availableCap()).to.be.equal(0)
+      expect(await vault.spentCap()).to.be.equal(cap)
+
+      await vault.connect(strategist).endRound()
+      await vault.connect(strategist).processQueuedDeposits(0, await vault.depositQueueSize())
+      await vault.connect(strategist).startRound()
+      await vault.connect(user0).withdraw(user0.address)
+
+      expect(await vault.availableCap()).to.be.equal(cap)
+      expect(await vault.spentCap()).to.be.equal(0)
+
+      // Using vault without cap
+      await configuration.setCap(vault.address, 0)
+
+      await vault.connect(user0).deposit(assets, user0.address)
+
+      expect(await vault.availableCap()).to.be.equal(ethers.constants.MaxUint256)
+      expect(await vault.spentCap()).to.be.equal(assets)
+
+      await vault.connect(strategist).endRound()
+      await vault.connect(strategist).processQueuedDeposits(0, await vault.depositQueueSize())
+      await vault.connect(strategist).startRound()
+      await vault.connect(user0).withdraw(user0.address)
+
+      expect(await vault.availableCap()).to.be.equal(ethers.constants.MaxUint256)
+      expect(await vault.spentCap()).to.be.equal(assets)
+    })
+  })
+
   it('cannot processQueue After round started', async () => {
     const assets = ethers.utils.parseEther('10')
 
@@ -196,6 +250,16 @@ describe('BaseVault', () => {
     await vault.connect(strategist).endRound()
     await vault.connect(strategist).startRound()
     await expect(vault.connect(strategist).processQueuedDeposits(0, await vault.depositQueueSize())).to.be.revertedWith('IVault__NotProcessingDeposits()')
+  })
+
+  it('cannot start or end rounds twice', async () => {
+    await vault.connect(strategist).endRound()
+    await expect(vault.connect(strategist).endRound())
+      .to.be.revertedWith('IVault__AlreadyProcessingDeposits()')
+
+    await vault.connect(strategist).startRound()
+    await expect(vault.connect(strategist).startRound())
+      .to.be.revertedWith('IVault__NotProcessingDeposits()')
   })
 
   it('withdraws proportionally', async () => {

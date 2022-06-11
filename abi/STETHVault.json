@@ -2,6 +2,11 @@
   {
     "inputs": [
       {
+        "internalType": "contract IConfigurationManager",
+        "name": "_configuration",
+        "type": "address"
+      },
+      {
         "internalType": "address",
         "name": "_asset",
         "type": "address"
@@ -21,8 +26,29 @@
     "type": "constructor"
   },
   {
+    "inputs": [
+      {
+        "internalType": "uint256",
+        "name": "amount",
+        "type": "uint256"
+      },
+      {
+        "internalType": "uint256",
+        "name": "available",
+        "type": "uint256"
+      }
+    ],
+    "name": "Capped__AmountExceedsCap",
+    "type": "error"
+  },
+  {
     "inputs": [],
     "name": "FixedPointMath__DivByZero",
+    "type": "error"
+  },
+  {
+    "inputs": [],
+    "name": "IVault__AlreadyProcessingDeposits",
     "type": "error"
   },
   {
@@ -358,6 +384,19 @@
     "type": "function"
   },
   {
+    "inputs": [],
+    "name": "availableCap",
+    "outputs": [
+      {
+        "internalType": "uint256",
+        "name": "",
+        "type": "uint256"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
     "inputs": [
       {
         "internalType": "address",
@@ -371,6 +410,19 @@
         "internalType": "uint256",
         "name": "",
         "type": "uint256"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [],
+    "name": "configuration",
+    "outputs": [
+      {
+        "internalType": "contract IConfigurationManager",
+        "name": "",
+        "type": "address"
       }
     ],
     "stateMutability": "view",
@@ -768,6 +820,19 @@
         "internalType": "uint8",
         "name": "",
         "type": "uint8"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [],
+    "name": "spentCap",
+    "outputs": [
+      {
+        "internalType": "uint256",
+        "name": "",
+        "type": "uint256"
       }
     ],
     "stateMutability": "view",

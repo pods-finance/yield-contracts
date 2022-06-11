@@ -83,4 +83,18 @@ describe('DepositQueueLib', () => {
     await queue.remove(0, await queue.size())
     expect(await queue.size()).to.be.equal(0)
   })
+
+  it('will not remove if startIndex >= endIndex', async () => {
+    expect(await queue.size()).to.be.equal(0)
+
+    await queue.connect(user0).push(42)
+    await queue.connect(user1).push(160)
+    expect(await queue.size()).to.be.equal(2)
+
+    await queue.remove(1, 1)
+    expect(await queue.size()).to.be.equal(2)
+
+    await queue.remove(2, 1)
+    expect(await queue.size()).to.be.equal(2)
+  })
 })

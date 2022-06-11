@@ -3,30 +3,39 @@ pragma solidity >=0.8.6;
 
 import "@openzeppelin/contracts/token/ERC20/extensions/IERC20Metadata.sol";
 import "@openzeppelin/contracts/token/ERC20/ERC20.sol";
+import "../interfaces/IConfigurationManager.sol";
 import "../interfaces/IVault.sol";
 import "../libs/TransferUtils.sol";
 import "../libs/FixedPointMath.sol";
 import "../libs/DepositQueueLib.sol";
+import "../mixins/Capped.sol";
 
 /**
  * @title A Vault that tokenize shares of strategy
  * @author Pods Finance
  */
-contract BaseVault is IVault, ERC20 {
+contract BaseVault is IVault, ERC20, Capped {
     using TransferUtils for IERC20Metadata;
     using FixedPointMath for uint256;
     using DepositQueueLib for DepositQueueLib.DepositQueue;
 
+    IConfigurationManager public immutable configuration;
     IERC20Metadata public immutable asset;
 
     address public strategist;
-
     uint256 public currentRoundId;
     bool public isProcessingDeposits = false;
 
     DepositQueueLib.DepositQueue private depositQueue;
 
-    constructor(string memory name, string memory symbol, address _asset, address _strategist) ERC20(name, symbol) {
+    constructor(
+        string memory name,
+        string memory symbol,
+        IConfigurationManager _configuration,
+        address _asset,
+        address _strategist
+    ) ERC20(name, symbol) Capped(_configuration) {
+        configuration = _configuration;
         asset = IERC20Metadata(_asset);
         strategist = _strategist;
 
@@ -41,6 +50,7 @@ contract BaseVault is IVault, ERC20 {
      */
     function deposit(uint256 assets, address receiver) public virtual override {
         if (isProcessingDeposits) revert IVault__ForbiddenWhileProcessingDeposits();
+        _spendCap(previewShares(assets));
 
         asset.safeTransferFrom(msg.sender, address(this), assets);
         depositQueue.push(DepositQueueLib.DepositEntry(receiver, assets));
@@ -62,6 +72,8 @@ contract BaseVault is IVault, ERC20 {
         }
 
         _burn(owner, shares);
+
+        _restoreCap(shares);
 
         // Apply custom withdraw logic
         _beforeWithdraw(shares, assets);
@@ -146,6 +158,8 @@ contract BaseVault is IVault, ERC20 {
      * strategist where it should start accruing yield.
      */
     function startRound() public virtual onlyStrategist {
+        if (!isProcessingDeposits) revert IVault__NotProcessingDeposits();
+
         isProcessingDeposits = false;
 
         uint256 idleBalance = asset.balanceOf(address(this));
@@ -159,6 +173,8 @@ contract BaseVault is IVault, ERC20 {
      * and opens the window for withdraws.
      */
     function endRound() public virtual onlyStrategist {
+        if(isProcessingDeposits) revert IVault__AlreadyProcessingDeposits();
+
         isProcessingDeposits = true;
         _afterRoundEnd();
 
