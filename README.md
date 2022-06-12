@@ -1,6 +1,20 @@
-# Pods - Yield
+<p align="center"> Pods - Yield </p>
 
-# Overview - Context
+
+<p align="center">
+  <a href="https://github.com/pods-finance/lisbon/actions?query=workflow:test">
+    <img src="https://github.com/pods-finance/contracts/workflows/lint+compile+test/badge.svg" alt="test"/>
+  </a>
+  
+  <a href='https://coveralls.io/github/pods-finance/lisbon?branch=main'>
+    <img src='https://coveralls.io/repos/github/pods-finance/lisbon/badge.svg?branch=main&t=WGkNnv' alt='Coverage Status' />
+  </a>
+
+  <a href="http://gplv3.fsf.org/">
+    <img src="https://img.shields.io/badge/license-AGPL--3-blue" alt="License AGPL-3">
+  </a>
+
+# Overview / Context
 
 In this new project, Pods team is launching a 1-click strategy product. This strategy will consist of:
 
@@ -12,9 +26,10 @@ That way, you don't ever touch the principal and only take risks with the profit
 
 # Points of centralization
 
- Although we wished to build a strategy fully on-chain, for some reasons its not possible right now. Specially on the part B) (Buying weekly options) Since we dont have yet mmature option protocols in the market with enough liquidity and low slippage. So, under the hood, on the part B of the process, we transfer part of the yield to a Multisig that will have the freedom to find the best place to buy those options (Ribbon auction / Options own AMM / OTC with Market Makers).
+ Although we wished to build a strategy fully on-chain, for some reasons its not possible right now. On the part B) (Buying weekly options) we dont have yet mature option protocols in the market with enough liquidity and low slippage.
+  So, under the hood, on the part B of the process, we transfer part of the yield to a Multisig that will have the freedom to find the best place to buy those options (Ribbon auction / Pods AMM / OTC with Market Makers).
 
- In case of Multisig hack, the only balance that the Multisig could have access is the yield generated between rounds.
+ In case of Multisig hack, the only balances that **the Multisig have access are the yield generated between rounds**.
 
  # Operation Flowchart
 Red -> Any address can call this function
