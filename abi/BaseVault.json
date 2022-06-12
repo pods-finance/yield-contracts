@@ -367,7 +367,7 @@
         "type": "address"
       }
     ],
-    "name": "idleAmountOf",
+    "name": "idleBalanceOf",
     "outputs": [
       {
         "internalType": "uint256",
