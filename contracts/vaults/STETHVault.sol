@@ -12,8 +12,6 @@ contract STETHVault is BaseVault {
     using FixedPointMath for uint256;
     using FixedPointMath for FixedPointMath.Fractional;
 
-    uint256 public constant DENOMINATOR = 10000;
-
     uint8 public immutable sharePriceDecimals;
     uint256 public lastRoundAssets;
     FixedPointMath.Fractional public lastSharePrice;
