@@ -66,7 +66,7 @@ describe('BaseVault', () => {
     expect(await asset.balanceOf(user0.address)).to.be.equal(0)
     expect(await asset.balanceOf(vault.address)).to.be.equal(assets)
     expect(await vault.sharesOf(user0.address)).to.be.equal(0)
-    expect(await vault.idleAmountOf(user0.address)).to.be.equal(assets)
+    expect(await vault.idleBalanceOf(user0.address)).to.be.equal(assets)
     expect(await vault.isProcessingDeposits()).to.be.equal(false)
 
     // Process deposits
@@ -79,7 +79,7 @@ describe('BaseVault', () => {
     expect(await vault.totalShares()).to.be.equal(expectedShares)
     expect(await vault.depositQueueSize()).to.be.equal(0)
     expect(await vault.sharesOf(user0.address)).to.be.equal(expectedShares)
-    expect(await vault.idleAmountOf(user0.address)).to.be.equal(0)
+    expect(await vault.idleBalanceOf(user0.address)).to.be.equal(0)
 
     // Start round
     await vault.connect(vaultController).startRound()
@@ -102,7 +102,7 @@ describe('BaseVault', () => {
     await vault.connect(proxy).deposit(assets, user0.address)
     expect(await vault.depositQueueSize()).to.be.equal(1)
     expect(await asset.balanceOf(vault.address)).to.be.equal(assets)
-    expect(await vault.idleAmountOf(user0.address)).to.be.equal(assets)
+    expect(await vault.idleBalanceOf(user0.address)).to.be.equal(assets)
 
     await vault.connect(vaultController).endRound()
     await vault.connect(vaultController).processQueuedDeposits(0, await vault.depositQueueSize())
@@ -135,14 +135,14 @@ describe('BaseVault', () => {
     await vault.connect(user0).deposit(assets, user0.address)
     expect(await vault.depositQueueSize()).to.be.equal(1)
     expect(await asset.balanceOf(vault.address)).to.be.equal(assets)
-    expect(await vault.idleAmountOf(user0.address)).to.be.equal(assets)
+    expect(await vault.idleBalanceOf(user0.address)).to.be.equal(assets)
 
     await vault.connect(vaultController).endRound()
     await vault.connect(vaultController).processQueuedDeposits(0, await vault.depositQueueSize())
     expect(await vault.totalShares()).to.be.equal(expectedShares)
     expect(await vault.depositQueueSize()).to.be.equal(0)
     expect(await vault.sharesOf(user0.address)).to.be.equal(expectedShares)
-    expect(await vault.idleAmountOf(user0.address)).to.be.equal(0)
+    expect(await vault.idleBalanceOf(user0.address)).to.be.equal(0)
 
     await vault.connect(vaultController).startRound()
     await expect(
@@ -264,9 +264,9 @@ describe('BaseVault', () => {
     expect(await asset.balanceOf(user1.address)).to.be.equal(0)
     expect(await vault.depositQueueSize()).to.be.equal(2)
     expect(await vault.sharesOf(user0.address)).to.be.equal(0)
-    expect(await vault.idleAmountOf(user0.address)).to.be.equal(assets.mul(2))
+    expect(await vault.idleBalanceOf(user0.address)).to.be.equal(assets.mul(2))
     expect(await vault.sharesOf(user1.address)).to.be.equal(0)
-    expect(await vault.idleAmountOf(user1.address)).to.be.equal(assets)
+    expect(await vault.idleBalanceOf(user1.address)).to.be.equal(assets)
 
     // Process deposits
     await vault.connect(vaultController).endRound()
@@ -286,14 +286,14 @@ describe('BaseVault', () => {
     await vault.connect(user0).withdraw(user0.address)
     expect(await asset.balanceOf(user0.address)).to.be.equal(assets.mul(2))
     expect(await vault.sharesOf(user0.address)).to.be.equal(0)
-    expect(await vault.idleAmountOf(user0.address)).to.be.equal(0)
+    expect(await vault.idleBalanceOf(user0.address)).to.be.equal(0)
 
     // User1 withdraws
     expect(await vault.previewWithdraw(await vault.sharesOf(user1.address))).to.be.equal(assets)
     await vault.connect(user1).withdraw(user1.address)
     expect(await asset.balanceOf(user1.address)).to.be.equal(assets)
     expect(await vault.sharesOf(user1.address)).to.be.equal(0)
-    expect(await vault.idleAmountOf(user1.address)).to.be.equal(0)
+    expect(await vault.idleBalanceOf(user1.address)).to.be.equal(0)
 
     // Vault is empty
     expect(await asset.balanceOf(vault.address)).to.be.equal(0)
@@ -330,12 +330,12 @@ describe('BaseVault', () => {
     await vault.connect(user0).withdraw(user0.address)
     expect(await asset.balanceOf(user0.address)).to.be.equal(expectedUser0Amount)
     expect(await vault.sharesOf(user0.address)).to.be.equal(0)
-    expect(await vault.idleAmountOf(user0.address)).to.be.equal(0)
+    expect(await vault.idleBalanceOf(user0.address)).to.be.equal(0)
 
     await vault.connect(user1).withdraw(user1.address)
     expect(await asset.balanceOf(user1.address)).to.be.equal(expectedUser1Amount)
     expect(await vault.sharesOf(user1.address)).to.be.equal(0)
-    expect(await vault.idleAmountOf(user1.address)).to.be.equal(0)
+    expect(await vault.idleBalanceOf(user1.address)).to.be.equal(0)
 
     expect(await asset.balanceOf(vault.address)).to.be.equal(0)
     expect(await asset.balanceOf(yieldSource.address)).to.be.equal(0)
