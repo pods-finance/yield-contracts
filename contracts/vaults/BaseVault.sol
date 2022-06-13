@@ -40,14 +40,23 @@ contract BaseVault is IVault, ERC20, Capped {
         emit StartRound(currentRoundId, 0);
     }
 
+    /**
+     * @dev See {ERC20-name}.
+     */
     function name() public view override returns(string memory) {
         return string(abi.encodePacked("Pods Yield ", asset.symbol()));
     }
 
+    /**
+     * @dev See {ERC20-symbol}.
+     */
     function symbol() public view override returns(string memory) {
         return string(abi.encodePacked("py", asset.symbol()));
     }
 
+    /**
+     * @dev See {ERC20-decimals}.
+     */
     function decimals() public view override returns(uint8) {
         return asset.decimals();
     }
