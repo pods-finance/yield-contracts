@@ -34,13 +34,11 @@ contract PrincipalProtectedMock is BaseVault {
     event SharePrice(uint256 indexed roundId, uint256 startSharePrice, uint256 endSharePrice);
 
     constructor(
-        string memory name,
-        string memory symbol,
         IConfigurationManager _configuration,
         address _asset,
         address _investor,
         address _yieldSource
-    ) BaseVault(name, symbol, _configuration, _asset) {
+    ) BaseVault(_configuration, _asset) {
         investor = _investor;
         yieldSource = YieldSourceMock(_yieldSource);
         sharePriceDecimals = asset.decimals();

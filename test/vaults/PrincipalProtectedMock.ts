@@ -33,8 +33,6 @@ describe('PrincipalProtectedMock', () => {
       }
     })
     vault = await PrincipalProtectedETHBull.deploy(
-      'Principal Protected ETH Bull',
-      'PPETH',
       configuration.address,
       asset.address,
       investor.address,

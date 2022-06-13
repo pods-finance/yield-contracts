@@ -30,11 +30,9 @@ contract BaseVault is IVault, ERC20, Capped {
     DepositQueueLib.DepositQueue private depositQueue;
 
     constructor(
-        string memory name,
-        string memory symbol,
         IConfigurationManager _configuration,
         address _asset
-    ) ERC20(name, symbol) Capped(_configuration) {
+    ) ERC20("", "") Capped(_configuration) {
         configuration = _configuration;
         asset = IERC20Metadata(_asset);
 

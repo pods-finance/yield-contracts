@@ -11,8 +11,6 @@ describe('BaseVault', () => {
   let user0: SignerWithAddress, user1: SignerWithAddress,
     user2: SignerWithAddress, vaultController: SignerWithAddress, proxy: SignerWithAddress
   let snapshotId: BigNumber
-  const name = 'Base Vault'
-  const symbol = 'BASE'
 
   before(async () => {
     ;[, user0, user1, user2, vaultController, proxy] = await ethers.getSigners()
@@ -33,8 +31,6 @@ describe('BaseVault', () => {
       }
     })
     vault = await Vault.deploy(
-      name,
-      symbol,
       configuration.address,
       asset.address,
       yieldSource.address

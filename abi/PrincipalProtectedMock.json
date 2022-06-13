@@ -2,16 +2,6 @@
   {
     "inputs": [
       {
-        "internalType": "string",
-        "name": "name",
-        "type": "string"
-      },
-      {
-        "internalType": "string",
-        "name": "symbol",
-        "type": "string"
-      },
-      {
         "internalType": "contract IConfigurationManager",
         "name": "_configuration",
         "type": "address"
