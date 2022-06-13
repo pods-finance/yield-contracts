@@ -7,6 +7,7 @@ library CastUint {
      */
     function toAddress(uint256 value) internal pure returns (address) {
         bytes memory data = new bytes(32);
+        // solhint-disable-next-line no-inline-assembly
         assembly {
             mstore(add(data, 32), value)
         }
