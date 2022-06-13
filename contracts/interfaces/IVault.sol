@@ -1,9 +1,9 @@
 //SPDX-License-Identifier: UNLICENSED
 pragma solidity >=0.8.6;
 
-import "@openzeppelin/contracts/token/ERC20/extensions/IERC20Metadata.sol";
+import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 
-interface IVault is IERC20Metadata {
+interface IVault is IERC20 {
     error IVault__CallerIsNotTheController();
     error IVault__NotProcessingDeposits();
     error IVault__AlreadyProcessingDeposits();

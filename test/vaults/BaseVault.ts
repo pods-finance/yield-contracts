@@ -4,9 +4,10 @@ import { ethers } from 'hardhat'
 import { BigNumber } from 'ethers'
 import { SignerWithAddress } from '@nomiclabs/hardhat-ethers/signers'
 import createConfigurationManager from '../utils/createConfigurationManager'
+import { Asset } from '../../typechain'
 
 describe('BaseVault', () => {
-  let asset: Contract, vault: Contract, yieldSource: Contract, configuration: Contract
+  let asset: Asset, vault: Contract, yieldSource: Contract, configuration: Contract
   let user0: SignerWithAddress, user1: SignerWithAddress,
     user2: SignerWithAddress, vaultController: SignerWithAddress, proxy: SignerWithAddress
   let snapshotId: BigNumber
@@ -46,7 +47,6 @@ describe('BaseVault', () => {
     await asset.connect(user1).approve(vault.address, ethers.constants.MaxUint256)
     await asset.connect(user2).approve(vault.address, ethers.constants.MaxUint256)
     await asset.connect(vaultController).approve(vault.address, ethers.constants.MaxUint256)
-    expect(await vault.name()).to.be.equal('Base Vault')
   })
 
   beforeEach(async () => {
@@ -59,11 +59,15 @@ describe('BaseVault', () => {
 
   describe('ERC20 checks', () => {
     it('has a name', async () => {
-      expect(await vault.name()).to.be.equal(name)
+      expect(await vault.name()).to.be.equal(`Pods Yield ${await asset.symbol()}`)
     })
 
     it('has a symbol', async () => {
-      expect(await vault.symbol()).to.be.equal(symbol)
+      expect(await vault.symbol()).to.be.equal(`py${await asset.symbol()}`)
+    })
+
+    it('has decimals', async () => {
+      expect(await vault.decimals()).to.be.equal(await asset.decimals())
     })
   })
 

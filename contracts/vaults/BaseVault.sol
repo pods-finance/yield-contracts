@@ -42,6 +42,18 @@ contract BaseVault is IVault, ERC20, Capped {
         emit StartRound(currentRoundId, 0);
     }
 
+    function name() public view override returns(string memory) {
+        return string(abi.encodePacked("Pods Yield ", asset.symbol()));
+    }
+
+    function symbol() public view override returns(string memory) {
+        return string(abi.encodePacked("py", asset.symbol()));
+    }
+
+    function decimals() public view override returns(uint8) {
+        return asset.decimals();
+    }
+
     /** Depositor **/
 
     /**
