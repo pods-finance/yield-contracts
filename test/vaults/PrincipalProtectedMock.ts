@@ -1,14 +1,17 @@
-import { Contract } from '@ethersproject/contracts'
 import { expect } from 'chai'
 import { ethers } from 'hardhat'
 import { BigNumber } from 'ethers'
 import { SignerWithAddress } from '@nomiclabs/hardhat-ethers/signers'
 import createConfigurationManager from '../utils/createConfigurationManager'
+import { Asset, ConfigurationManager, InvestorActorMock, PrincipalProtectedMock, YieldSourceMock } from '../../typechain'
 
 describe('PrincipalProtectedMock', () => {
-  let asset: Contract, vault: Contract, yieldSource: Contract, investor: Contract, configuration: Contract
+  let asset: Asset, vault: PrincipalProtectedMock, yieldSource: YieldSourceMock,
+    investor: InvestorActorMock, configuration: ConfigurationManager
+
   let user0: SignerWithAddress, user1: SignerWithAddress, user2: SignerWithAddress, user3: SignerWithAddress,
     user4: SignerWithAddress, vaultController: SignerWithAddress
+
   let snapshotId: BigNumber
 
   before(async () => {

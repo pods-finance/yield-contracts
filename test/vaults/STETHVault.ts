@@ -1,4 +1,3 @@
-import { Contract } from '@ethersproject/contracts'
 import { expect } from 'chai'
 import hre, { ethers } from 'hardhat'
 import { BigNumber } from 'ethers'
@@ -6,10 +5,15 @@ import { SignerWithAddress } from '@nomiclabs/hardhat-ethers/signers'
 import minus from '../utils/minus'
 import { startMainnetFork, stopMainnetFork } from '../utils/mainnetFork'
 import createConfigurationManager from '../utils/createConfigurationManager'
+import { ConfigurationManager, ERC20, InvestorActorMock, STETHVault } from '../../typechain'
 
 describe('STETHVault', () => {
-  let asset: Contract, vault: Contract, investor: Contract, configuration: Contract
-  let user0: SignerWithAddress, user1: SignerWithAddress, yieldGenerator: SignerWithAddress, vaultController: SignerWithAddress
+  let asset: ERC20, vault: STETHVault, investor: InvestorActorMock,
+    configuration: ConfigurationManager
+
+  let user0: SignerWithAddress, user1: SignerWithAddress,
+    yieldGenerator: SignerWithAddress, vaultController: SignerWithAddress
+
   let snapshotId: BigNumber
 
   before(async () => {
@@ -84,7 +88,7 @@ describe('STETHVault', () => {
     const assetAmountEffective = assetAmount.sub(1)
 
     // User0 deposits to vault
-    await expect(() => vault.connect(user0).deposit(assetAmount, user0.address))
+    await expect(async () => await vault.connect(user0).deposit(assetAmount, user0.address))
       .to.changeTokenBalances(
         asset,
         [user0, vault],
@@ -144,13 +148,13 @@ describe('STETHVault', () => {
     const effectiveTotal = assetAmountUser0Effective.add(assetAmountUser1Effective)
 
     // Users deposits to vault
-    await expect(() => vault.connect(user0).deposit(assetAmountUser0, user0.address))
+    await expect(async () => await vault.connect(user0).deposit(assetAmountUser0, user0.address))
       .to.changeTokenBalances(
         asset,
         [user0, vault],
         [minus(assetAmountUser0Effective), assetAmountUser0Effective]
       )
-    await expect(() => vault.connect(user1).deposit(assetAmountUser1, user1.address))
+    await expect(async () => await vault.connect(user1).deposit(assetAmountUser1, user1.address))
       .to.changeTokenBalances(
         asset,
         [user1, vault],
@@ -213,13 +217,13 @@ describe('STETHVault', () => {
     const expectedUser0Amount = BigNumber.from('803225806451612903218')
     const expectedUser1Amount = BigNumber.from('96774193548387096779')
 
-    await expect(() => vault.connect(user0).withdraw(user0.address))
+    await expect(async () => await vault.connect(user0).withdraw(user0.address))
       .to.changeTokenBalances(
         asset,
         [vault, user0],
         [minus(expectedUser0Amount), expectedUser0Amount]
       )
-    await expect(() => vault.connect(user1).withdraw(user1.address))
+    await expect(async () => await vault.connect(user1).withdraw(user1.address))
       .to.changeTokenBalances(
         asset,
         [vault, user1],
