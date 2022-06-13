@@ -76,7 +76,7 @@ contract BaseVault is IVault, Capped {
         // Apply custom withdraw logic
         _beforeWithdraw(shares, assets);
 
-        uint256 fee = (assets * WITHDRAW_FEE) / DENOMINATOR;
+        uint256 fee = (assets * withdrawFeeRatio()) / DENOMINATOR;
         asset.safeTransfer(owner, assets - fee);
         asset.safeTransfer(controller(), fee);
 
@@ -88,6 +88,13 @@ contract BaseVault is IVault, Capped {
      */
     function name() external pure virtual override returns (string memory) {
         return "Base Vault";
+    }
+
+    /**
+     * @dev See {IVault-withdrawFeeRatio}.
+     */
+    function withdrawFeeRatio() public view override returns(uint256) {
+        return configuration.getParameter("WITHDRAW_FEE_RATIO");
     }
 
     /**

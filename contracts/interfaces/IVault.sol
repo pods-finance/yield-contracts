@@ -23,6 +23,11 @@ interface IVault {
     function name() external view returns(string memory);
 
     /**
+     * @dev Returns the fee charged on withdraws.
+     */
+    function withdrawFeeRatio() external view returns(uint256);
+
+    /**
      * @dev Returns the vault controller
      */
     function controller() external view returns(address);
