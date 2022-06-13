@@ -5,6 +5,7 @@
 // Runtime Environment's members available in the global scope.
 import hre, { ethers } from 'hardhat'
 import verifyContract from './verify'
+import { BigNumber } from 'ethers'
 
 const WAIT_CONFIRMATIONS = 5
 
@@ -15,6 +16,10 @@ async function main (): Promise<void> {
   const configurationManager = await ConfigurationManager.deploy()
   await configurationManager.deployTransaction.wait(WAIT_CONFIRMATIONS)
   console.log(`\nConfigurationManager deployed at: ${configurationManager.address}\n`)
+
+  await configurationManager.setParameter(ethers.utils.formatBytes32String('VAULT_CONTROLLER'), deployer.address)
+  await configurationManager.setParameter(ethers.utils.formatBytes32String('WITHDRAW_FEE_RATIO'), BigNumber.from('100'))
+
   await verifyContract(hre, configurationManager.address, [])
 
   const assetName = 'Liquid staked Ether 2.0'

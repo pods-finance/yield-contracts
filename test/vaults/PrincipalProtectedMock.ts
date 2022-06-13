@@ -3,6 +3,7 @@ import { ethers } from 'hardhat'
 import { BigNumber } from 'ethers'
 import { SignerWithAddress } from '@nomiclabs/hardhat-ethers/signers'
 import createConfigurationManager from '../utils/createConfigurationManager'
+import feeExcluded from '../utils/feeExcluded'
 import { Asset, ConfigurationManager, InvestorActorMock, PrincipalProtectedMock, YieldSourceMock } from '../../typechain'
 
 describe('PrincipalProtectedMock', () => {
@@ -71,7 +72,7 @@ describe('PrincipalProtectedMock', () => {
     expect(await asset.balanceOf(user0.address)).to.be.equal(0)
     expect(await asset.balanceOf(vault.address)).to.be.equal(assetAmount)
     expect(await vault.balanceOf(user0.address)).to.be.equal(0)
-    expect(await vault.idleAmountOf(user0.address)).to.be.equal(assetAmount)
+    expect(await vault.idleBalanceOf(user0.address)).to.be.equal(assetAmount)
 
     // Process deposits
     const endRoundTx = vault.connect(vaultController).endRound()
@@ -79,7 +80,7 @@ describe('PrincipalProtectedMock', () => {
     await vault.connect(vaultController).processQueuedDeposits(0, await vault.depositQueueSize())
     expect(await vault.depositQueueSize()).to.be.equal(0)
     expect(await vault.balanceOf(user0.address)).to.be.equal(assetAmount)
-    expect(await vault.idleAmountOf(user0.address)).to.be.equal(0)
+    expect(await vault.idleBalanceOf(user0.address)).to.be.equal(0)
 
     // Start round
     await vault.connect(vaultController).startRound()
@@ -134,9 +135,9 @@ describe('PrincipalProtectedMock', () => {
     expect(await asset.balanceOf(user1.address)).to.be.equal(0)
     expect(await vault.depositQueueSize()).to.be.equal(2)
     expect(await vault.balanceOf(user0.address)).to.be.equal(0)
-    expect(await vault.idleAmountOf(user0.address)).to.be.equal(assetAmount.mul(2))
+    expect(await vault.idleBalanceOf(user0.address)).to.be.equal(assetAmount.mul(2))
     expect(await vault.balanceOf(user1.address)).to.be.equal(0)
-    expect(await vault.idleAmountOf(user1.address)).to.be.equal(assetAmount)
+    expect(await vault.idleBalanceOf(user1.address)).to.be.equal(assetAmount)
 
     // Process deposits
     await vault.connect(vaultController).endRound()
@@ -148,15 +149,15 @@ describe('PrincipalProtectedMock', () => {
 
     // User0 withdraws
     await vault.connect(user0).withdraw(user0.address)
-    expect(await asset.balanceOf(user0.address)).to.be.equal(assetAmount.mul(2))
+    expect(await asset.balanceOf(user0.address)).to.be.equal(feeExcluded(assetAmount.mul(2)))
     expect(await vault.balanceOf(user0.address)).to.be.equal(0)
-    expect(await vault.idleAmountOf(user0.address)).to.be.equal(0)
+    expect(await vault.idleBalanceOf(user0.address)).to.be.equal(0)
 
     // User1 withdraws
     await vault.connect(user1).withdraw(user1.address)
-    expect(await asset.balanceOf(user1.address)).to.be.equal(assetAmount)
+    expect(await asset.balanceOf(user1.address)).to.be.equal(feeExcluded(assetAmount))
     expect(await vault.balanceOf(user1.address)).to.be.equal(0)
-    expect(await vault.idleAmountOf(user1.address)).to.be.equal(0)
+    expect(await vault.idleBalanceOf(user1.address)).to.be.equal(0)
 
     // Vault is empty
     expect(await asset.balanceOf(vault.address)).to.be.equal(0)
@@ -196,16 +197,16 @@ describe('PrincipalProtectedMock', () => {
     expect(await vault.totalSupply()).to.be.equal(0)
     expect(await vault.totalAssets()).to.be.equal(0)
 
-    const expectedUser0Amount = '1495424836601307189542'
-    const expectedUser1Amount = '104575163398692810458'
+    const expectedUser0Amount = feeExcluded('1495424836601307189542')
+    const expectedUser1Amount = feeExcluded('104575163398692810458')
 
     expect(await asset.balanceOf(user0.address)).to.be.equal(expectedUser0Amount)
     expect(await vault.balanceOf(user0.address)).to.be.equal(0)
-    expect(await vault.idleAmountOf(user0.address)).to.be.equal(0)
+    expect(await vault.idleBalanceOf(user0.address)).to.be.equal(0)
 
     expect(await asset.balanceOf(user1.address)).to.be.equal(expectedUser1Amount)
     expect(await vault.balanceOf(user1.address)).to.be.equal(0)
-    expect(await vault.idleAmountOf(user1.address)).to.be.equal(0)
+    expect(await vault.idleBalanceOf(user1.address)).to.be.equal(0)
 
     expect(await vault.totalAssets()).to.be.equal(0)
 
@@ -275,11 +276,11 @@ describe('PrincipalProtectedMock', () => {
     expect(await vault.totalSupply()).to.be.equal(0)
 
     // User checks
-    expect(await asset.balanceOf(user0.address)).to.be.gte(user0InitialBalance)
-    expect(await asset.balanceOf(user1.address)).to.be.gte(user1InitialBalance)
-    expect(await asset.balanceOf(user2.address)).to.be.gte(user2InitialBalance)
-    expect(await asset.balanceOf(user3.address)).to.be.gte(user3InitialBalance)
-    expect(await asset.balanceOf(user4.address)).to.be.gte(user4InitialBalance)
+    expect(await asset.balanceOf(user0.address)).to.be.gte(feeExcluded(user0InitialBalance))
+    expect(await asset.balanceOf(user1.address)).to.be.gte(feeExcluded(user1InitialBalance))
+    expect(await asset.balanceOf(user2.address)).to.be.gte(feeExcluded(user2InitialBalance))
+    expect(await asset.balanceOf(user3.address)).to.be.gte(feeExcluded(user3InitialBalance))
+    expect(await asset.balanceOf(user4.address)).to.be.gte(feeExcluded(user4InitialBalance))
 
     expect(await vault.balanceOf(user0.address)).to.be.equal(0)
     expect(await vault.balanceOf(user1.address)).to.be.equal(0)
@@ -287,10 +288,10 @@ describe('PrincipalProtectedMock', () => {
     expect(await vault.balanceOf(user3.address)).to.be.equal(0)
     expect(await vault.balanceOf(user4.address)).to.be.equal(0)
 
-    expect(await vault.idleAmountOf(user0.address)).to.be.equal(0)
-    expect(await vault.idleAmountOf(user1.address)).to.be.equal(0)
-    expect(await vault.idleAmountOf(user2.address)).to.be.equal(0)
-    expect(await vault.idleAmountOf(user3.address)).to.be.equal(0)
-    expect(await vault.idleAmountOf(user4.address)).to.be.equal(0)
+    expect(await vault.idleBalanceOf(user0.address)).to.be.equal(0)
+    expect(await vault.idleBalanceOf(user1.address)).to.be.equal(0)
+    expect(await vault.idleBalanceOf(user2.address)).to.be.equal(0)
+    expect(await vault.idleBalanceOf(user3.address)).to.be.equal(0)
+    expect(await vault.idleBalanceOf(user4.address)).to.be.equal(0)
   })
 })

@@ -27,6 +27,9 @@ contract BaseVault is IVault, ERC20, Capped {
     uint256 public currentRoundId;
     bool public isProcessingDeposits = false;
 
+    uint256 public constant DENOMINATOR = 10000;
+    uint256 public constant WITHDRAW_FEE = 100;
+
     DepositQueueLib.DepositQueue private depositQueue;
 
     constructor(
@@ -96,9 +99,18 @@ contract BaseVault is IVault, ERC20, Capped {
         // Apply custom withdraw logic
         _beforeWithdraw(shares, assets);
 
-        asset.safeTransfer(owner, assets);
+        uint256 fee = (assets * withdrawFeeRatio()) / DENOMINATOR;
+        asset.safeTransfer(owner, assets - fee);
+        asset.safeTransfer(controller(), fee);
 
         emit Withdraw(owner, shares, assets);
+    }
+
+    /**
+     * @dev See {IVault-withdrawFeeRatio}.
+     */
+    function withdrawFeeRatio() public view override returns(uint256) {
+        return configuration.getParameter("WITHDRAW_FEE_RATIO");
     }
 
     /**
@@ -153,7 +165,7 @@ contract BaseVault is IVault, ERC20, Capped {
     /**
      * @dev Outputs the amount of asset tokens of an `owner` is idle, waiting for the next round.
      */
-    function idleAmountOf(address owner) public view virtual returns (uint256) {
+    function idleBalanceOf(address owner) public view virtual returns (uint256) {
         return depositQueue.balanceOf(owner);
     }
 

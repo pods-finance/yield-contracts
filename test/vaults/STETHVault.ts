@@ -5,6 +5,7 @@ import { SignerWithAddress } from '@nomiclabs/hardhat-ethers/signers'
 import minus from '../utils/minus'
 import { startMainnetFork, stopMainnetFork } from '../utils/mainnetFork'
 import createConfigurationManager from '../utils/createConfigurationManager'
+import feeExcluded from '../utils/feeExcluded'
 import { ConfigurationManager, ERC20, InvestorActorMock, STETHVault } from '../../typechain'
 
 describe('STETHVault', () => {
@@ -96,14 +97,14 @@ describe('STETHVault', () => {
       )
     expect(await vault.depositQueueSize()).to.be.equal(1)
     expect(await vault.balanceOf(user0.address)).to.be.equal(0)
-    expect(await vault.idleAmountOf(user0.address)).to.be.equal(assetAmount)
+    expect(await vault.idleBalanceOf(user0.address)).to.be.equal(assetAmount)
 
     // Process deposits
     await vault.connect(vaultController).endRound()
     await vault.connect(vaultController).processQueuedDeposits(0, await vault.depositQueueSize())
     expect(await vault.depositQueueSize()).to.be.equal(0)
     expect(await vault.balanceOf(user0.address)).to.be.equal(assetAmount)
-    expect(await vault.idleAmountOf(user0.address)).to.be.equal(0)
+    expect(await vault.idleBalanceOf(user0.address)).to.be.equal(0)
 
     // Start round
     await vault.connect(vaultController).startRound()
@@ -164,9 +165,9 @@ describe('STETHVault', () => {
     expect(await asset.balanceOf(vault.address)).to.be.equal(effectiveTotal)
     expect(await vault.depositQueueSize()).to.be.equal(2)
     expect(await vault.balanceOf(user0.address)).to.be.equal(0)
-    expect(await vault.idleAmountOf(user0.address)).to.be.equal(assetAmountUser0)
+    expect(await vault.idleBalanceOf(user0.address)).to.be.equal(assetAmountUser0)
     expect(await vault.balanceOf(user1.address)).to.be.equal(0)
-    expect(await vault.idleAmountOf(user1.address)).to.be.equal(assetAmountUser1)
+    expect(await vault.idleBalanceOf(user1.address)).to.be.equal(assetAmountUser1)
 
     // Process deposits
     await vault.connect(vaultController).endRound()
@@ -179,12 +180,12 @@ describe('STETHVault', () => {
     // User0 withdraws
     await vault.connect(user0).withdraw(user0.address)
     expect(await vault.balanceOf(user0.address)).to.be.equal(0)
-    expect(await vault.idleAmountOf(user0.address)).to.be.equal(0)
+    expect(await vault.idleBalanceOf(user0.address)).to.be.equal(0)
 
     // User1 withdraws
     await vault.connect(user1).withdraw(user1.address)
     expect(await vault.balanceOf(user1.address)).to.be.equal(0)
-    expect(await vault.idleAmountOf(user1.address)).to.be.equal(0)
+    expect(await vault.idleBalanceOf(user1.address)).to.be.equal(0)
   })
 
   it('full cycle test case', async () => {
@@ -221,19 +222,19 @@ describe('STETHVault', () => {
       .to.changeTokenBalances(
         asset,
         [vault, user0],
-        [minus(expectedUser0Amount), expectedUser0Amount]
+        [minus(expectedUser0Amount), feeExcluded(expectedUser0Amount)]
       )
     await expect(async () => await vault.connect(user1).withdraw(user1.address))
       .to.changeTokenBalances(
         asset,
         [vault, user1],
-        [minus(expectedUser1Amount).add(1), expectedUser1Amount]
+        [minus(expectedUser1Amount).add(2), feeExcluded(expectedUser1Amount)]
       )
 
     expect(await vault.balanceOf(user0.address)).to.be.equal(0)
-    expect(await vault.idleAmountOf(user0.address)).to.be.equal(0)
+    expect(await vault.idleBalanceOf(user0.address)).to.be.equal(0)
 
     expect(await vault.balanceOf(user1.address)).to.be.equal(0)
-    expect(await vault.idleAmountOf(user1.address)).to.be.equal(0)
+    expect(await vault.idleBalanceOf(user1.address)).to.be.equal(0)
   })
 })

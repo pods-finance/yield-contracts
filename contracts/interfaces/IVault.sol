@@ -16,6 +16,11 @@ interface IVault is IERC20 {
     event DepositProcessed(address indexed owner, uint indexed roundId, uint assets, uint shares);
 
     /**
+     * @dev Returns the fee charged on withdraws.
+     */
+    function withdrawFeeRatio() external view returns(uint256);
+
+    /**
      * @dev Returns the vault controller
      */
     function controller() external view returns(address);
