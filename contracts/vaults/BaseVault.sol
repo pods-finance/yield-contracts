@@ -157,6 +157,13 @@ contract BaseVault is IVault, Capped {
     }
 
     /**
+     * @dev Outputs the amount of asset tokens is idle, waiting for the next round.
+     */
+    function totalIdleBalance() public view virtual returns (uint256) {
+        return depositQueue.totalDeposited;
+    }
+
+    /**
      * @dev Outputs current size of the deposit queue.
      */
     function depositQueueSize() external view returns (uint256) {

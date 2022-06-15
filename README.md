@@ -3,7 +3,7 @@
 
 <p align="center">
   <a href="https://github.com/pods-finance/lisbon/actions?query=workflow:test">
-    <img src="https://github.com/pods-finance/contracts/workflows/lint+compile+test/badge.svg" alt="test"/>
+    <img src="https://github.com/pods-finance/lisbon/workflows/lint+compile+test/badge.svg" alt="test"/>
   </a>
   
   <a href='https://coveralls.io/github/pods-finance/lisbon?branch=main'>
@@ -16,22 +16,22 @@
 
 # Overview / Context
 
-In this new project, Pods team is launching a 1-click strategy product. This strategy will consist of:
+In this new project, Pods team is launching a 1-click exposure to strategy. The strategy consists in:
 
-A) Invest the principal amount of the investment in a type of Yield Source (Lido, AAVE, AMM Pools). But we will begin only with Lido.
+A) Allocate users deposits to a Yield Source (Lido, AAVE, AMM Pools). At the moment we're working only with Lido.
 
-B) Use part of the yield generated weekly to buy weekly Call Options on ETH 10-20% OTM. 
+B) Each week, invest part of the yield generated weekly to buy weekly Call Options on ETH 10-20% _out-of-the-money_
 
-That way, you don't ever touch the principal and only take risks with the profit. This type of strategy is called Principal Protected.
+By doing so, you don't depositor won't risk their principal amount and only take risks with the yield. This type of strategy is called Principal Protected.
 
 # Points of centralization
 
- Although we wished to build a strategy fully on-chain, for some reasons its not possible right now. On the part B) (Buying weekly options) we dont have yet mature option protocols in the market with enough liquidity and low slippage.
-  So, under the hood, on the part B of the process, we transfer part of the yield to a Multisig that will have the freedom to find the best place to buy those options (Ribbon auction / Pods AMM / OTC with Market Makers).
+Although we wished to build a strategy fully on-chain, for some reasons it's not possible right now. On the part B) (Buying weekly options) we don't have yet mature option protocols in the market with enough liquidity and low slippage. 
+So, under the hood, on the part B) of the process, we transfer part of the yield to an **Investor** contract(Multisig) that will have the freedom to find the best place to buy those options (Ribbon auction / Pods AMM / OTC with Market Makers).
 
- In case of Multisig hack, the only balances that **the Multisig have access are the yield generated between rounds**.
+In case of Multisig hack, the only balances that **the Multisig have access are the yield generated between rounds**.
 
- # Operation Flowchart
+# Operation Flowchart
 Red -> Any address can call this function
 
 Black -> Only the Vault Controller
@@ -48,15 +48,18 @@ flowchart LR
 
 ```
 
- # System Actors
+# System Actors
 
-### Investor 
+### User 
 That EOA or a contract can interact with three functions: deposit, withdraw and processDeposits.
+
+### Investor
+A contract or Multisig that would be weekly funded to buy options
 
 ### Vault Controller
 That vault controller have the power to:
 - Start round
-- Proccess deposits
+- Process deposits
 - End round
 
 # Steps
@@ -64,18 +67,19 @@ That vault controller have the power to:
 ## End Round
 During end round the vault will perform 3 things:
 
+
 a) Set the flag `isProcessingDeposits` to true. This should block any deposit or withdraw.
 
 b) Check the interest generated between rounds
 
-c) Pull tokens from the investor contract (The Multisig that will be responsible for the options operation). If the option from the last week ended up ITM, the Investor should leave the profit available in the contract before the Vault Controller calls the End Round function
+c) Pull tokens from the **Investor**. If the option from the last week ended up ITM, the **Investor** should leave the profit available in the contract before the Vault Controller calls the End Round function.
 
-d) After checking interest generated, part of that yield will be transfered back to investor Multisig based on the investorRatio variable.
+d) After checking interest generated, part of that yield will be transferred back to **Investor** based on the `investorRatio` variable.
 
 ## Start Round
 During this step, we perform the following logics:
 
-a) Reanable deposits and withdraws by setting the `isProcessingDeposits` to false.
+a) Re-enable deposits and withdraws by setting the `isProcessingDeposits` to false.
 
 b) Store the initial round balance and initial round share price.
 
