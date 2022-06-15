@@ -67,6 +67,7 @@ describe('BaseVault', () => {
     expect(await asset.balanceOf(vault.address)).to.be.equal(assets)
     expect(await vault.sharesOf(user0.address)).to.be.equal(0)
     expect(await vault.idleBalanceOf(user0.address)).to.be.equal(assets)
+    expect(await vault.totalIdleBalance()).to.be.equal(assets)
     expect(await vault.isProcessingDeposits()).to.be.equal(false)
 
     // Process deposits
@@ -80,6 +81,7 @@ describe('BaseVault', () => {
     expect(await vault.depositQueueSize()).to.be.equal(0)
     expect(await vault.sharesOf(user0.address)).to.be.equal(expectedShares)
     expect(await vault.idleBalanceOf(user0.address)).to.be.equal(0)
+    expect(await vault.totalIdleBalance()).to.be.equal(0)
 
     // Start round
     await vault.connect(vaultController).startRound()
