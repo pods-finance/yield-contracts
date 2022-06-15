@@ -26,8 +26,10 @@ contract BaseVault is IVault, Capped {
     uint256 public currentRoundId;
     mapping(address => uint256) userShares;
     uint256 public totalShares;
-
     bool public isProcessingDeposits = false;
+
+    uint256 public constant DENOMINATOR = 10000;
+    uint256 public constant WITHDRAW_FEE = 100;
 
     DepositQueueLib.DepositQueue private depositQueue;
 
@@ -74,7 +76,9 @@ contract BaseVault is IVault, Capped {
         // Apply custom withdraw logic
         _beforeWithdraw(shares, assets);
 
-        asset.safeTransfer(owner, assets);
+        uint256 fee = (assets * withdrawFeeRatio()) / DENOMINATOR;
+        asset.safeTransfer(owner, assets - fee);
+        asset.safeTransfer(controller(), fee);
 
         emit Withdraw(owner, shares, assets);
     }
@@ -84,6 +88,13 @@ contract BaseVault is IVault, Capped {
      */
     function name() external pure virtual override returns (string memory) {
         return "Base Vault";
+    }
+
+    /**
+     * @dev See {IVault-withdrawFeeRatio}.
+     */
+    function withdrawFeeRatio() public view override returns(uint256) {
+        return configuration.getParameter("WITHDRAW_FEE_RATIO");
     }
 
     /**

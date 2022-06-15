@@ -308,6 +308,19 @@
     "type": "function"
   },
   {
+    "inputs": [],
+    "name": "WITHDRAW_FEE",
+    "outputs": [
+      {
+        "internalType": "uint256",
+        "name": "",
+        "type": "uint256"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
     "inputs": [
       {
         "internalType": "address",
@@ -718,6 +731,19 @@
     "name": "withdraw",
     "outputs": [],
     "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [],
+    "name": "withdrawFeeRatio",
+    "outputs": [
+      {
+        "internalType": "uint256",
+        "name": "",
+        "type": "uint256"
+      }
+    ],
+    "stateMutability": "view",
     "type": "function"
   }
 ]

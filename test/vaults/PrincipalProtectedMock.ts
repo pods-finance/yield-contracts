@@ -4,6 +4,7 @@ import { ethers } from 'hardhat'
 import { BigNumber } from 'ethers'
 import { SignerWithAddress } from '@nomiclabs/hardhat-ethers/signers'
 import createConfigurationManager from '../utils/createConfigurationManager'
+import feeExcluded from '../utils/feeExcluded'
 
 describe('PrincipalProtectedMock', () => {
   let asset: Contract, vault: Contract, yieldSource: Contract, investor: Contract, configuration: Contract
@@ -145,13 +146,13 @@ describe('PrincipalProtectedMock', () => {
 
     // User0 withdraws
     await vault.connect(user0).withdraw(user0.address)
-    expect(await asset.balanceOf(user0.address)).to.be.equal(assetAmount.mul(2))
+    expect(await asset.balanceOf(user0.address)).to.be.equal(feeExcluded(assetAmount.mul(2)))
     expect(await vault.sharesOf(user0.address)).to.be.equal(0)
     expect(await vault.idleBalanceOf(user0.address)).to.be.equal(0)
 
     // User1 withdraws
     await vault.connect(user1).withdraw(user1.address)
-    expect(await asset.balanceOf(user1.address)).to.be.equal(assetAmount)
+    expect(await asset.balanceOf(user1.address)).to.be.equal(feeExcluded(assetAmount))
     expect(await vault.sharesOf(user1.address)).to.be.equal(0)
     expect(await vault.idleBalanceOf(user1.address)).to.be.equal(0)
 
@@ -193,8 +194,8 @@ describe('PrincipalProtectedMock', () => {
     expect(await vault.totalShares()).to.be.equal(0)
     expect(await vault.totalAssets()).to.be.equal(0)
 
-    const expectedUser0Amount = '1495424836601307189542'
-    const expectedUser1Amount = '104575163398692810458'
+    const expectedUser0Amount = feeExcluded('1495424836601307189542')
+    const expectedUser1Amount = feeExcluded('104575163398692810458')
 
     expect(await asset.balanceOf(user0.address)).to.be.equal(expectedUser0Amount)
     expect(await vault.sharesOf(user0.address)).to.be.equal(0)
@@ -272,11 +273,11 @@ describe('PrincipalProtectedMock', () => {
     expect(await vault.totalShares()).to.be.equal(0)
 
     // User checks
-    expect(await asset.balanceOf(user0.address)).to.be.gte(user0InitialBalance)
-    expect(await asset.balanceOf(user1.address)).to.be.gte(user1InitialBalance)
-    expect(await asset.balanceOf(user2.address)).to.be.gte(user2InitialBalance)
-    expect(await asset.balanceOf(user3.address)).to.be.gte(user3InitialBalance)
-    expect(await asset.balanceOf(user4.address)).to.be.gte(user4InitialBalance)
+    expect(await asset.balanceOf(user0.address)).to.be.gte(feeExcluded(user0InitialBalance))
+    expect(await asset.balanceOf(user1.address)).to.be.gte(feeExcluded(user1InitialBalance))
+    expect(await asset.balanceOf(user2.address)).to.be.gte(feeExcluded(user2InitialBalance))
+    expect(await asset.balanceOf(user3.address)).to.be.gte(feeExcluded(user3InitialBalance))
+    expect(await asset.balanceOf(user4.address)).to.be.gte(feeExcluded(user4InitialBalance))
 
     expect(await vault.sharesOf(user0.address)).to.be.equal(0)
     expect(await vault.sharesOf(user1.address)).to.be.equal(0)

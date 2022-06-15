@@ -6,6 +6,7 @@ import { SignerWithAddress } from '@nomiclabs/hardhat-ethers/signers'
 import minus from '../utils/minus'
 import { startMainnetFork, stopMainnetFork } from '../utils/mainnetFork'
 import createConfigurationManager from '../utils/createConfigurationManager'
+import feeExcluded from '../utils/feeExcluded'
 
 describe('STETHVault', () => {
   let asset: Contract, vault: Contract, investor: Contract, configuration: Contract
@@ -217,13 +218,13 @@ describe('STETHVault', () => {
       .to.changeTokenBalances(
         asset,
         [vault, user0],
-        [minus(expectedUser0Amount), expectedUser0Amount]
+        [minus(expectedUser0Amount), feeExcluded(expectedUser0Amount)]
       )
     await expect(() => vault.connect(user1).withdraw(user1.address))
       .to.changeTokenBalances(
         asset,
         [vault, user1],
-        [minus(expectedUser1Amount).add(1), expectedUser1Amount]
+        [minus(expectedUser1Amount).add(2), feeExcluded(expectedUser1Amount)]
       )
 
     expect(await vault.sharesOf(user0.address)).to.be.equal(0)

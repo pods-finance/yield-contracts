@@ -4,6 +4,7 @@ import { ethers } from 'hardhat'
 import { BigNumber } from 'ethers'
 import { SignerWithAddress } from '@nomiclabs/hardhat-ethers/signers'
 import createConfigurationManager from '../utils/createConfigurationManager'
+import feeExcluded from '../utils/feeExcluded'
 
 describe('BaseVault', () => {
   let asset: Contract, vault: Contract, yieldSource: Contract, configuration: Contract
@@ -118,7 +119,7 @@ describe('BaseVault', () => {
     expect(await vault.allowance(user0.address, proxy.address)).to.be.equal(expectedShares)
     await vault.connect(proxy).withdraw(user0.address)
     expect(await vault.allowance(user0.address, proxy.address)).to.be.equal(0)
-    expect(await asset.balanceOf(user0.address)).to.be.equal(assets)
+    expect(await asset.balanceOf(user0.address)).to.be.equal(feeExcluded(assets))
 
     // If MaxUint256 allowance was given, it should not be spent
     await ethers.provider.send('evm_revert', [snapshotId])
@@ -126,7 +127,7 @@ describe('BaseVault', () => {
     expect(await vault.allowance(user0.address, proxy.address)).to.be.equal(ethers.constants.MaxUint256)
     await vault.connect(proxy).withdraw(user0.address)
     expect(await vault.allowance(user0.address, proxy.address)).to.be.equal(ethers.constants.MaxUint256)
-    expect(await asset.balanceOf(user0.address)).to.be.equal(assets)
+    expect(await asset.balanceOf(user0.address)).to.be.equal(feeExcluded(assets))
   })
 
   it('cannot withdraw on behalf without allowance', async () => {
@@ -194,9 +195,9 @@ describe('BaseVault', () => {
 
     it('restores cap after withdrawing', async () => {
       const assets = ethers.utils.parseEther('10')
-      await asset.connect(user0).mint(assets)
 
       // Using vault with cap
+      await asset.connect(user0).mint(assets)
       const cap = ethers.utils.parseEther('10')
       await configuration.setCap(vault.address, cap)
 
@@ -214,6 +215,7 @@ describe('BaseVault', () => {
       expect(await vault.spentCap()).to.be.equal(0)
 
       // Using vault without cap
+      await asset.connect(user0).mint(assets)
       await configuration.setCap(vault.address, 0)
 
       await vault.connect(user0).deposit(assets, user0.address)
@@ -286,14 +288,14 @@ describe('BaseVault', () => {
     // User0 withdraws
     expect(await vault.previewWithdraw(await vault.sharesOf(user0.address))).to.be.equal(assets.mul(2))
     await vault.connect(user0).withdraw(user0.address)
-    expect(await asset.balanceOf(user0.address)).to.be.equal(assets.mul(2))
+    expect(await asset.balanceOf(user0.address)).to.be.equal(feeExcluded(assets.mul(2)))
     expect(await vault.sharesOf(user0.address)).to.be.equal(0)
     expect(await vault.idleBalanceOf(user0.address)).to.be.equal(0)
 
     // User1 withdraws
     expect(await vault.previewWithdraw(await vault.sharesOf(user1.address))).to.be.equal(assets)
     await vault.connect(user1).withdraw(user1.address)
-    expect(await asset.balanceOf(user1.address)).to.be.equal(assets)
+    expect(await asset.balanceOf(user1.address)).to.be.equal(feeExcluded(assets))
     expect(await vault.sharesOf(user1.address)).to.be.equal(0)
     expect(await vault.idleBalanceOf(user1.address)).to.be.equal(0)
 
@@ -326,8 +328,8 @@ describe('BaseVault', () => {
 
     await yieldSource.generateInterest(ethers.utils.parseEther('200')) // Accruing yield
 
-    const expectedUser0Amount = ethers.utils.parseEther('375')
-    const expectedUser1Amount = ethers.utils.parseEther('225')
+    const expectedUser0Amount = feeExcluded(ethers.utils.parseEther('375'))
+    const expectedUser1Amount = feeExcluded(ethers.utils.parseEther('225'))
 
     await vault.connect(user0).withdraw(user0.address)
     expect(await asset.balanceOf(user0.address)).to.be.equal(expectedUser0Amount)
