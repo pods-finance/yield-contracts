@@ -139,10 +139,17 @@ contract BaseVault is IVault, Capped {
     }
 
     /**
-     * @dev Outputs the amount of underlying tokens of an `owner` is idle, waiting for the next round.
+     * @dev Outputs the amount of asset tokens of an `owner` is idle, waiting for the next round.
      */
-    function idleAmountOf(address owner) public view virtual returns (uint256) {
+    function idleBalanceOf(address owner) public view virtual returns (uint256) {
         return depositQueue.balanceOf(owner);
+    }
+
+    /**
+     * @dev Outputs the amount of asset tokens is idle, waiting for the next round.
+     */
+    function totalIdleBalance() public view virtual returns (uint256) {
+        return depositQueue.totalDeposited;
     }
 
     /**

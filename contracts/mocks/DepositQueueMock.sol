@@ -28,4 +28,8 @@ contract DepositQueueMock {
     function size() external view returns(uint) {
         return depositQueue.size();
     }
+
+    function totalDeposited() external view returns(uint) {
+        return depositQueue.totalDeposited;
+    }
 }
