@@ -40,9 +40,4 @@ interface IVault is IERC4626 {
      * @notice Outputs current size of the deposit queue.
      */
     function depositQueueSize() external view returns (uint256);
-
-    /**
-     * @dev Burn shares, withdrawing asset tokens.
-     */
-    function withdraw(address owner) external;
 }

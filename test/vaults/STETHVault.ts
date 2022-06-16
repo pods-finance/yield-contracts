@@ -118,7 +118,7 @@ describe('STETHVault', () => {
     await vault.connect(vaultController).processQueuedDeposits(0, await vault.depositQueueSize())
 
     await expect(
-      vault.connect(user0).withdraw(user0.address)
+      vault.connect(user0).redeem(await vault.balanceOf(user0.address), user0.address, user0.address)
     ).to.be.revertedWith('IVault__ForbiddenWhileProcessingDeposits()')
   })
 
@@ -178,12 +178,12 @@ describe('STETHVault', () => {
     await vault.connect(vaultController).startRound()
 
     // User0 withdraws
-    await vault.connect(user0).withdraw(user0.address)
+    await vault.connect(user0).redeem(await vault.balanceOf(user0.address), user0.address, user0.address)
     expect(await vault.balanceOf(user0.address)).to.be.equal(0)
     expect(await vault.idleBalanceOf(user0.address)).to.be.equal(0)
 
     // User1 withdraws
-    await vault.connect(user1).withdraw(user1.address)
+    await vault.connect(user1).redeem(await vault.balanceOf(user1.address), user1.address, user1.address)
     expect(await vault.balanceOf(user1.address)).to.be.equal(0)
     expect(await vault.idleBalanceOf(user1.address)).to.be.equal(0)
   })
@@ -218,13 +218,13 @@ describe('STETHVault', () => {
     const expectedUser0Amount = BigNumber.from('803225806451612903218')
     const expectedUser1Amount = BigNumber.from('96774193548387096779')
 
-    await expect(async () => await vault.connect(user0).withdraw(user0.address))
+    await expect(async () => await vault.connect(user0).redeem(await vault.balanceOf(user0.address), user0.address, user0.address))
       .to.changeTokenBalances(
         asset,
         [vault, user0],
         [minus(expectedUser0Amount), feeExcluded(expectedUser0Amount)]
       )
-    await expect(async () => await vault.connect(user1).withdraw(user1.address))
+    await expect(async () => await vault.connect(user1).redeem(await vault.balanceOf(user1.address), user1.address, user1.address))
       .to.changeTokenBalances(
         asset,
         [vault, user1],

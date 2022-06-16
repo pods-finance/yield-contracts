@@ -101,13 +101,12 @@ contract BaseVault is IVault, ERC20, Capped {
     }
 
     /**
-     * @dev See {IVault-withdraw}.
+     * @inheritdoc IERC4626
      */
-    function withdraw(address owner) public virtual override {
+    function redeem(uint256 shares, address receiver, address owner) public virtual override returns(uint256 assets) {
         if (isProcessingDeposits) revert IVault__ForbiddenWhileProcessingDeposits();
 
-        uint256 shares = balanceOf(owner);
-        uint256 assets = previewRedeem(shares);
+        assets = previewRedeem(shares);
 
         if (msg.sender != owner) {
             _spendAllowance(owner, msg.sender, shares);
@@ -121,7 +120,33 @@ contract BaseVault is IVault, ERC20, Capped {
         _beforeWithdraw(shares, assets);
 
         uint256 fee = (assets * withdrawFeeRatio()) / DENOMINATOR;
-        asset.safeTransfer(owner, assets - fee);
+        asset.safeTransfer(receiver, assets - fee);
+        asset.safeTransfer(controller(), fee);
+
+        emit Withdraw(owner, shares, assets);
+    }
+
+    /**
+     * @inheritdoc IERC4626
+     */
+    function withdraw(uint256 assets, address receiver, address owner) public virtual override returns(uint256 shares) {
+        if (isProcessingDeposits) revert IVault__ForbiddenWhileProcessingDeposits();
+
+        shares = previewWithdraw(assets);
+
+        if (msg.sender != owner) {
+            _spendAllowance(owner, msg.sender, shares);
+        }
+
+        _burn(owner, shares);
+
+        _restoreCap(shares);
+
+        // Apply custom withdraw logic
+        _beforeWithdraw(shares, assets);
+
+        uint256 fee = (assets * withdrawFeeRatio()) / DENOMINATOR;
+        asset.safeTransfer(receiver, assets - fee);
         asset.safeTransfer(controller(), fee);
 
         emit Withdraw(owner, shares, assets);

@@ -96,7 +96,7 @@ describe('PrincipalProtectedMock', () => {
     await vault.connect(vaultController).processQueuedDeposits(0, await vault.depositQueueSize())
 
     await expect(
-      vault.connect(user0).withdraw(user0.address)
+      vault.connect(user0).redeem(await vault.balanceOf(user0.address), user0.address, user0.address)
     ).to.be.revertedWith('IVault__ForbiddenWhileProcessingDeposits()')
   })
 
@@ -148,13 +148,13 @@ describe('PrincipalProtectedMock', () => {
     await vault.connect(vaultController).startRound()
 
     // User0 withdraws
-    await vault.connect(user0).withdraw(user0.address)
+    await vault.connect(user0).redeem(await vault.balanceOf(user0.address), user0.address, user0.address)
     expect(await asset.balanceOf(user0.address)).to.be.equal(feeExcluded(assetAmount.mul(2)))
     expect(await vault.balanceOf(user0.address)).to.be.equal(0)
     expect(await vault.idleBalanceOf(user0.address)).to.be.equal(0)
 
     // User1 withdraws
-    await vault.connect(user1).withdraw(user1.address)
+    await vault.connect(user1).redeem(await vault.balanceOf(user1.address), user1.address, user1.address)
     expect(await asset.balanceOf(user1.address)).to.be.equal(feeExcluded(assetAmount))
     expect(await vault.balanceOf(user1.address)).to.be.equal(0)
     expect(await vault.idleBalanceOf(user1.address)).to.be.equal(0)
@@ -191,8 +191,8 @@ describe('PrincipalProtectedMock', () => {
     await vault.connect(vaultController).startRound()
     await yieldSource.generateInterest(ethers.utils.parseEther('70'))
 
-    await vault.connect(user0).withdraw(user0.address)
-    await vault.connect(user1).withdraw(user1.address)
+    await vault.connect(user0).redeem(await vault.balanceOf(user0.address), user0.address, user0.address)
+    await vault.connect(user1).redeem(await vault.balanceOf(user1.address), user1.address, user1.address)
 
     expect(await vault.totalSupply()).to.be.equal(0)
     expect(await vault.totalAssets()).to.be.equal(0)
@@ -236,7 +236,7 @@ describe('PrincipalProtectedMock', () => {
     await vault.connect(vaultController).processQueuedDeposits(0, 2)
     await vault.connect(vaultController).startRound()
 
-    await vault.connect(user0).withdraw(user0.address)
+    await vault.connect(user0).redeem(await vault.balanceOf(user0.address), user0.address, user0.address)
 
     await asset.connect(user2).mint(user2InitialBalance)
     await asset.connect(user2).approve(vault.address, ethers.constants.MaxUint256)
@@ -257,7 +257,7 @@ describe('PrincipalProtectedMock', () => {
     await vault.connect(vaultController).endRound()
     await vault.connect(vaultController).startRound()
 
-    await vault.connect(user2).withdraw(user2.address)
+    await vault.connect(user2).redeem(await vault.balanceOf(user2.address), user2.address, user2.address)
 
     await asset.connect(user4).mint(user4InitialBalance)
     await asset.connect(user4).approve(vault.address, ethers.constants.MaxUint256)
@@ -267,9 +267,9 @@ describe('PrincipalProtectedMock', () => {
     await vault.connect(vaultController).processQueuedDeposits(0, 1)
     await vault.connect(vaultController).startRound()
 
-    await vault.connect(user1).withdraw(user1.address)
-    await vault.connect(user3).withdraw(user3.address)
-    await vault.connect(user4).withdraw(user4.address)
+    await vault.connect(user1).redeem(await vault.balanceOf(user1.address), user1.address, user1.address)
+    await vault.connect(user3).redeem(await vault.balanceOf(user3.address), user3.address, user3.address)
+    await vault.connect(user4).redeem(await vault.balanceOf(user4.address), user4.address, user4.address)
 
     // Vault checks
     expect(await vault.totalAssets()).to.be.equal(0)
