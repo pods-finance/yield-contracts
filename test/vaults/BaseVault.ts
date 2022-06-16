@@ -69,7 +69,7 @@ describe('BaseVault', () => {
     })
   })
 
-  it('should add collateral and receive shares', async () => {
+  it('deposit assets and receive shares', async () => {
     const assets = ethers.utils.parseEther('10')
     const expectedShares = assets
 
@@ -78,6 +78,42 @@ describe('BaseVault', () => {
 
     // User0 deposits to vault
     await vault.connect(user0).deposit(assets, user0.address)
+    expect(await vault.depositQueueSize()).to.be.equal(1)
+    expect(await asset.balanceOf(user0.address)).to.be.equal(0)
+    expect(await asset.balanceOf(vault.address)).to.be.equal(assets)
+    expect(await vault.balanceOf(user0.address)).to.be.equal(0)
+    expect(await vault.idleBalanceOf(user0.address)).to.be.equal(assets)
+    expect(await vault.totalIdleBalance()).to.be.equal(assets)
+    expect(await vault.isProcessingDeposits()).to.be.equal(false)
+
+    // Process deposits
+    // Since Round 0 started upon deployment, it should end the exact same round number "0"
+    const endRoundTx = vault.connect(vaultController).endRound()
+    await expect(endRoundTx).to.emit(vault, 'EndRound').withArgs(0)
+    expect(await vault.isProcessingDeposits()).to.be.equal(true)
+    const depositProcessingTx = vault.connect(vaultController).processQueuedDeposits(0, await vault.depositQueueSize())
+    await expect(depositProcessingTx).to.emit(vault, 'DepositProcessed').withArgs(user0.address, 1, assets, expectedShares)
+    expect(await vault.totalSupply()).to.be.equal(expectedShares)
+    expect(await vault.depositQueueSize()).to.be.equal(0)
+    expect(await vault.balanceOf(user0.address)).to.be.equal(expectedShares)
+    expect(await vault.idleBalanceOf(user0.address)).to.be.equal(0)
+    expect(await vault.totalIdleBalance()).to.be.equal(0)
+
+    // Start round
+    await vault.connect(vaultController).startRound()
+    expect(await vault.totalAssets()).to.be.equal(assets)
+    expect(await asset.balanceOf(vault.address)).to.be.equal(0)
+  })
+
+  it('mint shares and sending assets', async () => {
+    const assets = ethers.utils.parseEther('10')
+    const expectedShares = assets
+
+    await asset.connect(user0).mint(assets)
+    expect(await asset.balanceOf(user0.address)).to.be.equal(assets)
+
+    // User0 deposits to vault
+    await vault.connect(user0).mint(assets, user0.address)
     expect(await vault.depositQueueSize()).to.be.equal(1)
     expect(await asset.balanceOf(user0.address)).to.be.equal(0)
     expect(await asset.balanceOf(vault.address)).to.be.equal(assets)

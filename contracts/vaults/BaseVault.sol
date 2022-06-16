@@ -67,11 +67,29 @@ contract BaseVault is IVault, ERC20, Capped {
     /** Depositor **/
 
     /**
-     * @dev See {IVault-deposit}.
+     * @inheritdoc IERC4626
      */
-    function deposit(uint256 assets, address receiver) public virtual override {
+    function deposit(uint256 assets, address receiver) public virtual override returns(uint256 shares) {
         if (isProcessingDeposits) revert IVault__ForbiddenWhileProcessingDeposits();
-        _spendCap(previewDeposit(assets));
+        shares = previewDeposit(assets);
+
+        if (shares == 0) revert IVault__ZeroShares();
+        _spendCap(shares);
+
+        asset.safeTransferFrom(msg.sender, address(this), assets);
+        depositQueue.push(DepositQueueLib.DepositEntry(receiver, assets));
+
+        emit Deposit(receiver, assets);
+    }
+
+    /**
+     * @inheritdoc IERC4626
+     */
+    function mint(uint256 shares, address receiver) public virtual override returns(uint256 assets) {
+        if (isProcessingDeposits) revert IVault__ForbiddenWhileProcessingDeposits();
+        assets = previewMint(shares);
+
+        _spendCap(shares);
 
         asset.safeTransferFrom(msg.sender, address(this), assets);
         depositQueue.push(DepositQueueLib.DepositEntry(receiver, assets));
