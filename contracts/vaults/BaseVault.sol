@@ -15,7 +15,7 @@ import "../mixins/Capped.sol";
  * @title A Vault that tokenize shares of strategy
  * @author Pods Finance
  */
-contract BaseVault is IVault, ERC20, Capped {
+abstract contract BaseVault is IVault, ERC20, Capped {
     using TransferUtils for IERC20Metadata;
     using FixedPointMath for uint256;
     using CastUint for uint256;
@@ -155,9 +155,7 @@ contract BaseVault is IVault, ERC20, Capped {
     /**
      * @inheritdoc IERC4626
      */
-    function totalAssets() public view virtual returns (uint256) {
-        return asset.balanceOf(address(this));
-    }
+    function totalAssets() public view virtual returns (uint256);
 
     /**
      * @inheritdoc IERC4626
