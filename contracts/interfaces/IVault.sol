@@ -3,7 +3,22 @@ pragma solidity >=0.8.6;
 
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 
-interface IVault is IERC20 {
+interface IERC4626 {
+//    function previewDeposit(uint256 assets) external view override returns (uint256 shares);
+//    function previewMint(uint256 shares) external view override returns (uint256 amount);
+//    function previewWithdraw(uint256 assets) external view override returns (uint256 shares);
+//    function previewRedeem(uint256 shares) external view override returns (uint256 amount);
+
+    function convertToShares(uint256 assets) external view returns (uint256);
+    function convertToAssets(uint256 shares) external view returns (uint256);
+
+    function maxDeposit(address owner) external view returns (uint256);
+    function maxMint(address owner) external view returns (uint256);
+    function maxWithdraw(address owner) external view returns (uint256);
+    function maxRedeem(address owner) external view returns (uint256);
+}
+
+interface IVault is IERC20, IERC4626 {
     error IVault__CallerIsNotTheController();
     error IVault__NotProcessingDeposits();
     error IVault__AlreadyProcessingDeposits();
