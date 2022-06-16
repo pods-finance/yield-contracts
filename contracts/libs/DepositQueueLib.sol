@@ -10,6 +10,7 @@ library DepositQueueLib {
     struct DepositQueue {
         address[] list;
         mapping(address => uint256) cache;
+        uint256 totalDeposited;
     }
 
     function push(DepositQueue storage queue, DepositEntry memory deposit) external {
@@ -18,12 +19,17 @@ library DepositQueueLib {
         }
 
         queue.cache[deposit.owner] += deposit.amount;
+        queue.totalDeposited += deposit.amount;
     }
 
     function remove(DepositQueue storage queue, uint256 startIndex, uint256 endIndex) external {
         if (endIndex > startIndex) {
             // Remove the interval from the cache
             while(startIndex < endIndex) {
+                // No need to check, it can't go below 0
+                unchecked {
+                    queue.totalDeposited -= queue.cache[queue.list[startIndex]];
+                }
                 queue.cache[queue.list[startIndex]] = 0;
                 startIndex++;
             }

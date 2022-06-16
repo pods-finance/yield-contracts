@@ -1,11 +1,12 @@
 import { Contract } from '@ethersproject/contracts'
-import { BigNumber, Signer } from 'ethers'
+import { BigNumber } from 'ethers'
 import { ethers } from 'hardhat'
 import { expect } from 'chai'
+import { SignerWithAddress } from '@nomiclabs/hardhat-ethers/signers'
 
 describe('DepositQueueLib', () => {
   let queue: Contract
-  let user0: Signer, user1: Signer
+  let user0: SignerWithAddress, user1: SignerWithAddress
   let snapshotId: BigNumber
 
   before(async () => {
@@ -35,16 +36,18 @@ describe('DepositQueueLib', () => {
     await queue.connect(user0).push(1)
     expect(await queue.size()).to.be.equal(1)
     deposit = await queue.get(0)
-    expect(deposit.owner).to.be.equal(await user0.getAddress())
+    expect(deposit.owner).to.be.equal(user0.address)
     expect(deposit.amount).to.be.equal(1)
-    expect(await queue.balanceOf(await user0.getAddress())).to.be.equal(1)
+    expect(await queue.balanceOf(user0.address)).to.be.equal(1)
+    expect(await queue.totalDeposited()).to.be.equal(1)
 
     await queue.connect(user1).push(10)
     expect(await queue.size()).to.be.equal(2)
     deposit = await queue.get(1)
-    expect(deposit.owner).to.be.equal(await user1.getAddress())
+    expect(deposit.owner).to.be.equal(user1.address)
     expect(deposit.amount).to.be.equal(10)
-    expect(await queue.balanceOf(await user1.getAddress())).to.be.equal(10)
+    expect(await queue.balanceOf(user1.address)).to.be.equal(10)
+    expect(await queue.totalDeposited()).to.be.equal(11)
   })
 
   it('re-adds the user to the queue', async () => {
@@ -54,16 +57,18 @@ describe('DepositQueueLib', () => {
     await queue.connect(user0).push(1)
     expect(await queue.size()).to.be.equal(1)
     deposit = await queue.get(0)
-    expect(deposit.owner).to.be.equal(await user0.getAddress())
+    expect(deposit.owner).to.be.equal(user0.address)
     expect(deposit.amount).to.be.equal(1)
-    expect(await queue.balanceOf(await user0.getAddress())).to.be.equal(1)
+    expect(await queue.balanceOf(user0.address)).to.be.equal(1)
+    expect(await queue.totalDeposited()).to.be.equal(1)
 
     await queue.connect(user0).push(3)
     expect(await queue.size()).to.be.equal(1)
     deposit = await queue.get(0)
-    expect(deposit.owner).to.be.equal(await user0.getAddress())
+    expect(deposit.owner).to.be.equal(user0.address)
     expect(deposit.amount).to.be.equal(4)
-    expect(await queue.balanceOf(await user0.getAddress())).to.be.equal(4)
+    expect(await queue.balanceOf(user0.address)).to.be.equal(4)
+    expect(await queue.totalDeposited()).to.be.equal(4)
   })
 
   it('removes users from the queue and reorganize queue', async () => {
@@ -72,16 +77,19 @@ describe('DepositQueueLib', () => {
     await queue.connect(user0).push(42)
     await queue.connect(user1).push(160)
     expect(await queue.size()).to.be.equal(2)
+    expect(await queue.totalDeposited()).to.be.equal(202)
 
     await queue.remove(0, 1)
     const deposit = await queue.get(0)
-    expect(deposit.owner).to.be.equal(await user1.getAddress())
+    expect(deposit.owner).to.be.equal(user1.address)
     expect(deposit.amount).to.be.equal(160)
     expect(await queue.size()).to.be.equal(1)
+    expect(await queue.totalDeposited()).to.be.equal(160)
 
     await queue.connect(user0).push(42)
     await queue.remove(0, await queue.size())
     expect(await queue.size()).to.be.equal(0)
+    expect(await queue.totalDeposited()).to.be.equal(0)
   })
 
   it('will not remove if startIndex >= endIndex', async () => {
@@ -90,11 +98,14 @@ describe('DepositQueueLib', () => {
     await queue.connect(user0).push(42)
     await queue.connect(user1).push(160)
     expect(await queue.size()).to.be.equal(2)
+    expect(await queue.totalDeposited()).to.be.equal(202)
 
     await queue.remove(1, 1)
     expect(await queue.size()).to.be.equal(2)
+    expect(await queue.totalDeposited()).to.be.equal(202)
 
     await queue.remove(2, 1)
     expect(await queue.size()).to.be.equal(2)
+    expect(await queue.totalDeposited()).to.be.equal(202)
   })
 })
