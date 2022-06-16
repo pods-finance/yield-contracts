@@ -17,14 +17,29 @@ interface IVault is IERC4626 {
     event DepositProcessed(address indexed owner, uint indexed roundId, uint assets, uint shares);
 
     /**
-     * @dev Returns the fee charged on withdraws.
+     * @notice Returns the fee charged on withdraws.
      */
     function withdrawFeeRatio() external view returns(uint256);
 
     /**
-     * @dev Returns the vault controller
+     * @notice Returns the vault controller
      */
     function controller() external view returns(address);
+
+    /**
+     * @notice Outputs the amount of asset tokens of an `owner` is idle, waiting for the next round.
+     */
+    function idleBalanceOf(address owner) external view returns (uint256);
+
+    /**
+     * @notice Outputs the amount of asset tokens is idle, waiting for the next round.
+     */
+    function totalIdleBalance() external view returns (uint256);
+
+    /**
+     * @notice Outputs current size of the deposit queue.
+     */
+    function depositQueueSize() external view returns (uint256);
 
     /**
      * @dev Burn shares, withdrawing asset tokens.
