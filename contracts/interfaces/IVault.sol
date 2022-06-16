@@ -4,10 +4,10 @@ pragma solidity >=0.8.6;
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 
 interface IERC4626 {
-//    function previewDeposit(uint256 assets) external view override returns (uint256 shares);
-//    function previewMint(uint256 shares) external view override returns (uint256 amount);
-//    function previewWithdraw(uint256 assets) external view override returns (uint256 shares);
-//    function previewRedeem(uint256 shares) external view override returns (uint256 amount);
+    function previewDeposit(uint256 assets) external view returns (uint256 shares);
+    function previewMint(uint256 shares) external view returns (uint256 amount);
+    function previewWithdraw(uint256 assets) external view returns (uint256 shares);
+    function previewRedeem(uint256 shares) external view returns (uint256 amount);
 
     function convertToShares(uint256 assets) external view returns (uint256);
     function convertToAssets(uint256 shares) external view returns (uint256);

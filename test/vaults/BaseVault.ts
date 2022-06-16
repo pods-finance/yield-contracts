@@ -299,14 +299,14 @@ describe('BaseVault', () => {
     await vault.connect(vaultController).startRound()
 
     // User0 withdraws
-    expect(await vault.previewWithdraw(await vault.balanceOf(user0.address))).to.be.equal(assets.mul(2))
+    expect(await vault.previewRedeem(await vault.balanceOf(user0.address))).to.be.equal(assets.mul(2))
     await vault.connect(user0).withdraw(user0.address)
     expect(await asset.balanceOf(user0.address)).to.be.equal(feeExcluded(assets.mul(2)))
     expect(await vault.balanceOf(user0.address)).to.be.equal(0)
     expect(await vault.idleBalanceOf(user0.address)).to.be.equal(0)
 
     // User1 withdraws
-    expect(await vault.previewWithdraw(await vault.balanceOf(user1.address))).to.be.equal(assets)
+    expect(await vault.previewRedeem(await vault.balanceOf(user1.address))).to.be.equal(assets)
     await vault.connect(user1).withdraw(user1.address)
     expect(await asset.balanceOf(user1.address)).to.be.equal(feeExcluded(assets))
     expect(await vault.balanceOf(user1.address)).to.be.equal(0)
@@ -336,7 +336,7 @@ describe('BaseVault', () => {
     // Accruing yield
     await vault.connect(vaultController).endRound()
     await vault.connect(vaultController).processQueuedDeposits(0, await vault.depositQueueSize())
-    // expect(await vault.previewShares(user0Address)).to.be.equal(expectedShares)
+    // expect(await vault.previewDeposit(user0Address)).to.be.equal(expectedShares)
     await vault.connect(vaultController).startRound()
 
     await yieldSource.generateInterest(ethers.utils.parseEther('200')) // Accruing yield
