@@ -249,8 +249,7 @@ abstract contract BaseVault is IVault, ERC20, Capped {
     }
 
     /**
-     * @notice Starts the next round, sending the idle funds to the
-     * strategy where it should start accruing yield.
+     * @inheritdoc IVault
      */
     function startRound() public virtual onlyController {
         if (!isProcessingDeposits) revert IVault__NotProcessingDeposits();
@@ -264,8 +263,7 @@ abstract contract BaseVault is IVault, ERC20, Capped {
     }
 
     /**
-     * @notice Closes the round, allowing deposits to the next round be processed.
-     * and opens the window for withdraws.
+     * @inheritdoc IVault
      */
     function endRound() public virtual onlyController {
         if(isProcessingDeposits) revert IVault__AlreadyProcessingDeposits();
@@ -277,12 +275,7 @@ abstract contract BaseVault is IVault, ERC20, Capped {
     }
 
     /**
-     * @notice Mint shares for deposits accumulated, effectively including their owners in the next round.
-     * `processQueuedDeposits` extracts up to but not including endIndex. For example, processQueuedDeposits(1,4)
-     * extracts the second element through the fourth element (elements indexed 1, 2, and 3).
-     *
-     * @param startIndex Zero-based index at which to start processing deposits
-     * @param endIndex The index of the first element to exclude from queue
+     * @inheritdoc IVault
      */
     function processQueuedDeposits(uint256 startIndex, uint256 endIndex) public {
         if (!isProcessingDeposits) revert IVault__NotProcessingDeposits();

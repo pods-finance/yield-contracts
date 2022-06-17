@@ -40,4 +40,26 @@ interface IVault is IERC4626 {
      * @notice Outputs current size of the deposit queue.
      */
     function depositQueueSize() external view returns (uint256);
+
+    /**
+     * @notice Starts the next round, sending the idle funds to the
+     * strategy where it should start accruing yield.
+     */
+    function startRound() external;
+
+    /**
+     * @notice Closes the round, allowing deposits to the next round be processed.
+     * and opens the window for withdraws.
+     */
+    function endRound() external;
+
+    /**
+     * @notice Mint shares for deposits accumulated, effectively including their owners in the next round.
+     * `processQueuedDeposits` extracts up to but not including endIndex. For example, processQueuedDeposits(1,4)
+     * extracts the second element through the fourth element (elements indexed 1, 2, and 3).
+     *
+     * @param startIndex Zero-based index at which to start processing deposits
+     * @param endIndex The index of the first element to exclude from queue
+     */
+    function processQueuedDeposits(uint256 startIndex, uint256 endIndex) external;
 }

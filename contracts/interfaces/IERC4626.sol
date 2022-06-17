@@ -11,7 +11,7 @@ interface IERC4626 is IERC20 {
 
     /**
      * @notice Mints `shares` Vault shares to `receiver` by depositing exactly `amount` of underlying tokens.
-     * @return shares Shares created.
+     * @return shares Shares minted.
      */
     function deposit(uint256 assets, address receiver) external returns(uint256 shares);
 
@@ -23,11 +23,13 @@ interface IERC4626 is IERC20 {
 
     /**
      * @notice Burns exactly `shares` from `owner` and sends `assets` of underlying tokens to `receiver`.
+     * @return assets Assets withdrawn.
      */
     function redeem(uint256 shares, address receiver, address owner) external returns(uint256 assets);
 
     /**
      * @notice Burns `shares` from `owner` and sends exactly `assets` of underlying tokens to `receiver`.
+     * @return shares Shares burned.
      */
     function withdraw(uint256 assets, address receiver, address owner) external returns(uint256 shares);
 
