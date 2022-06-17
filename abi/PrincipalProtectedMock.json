@@ -68,6 +68,11 @@
   },
   {
     "inputs": [],
+    "name": "IVault__ZeroAssets",
+    "type": "error"
+  },
+  {
+    "inputs": [],
     "name": "IVault__ZeroShares",
     "type": "error"
   },

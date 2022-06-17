@@ -105,15 +105,15 @@ abstract contract BaseVault is IVault, ERC20, Capped {
      */
     function redeem(uint256 shares, address receiver, address owner) public virtual override returns(uint256 assets) {
         if (isProcessingDeposits) revert IVault__ForbiddenWhileProcessingDeposits();
-
         assets = previewRedeem(shares);
+
+        if (assets == 0) revert IVault__ZeroAssets();
 
         if (msg.sender != owner) {
             _spendAllowance(owner, msg.sender, shares);
         }
 
         _burn(owner, shares);
-
         _restoreCap(shares);
 
         // Apply custom withdraw logic
@@ -131,7 +131,6 @@ abstract contract BaseVault is IVault, ERC20, Capped {
      */
     function withdraw(uint256 assets, address receiver, address owner) public virtual override returns(uint256 shares) {
         if (isProcessingDeposits) revert IVault__ForbiddenWhileProcessingDeposits();
-
         shares = previewWithdraw(assets);
 
         if (msg.sender != owner) {
@@ -139,7 +138,6 @@ abstract contract BaseVault is IVault, ERC20, Capped {
         }
 
         _burn(owner, shares);
-
         _restoreCap(shares);
 
         // Apply custom withdraw logic

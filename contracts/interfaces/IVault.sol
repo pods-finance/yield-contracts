@@ -8,6 +8,7 @@ interface IVault is IERC4626 {
     error IVault__NotProcessingDeposits();
     error IVault__AlreadyProcessingDeposits();
     error IVault__ForbiddenWhileProcessingDeposits();
+    error IVault__ZeroAssets();
     error IVault__ZeroShares();
 
     event Deposit(address indexed owner, uint amountDeposited);
