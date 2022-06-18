@@ -97,7 +97,7 @@ abstract contract BaseVault is IVault, ERC20, ERC20Permit, Capped {
      */
     function redeem(uint256 shares, address receiver, address owner) public virtual override returns(uint256 assets) {
         if (isProcessingDeposits) revert IVault__ForbiddenWhileProcessingDeposits();
-        assets = previewRedeem(shares);
+        assets = convertToAssets(shares);
 
         if (assets == 0) revert IVault__ZeroAssets();
 
@@ -111,7 +111,7 @@ abstract contract BaseVault is IVault, ERC20, ERC20Permit, Capped {
         // Apply custom withdraw logic
         _beforeWithdraw(shares, assets);
 
-        uint256 fee = (assets * withdrawFeeRatio()) / DENOMINATOR;
+        uint256 fee = _getFee(assets);
         asset.safeTransfer(receiver, assets - fee);
         asset.safeTransfer(controller(), fee);
 
@@ -123,7 +123,7 @@ abstract contract BaseVault is IVault, ERC20, ERC20Permit, Capped {
      */
     function withdraw(uint256 assets, address receiver, address owner) public virtual override returns(uint256 shares) {
         if (isProcessingDeposits) revert IVault__ForbiddenWhileProcessingDeposits();
-        shares = previewWithdraw(assets);
+        shares = convertToShares(assets);
 
         if (msg.sender != owner) {
             _spendAllowance(owner, msg.sender, shares);
@@ -135,7 +135,7 @@ abstract contract BaseVault is IVault, ERC20, ERC20Permit, Capped {
         // Apply custom withdraw logic
         _beforeWithdraw(shares, assets);
 
-        uint256 fee = (assets * withdrawFeeRatio()) / DENOMINATOR;
+        uint256 fee = _getFee(assets);
         asset.safeTransfer(receiver, assets - fee);
         asset.safeTransfer(controller(), fee);
 
@@ -166,6 +166,7 @@ abstract contract BaseVault is IVault, ERC20, ERC20Permit, Capped {
      * @inheritdoc IERC4626
      */
     function previewWithdraw(uint256 assets) public view override returns (uint256) {
+        assets = assets - _getFee(assets);
         uint256 supply = totalSupply();
         return supply == 0 ? assets : assets.mulDivUp(supply, totalAssets());
     }
@@ -174,7 +175,8 @@ abstract contract BaseVault is IVault, ERC20, ERC20Permit, Capped {
      * @inheritdoc IERC4626
      */
     function previewRedeem(uint256 shares) public view override returns (uint256) {
-        return convertToAssets(shares);
+        uint256 assets = convertToAssets(shares);
+        return assets - _getFee(assets);
     }
 
     /**
@@ -308,6 +310,10 @@ abstract contract BaseVault is IVault, ERC20, ERC20Permit, Capped {
         uint256 shares = processedDeposits == 0 || supply == 0 ? assets : assets.mulDivUp(supply, processedDeposits);
         _mint(depositEntry.owner, shares);
         emit DepositProcessed(depositEntry.owner, currentRoundId, assets, shares);
+    }
+
+    function _getFee(uint256 assets) internal view returns(uint256) {
+        return (assets * withdrawFeeRatio()) / DENOMINATOR;
     }
 
     /** Hooks **/

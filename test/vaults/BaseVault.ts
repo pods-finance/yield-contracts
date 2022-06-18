@@ -335,14 +335,14 @@ describe('BaseVault', () => {
     await vault.connect(vaultController).startRound()
 
     // User0 withdraws
-    expect(await vault.previewRedeem(await vault.balanceOf(user0.address))).to.be.equal(assets.mul(2))
+    expect(await vault.previewRedeem(await vault.balanceOf(user0.address))).to.be.equal(feeExcluded(assets.mul(2)))
     await vault.connect(user0).redeem(await vault.balanceOf(user0.address), user0.address, user0.address)
     expect(await asset.balanceOf(user0.address)).to.be.equal(feeExcluded(assets.mul(2)))
     expect(await vault.balanceOf(user0.address)).to.be.equal(0)
     expect(await vault.idleBalanceOf(user0.address)).to.be.equal(0)
 
     // User1 withdraws
-    expect(await vault.previewWithdraw(assets)).to.be.equal(await vault.balanceOf(user1.address))
+    expect(await vault.previewWithdraw(assets)).to.be.equal(feeExcluded(await vault.balanceOf(user1.address)))
     await vault.connect(user1).withdraw(assets, user1.address, user1.address)
     expect(await asset.balanceOf(user1.address)).to.be.equal(feeExcluded(assets))
     expect(await vault.balanceOf(user1.address)).to.be.equal(0)
