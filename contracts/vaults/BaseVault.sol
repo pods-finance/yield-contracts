@@ -185,28 +185,46 @@ abstract contract BaseVault is IVault, ERC20, Capped {
         return convertToAssets(shares);
     }
 
+    /**
+     * @inheritdoc IERC4626
+     */
     function convertToShares(uint256 assets) public view override returns (uint256) {
         uint256 supply = totalSupply();
         return supply == 0 ? assets : assets.mulDivDown(supply, totalAssets());
     }
 
+    /**
+     * @inheritdoc IERC4626
+     */
     function convertToAssets(uint256 shares) public view override returns (uint256) {
         uint256 supply = totalSupply();
         return supply == 0 ? shares : shares.mulDivDown(totalAssets(), supply);
     }
 
+    /**
+     * @inheritdoc IERC4626
+     */
     function maxDeposit(address) public pure override returns (uint256) {
         return type(uint256).max;
     }
 
+    /**
+     * @inheritdoc IERC4626
+     */
     function maxMint(address) public pure override returns (uint256) {
         return type(uint256).max;
     }
 
+    /**
+     * @inheritdoc IERC4626
+     */
     function maxWithdraw(address owner) public view override returns (uint256) {
         return convertToAssets(balanceOf(owner));
     }
 
+    /**
+     * @inheritdoc IERC4626
+     */
     function maxRedeem(address owner) public view override returns (uint256) {
         return balanceOf(owner);
     }

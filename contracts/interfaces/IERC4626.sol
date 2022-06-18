@@ -44,7 +44,7 @@ interface IERC4626 is IERC20 {
     function previewMint(uint256 shares) external view returns (uint256 amount);
 
     /**
-     * @notice Outputs the amount of shares would be burned to withdraw the `assets`  amount.
+     * @notice Outputs the amount of shares would be burned to withdraw the `assets` amount.
      */
     function previewWithdraw(uint256 assets) external view returns (uint256 shares);
 
@@ -53,11 +53,39 @@ interface IERC4626 is IERC20 {
      */
     function previewRedeem(uint256 shares) external view returns (uint256 amount);
 
+    /**
+     * @notice The amount of shares that the Vault would exchange for
+     * the amount of assets provided, in an ideal scenario where all the conditions are met.
+     */
     function convertToShares(uint256 assets) external view returns (uint256);
+
+    /**
+     * @notice The amount of assets that the Vault would exchange for
+     * the amount of shares provided, in an ideal scenario where all the conditions are met.
+     */
     function convertToAssets(uint256 shares) external view returns (uint256);
 
+    /**
+     * @notice Maximum amount of the underlying asset that can be deposited into
+     * the Vault for the `receiver`, through a `deposit` call.
+     */
     function maxDeposit(address owner) external view returns (uint256);
-    function maxMint(address owner) external view returns (uint256);
-    function maxWithdraw(address owner) external view returns (uint256);
-    function maxRedeem(address owner) external view returns (uint256);
+
+    /**
+     * @notice Maximum amount of shares that can be minted from the Vault for
+     * the `receiver`, through a `mint` call.
+     */
+    function maxMint(address receiver) external view returns (uint256 maxShares);
+
+    /**
+     * @notice Maximum amount of the underlying asset that can be withdrawn from
+     * the `owner` balance in the Vault, through a `withdraw` call.
+     */
+    function maxWithdraw(address owner) external view returns (uint256 maxAssets);
+
+    /**
+     * @notice Maximum amount of Vault shares that can be redeemed from
+     * the `owner` balance in the Vault, through a `redeem` call.
+     */
+    function maxRedeem(address owner) external view returns (uint256 maxShares);
 }
