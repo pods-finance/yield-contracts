@@ -30,7 +30,7 @@ contract STETHVault is BaseVault {
 
     constructor(
         IConfigurationManager _configuration,
-        address _asset,
+        IERC20Metadata _asset,
         address _investor
     ) BaseVault(_configuration, _asset) {
         investor = _investor;

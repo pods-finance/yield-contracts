@@ -2,6 +2,7 @@
 pragma solidity >=0.8.6;
 
 import "@openzeppelin/contracts/token/ERC20/extensions/IERC20Metadata.sol";
+import "@openzeppelin/contracts/token/ERC20/extensions/draft-ERC20Permit.sol";
 import "@openzeppelin/contracts/token/ERC20/ERC20.sol";
 import "../interfaces/IConfigurationManager.sol";
 import "../interfaces/IVault.sol";
@@ -15,7 +16,7 @@ import "../mixins/Capped.sol";
  * @title A Vault that tokenize shares of strategy
  * @author Pods Finance
  */
-abstract contract BaseVault is IVault, ERC20, Capped {
+abstract contract BaseVault is IVault, ERC20, ERC20Permit, Capped {
     using TransferUtils for IERC20Metadata;
     using FixedPointMath for uint256;
     using CastUint for uint256;
@@ -34,10 +35,15 @@ abstract contract BaseVault is IVault, ERC20, Capped {
 
     constructor(
         IConfigurationManager _configuration,
-        address _asset
-    ) ERC20("", "") Capped(_configuration) {
+        IERC20Metadata _asset
+    ) ERC20(
+        string(abi.encodePacked("Pods Yield ", _asset.symbol())),
+        string(abi.encodePacked("py", _asset.symbol()))
+    ) ERC20Permit(
+        string(abi.encodePacked("Pods Yield ", _asset.symbol()))
+    ) Capped(_configuration) {
         configuration = _configuration;
-        asset = IERC20Metadata(_asset);
+        asset = _asset;
 
         // Vault starts in `start` state
         emit StartRound(currentRoundId, 0);
@@ -46,20 +52,6 @@ abstract contract BaseVault is IVault, ERC20, Capped {
     modifier onlyController() {
         if (msg.sender != controller()) revert IVault__CallerIsNotTheController();
         _;
-    }
-
-    /**
-     * @inheritdoc ERC20
-     */
-    function name() public view override returns(string memory) {
-        return string(abi.encodePacked("Pods Yield ", asset.symbol()));
-    }
-
-    /**
-     * @inheritdoc ERC20
-     */
-    function symbol() public view override returns(string memory) {
-        return string(abi.encodePacked("py", asset.symbol()));
     }
 
     /**

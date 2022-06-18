@@ -33,7 +33,7 @@ contract PrincipalProtectedMock is BaseVault {
 
     constructor(
         IConfigurationManager _configuration,
-        address _asset,
+        IERC20Metadata _asset,
         address _investor,
         address _yieldSource
     ) BaseVault(_configuration, _asset) {
