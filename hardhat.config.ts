@@ -4,8 +4,10 @@ import { HardhatUserConfig } from 'hardhat/config'
 import '@nomiclabs/hardhat-etherscan'
 import '@nomiclabs/hardhat-waffle'
 import '@typechain/hardhat'
-import 'hardhat-gas-reporter'
 import 'hardhat-abi-exporter'
+import 'hardhat-contract-sizer'
+import 'hardhat-gas-reporter'
+import 'hardhat-spdx-license-identifier'
 import 'solidity-coverage'
 
 dotenv.config()
@@ -57,6 +59,13 @@ const config: HardhatUserConfig = {
       'STETHVault',
       'ConfigurationManager'
     ]
+  },
+  contractSizer: {
+    runOnCompile: true
+  },
+  spdxLicenseIdentifier: {
+    overwrite: true,
+    runOnCompile: true
   }
 }
 
