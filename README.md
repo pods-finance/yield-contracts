@@ -6,7 +6,7 @@
     <img src="https://github.com/pods-finance/yield-contracts/workflows/lint+compile+test/badge.svg" alt="test"/>
   </a>
   
-  <a href='https://coveralls.io/github/pods-finance/lisbon?branch=main'>
+  <a href='https://coveralls.io/github/pods-finance/yield-contracts?branch=main'>
     <img src='https://coveralls.io/repos/github/pods-finance/yield-contracts/badge.svg?branch=main&t=WNloc0' alt='Coverage Status' />
   </a>
 
