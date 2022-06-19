@@ -22,7 +22,7 @@ A) Allocate users deposits to a Yield Source (Lido, AAVE, AMM Pools). At the mom
 
 B) Each week, invest part of the yield generated weekly to buy weekly Call Options on ETH 10-20% _out-of-the-money_
 
-By doing so, you don't depositor won't risk their principal amount and only take risks with the yield. This type of strategy is called Principal Protected.
+By doing so, the depositor won't risk their principal amount and only take risks with the yield. This type of strategy is called Principal Protected.
 
 # Points of centralization
 
