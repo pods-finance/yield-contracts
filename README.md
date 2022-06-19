@@ -7,7 +7,7 @@
   </a>
   
   <a href='https://coveralls.io/github/pods-finance/yield-contracts?branch=main'>
-    <img src='https://coveralls.io/repos/github/pods-finance/yield-contracts/badge.svg?branch=main&t=WNloc0' alt='Coverage Status' />
+    <img src='https://coveralls.io/repos/github/pods-finance/yield-contracts/badge.svg?branch=main&amp;t=WNIoc0' alt='Coverage Status' />
   </a>
 
   <a href="http://gplv3.fsf.org/">
