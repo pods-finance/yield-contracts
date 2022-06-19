@@ -2,19 +2,21 @@
 pragma solidity >=0.8.6;
 
 import "@openzeppelin/contracts/token/ERC20/extensions/IERC20Metadata.sol";
+import "@openzeppelin/contracts/token/ERC20/extensions/draft-ERC20Permit.sol";
+import "@openzeppelin/contracts/token/ERC20/ERC20.sol";
 import "../interfaces/IConfigurationManager.sol";
 import "../interfaces/IVault.sol";
 import "../libs/TransferUtils.sol";
 import "../libs/FixedPointMath.sol";
 import "../libs/DepositQueueLib.sol";
-import "../mixins/Capped.sol";
 import "../libs/CastUint.sol";
+import "../mixins/Capped.sol";
 
 /**
  * @title A Vault that tokenize shares of strategy
  * @author Pods Finance
  */
-contract BaseVault is IVault, Capped {
+abstract contract BaseVault is IVault, ERC20, ERC20Permit, Capped {
     using TransferUtils for IERC20Metadata;
     using FixedPointMath for uint256;
     using CastUint for uint256;
@@ -24,8 +26,6 @@ contract BaseVault is IVault, Capped {
     IERC20Metadata public immutable asset;
 
     uint256 public currentRoundId;
-    mapping(address => uint256) userShares;
-    uint256 public totalShares;
     bool public isProcessingDeposits = false;
 
     uint256 public constant DENOMINATOR = 10000;
@@ -33,24 +33,43 @@ contract BaseVault is IVault, Capped {
 
     DepositQueueLib.DepositQueue private depositQueue;
 
-    mapping(address => mapping(address => uint256)) private _allowances;
-
-    constructor(IConfigurationManager _configuration, address _asset) Capped(_configuration) {
+    constructor(
+        IConfigurationManager _configuration,
+        IERC20Metadata _asset
+    ) ERC20(
+        string(abi.encodePacked("Pods Yield ", _asset.symbol())),
+        string(abi.encodePacked("py", _asset.symbol()))
+    ) ERC20Permit(
+        string(abi.encodePacked("Pods Yield ", _asset.symbol()))
+    ) Capped(_configuration) {
         configuration = _configuration;
-        asset = IERC20Metadata(_asset);
+        asset = _asset;
 
         // Vault starts in `start` state
         emit StartRound(currentRoundId, 0);
     }
 
-    /** Depositor **/
+    modifier onlyController() {
+        if (msg.sender != controller()) revert IVault__CallerIsNotTheController();
+        _;
+    }
 
     /**
-     * @dev See {IVault-deposit}.
+     * @inheritdoc ERC20
      */
-    function deposit(uint256 assets, address receiver) public virtual override {
+    function decimals() public view override returns(uint8) {
+        return asset.decimals();
+    }
+
+    /**
+     * @inheritdoc IERC4626
+     */
+    function deposit(uint256 assets, address receiver) public virtual override returns(uint256 shares) {
         if (isProcessingDeposits) revert IVault__ForbiddenWhileProcessingDeposits();
-        _spendCap(previewShares(assets));
+        shares = previewDeposit(assets);
+
+        if (shares == 0) revert IVault__ZeroShares();
+        _spendCap(shares);
 
         asset.safeTransferFrom(msg.sender, address(this), assets);
         depositQueue.push(DepositQueueLib.DepositEntry(receiver, assets));
@@ -59,134 +78,188 @@ contract BaseVault is IVault, Capped {
     }
 
     /**
-     * @dev See {IVault-withdraw}.
+     * @inheritdoc IERC4626
      */
-    function withdraw(address owner) public virtual override {
+    function mint(uint256 shares, address receiver) public virtual override returns(uint256 assets) {
         if (isProcessingDeposits) revert IVault__ForbiddenWhileProcessingDeposits();
+        assets = previewMint(shares);
 
-        uint256 shares = sharesOf(owner);
-        uint256 assets = _burnShares(owner, shares);
+        _spendCap(shares);
+
+        asset.safeTransferFrom(msg.sender, address(this), assets);
+        depositQueue.push(DepositQueueLib.DepositEntry(receiver, assets));
+
+        emit Deposit(receiver, assets);
+    }
+
+    /**
+     * @inheritdoc IERC4626
+     */
+    function redeem(uint256 shares, address receiver, address owner) public virtual override returns(uint256 assets) {
+        if (isProcessingDeposits) revert IVault__ForbiddenWhileProcessingDeposits();
+        assets = convertToAssets(shares);
+
+        if (assets == 0) revert IVault__ZeroAssets();
 
         if (msg.sender != owner) {
-            _useAllowance(owner, msg.sender, shares);
+            _spendAllowance(owner, msg.sender, shares);
         }
 
+        _burn(owner, shares);
         _restoreCap(shares);
 
         // Apply custom withdraw logic
         _beforeWithdraw(shares, assets);
 
-        uint256 fee = (assets * withdrawFeeRatio()) / DENOMINATOR;
-        asset.safeTransfer(owner, assets - fee);
+        uint256 fee = _getFee(assets);
+        asset.safeTransfer(receiver, assets - fee);
         asset.safeTransfer(controller(), fee);
 
         emit Withdraw(owner, shares, assets);
     }
 
     /**
-     * @dev See {IVault-name}.
+     * @inheritdoc IERC4626
      */
-    function name() external pure virtual override returns (string memory) {
-        return "Base Vault";
+    function withdraw(uint256 assets, address receiver, address owner) public virtual override returns(uint256 shares) {
+        if (isProcessingDeposits) revert IVault__ForbiddenWhileProcessingDeposits();
+        shares = convertToShares(assets);
+
+        if (msg.sender != owner) {
+            _spendAllowance(owner, msg.sender, shares);
+        }
+
+        _burn(owner, shares);
+        _restoreCap(shares);
+
+        // Apply custom withdraw logic
+        _beforeWithdraw(shares, assets);
+
+        uint256 fee = _getFee(assets);
+        asset.safeTransfer(receiver, assets - fee);
+        asset.safeTransfer(controller(), fee);
+
+        emit Withdraw(owner, shares, assets);
     }
 
     /**
-     * @dev See {IVault-withdrawFeeRatio}.
+     * @inheritdoc IERC4626
+     */
+    function totalAssets() public view virtual returns (uint256);
+
+    /**
+     * @inheritdoc IERC4626
+     */
+    function previewDeposit(uint256 assets) public view override returns (uint256) {
+        return convertToShares(assets);
+    }
+
+    /**
+     * @inheritdoc IERC4626
+     */
+    function previewMint(uint256 shares) public view override returns (uint256) {
+        uint256 supply = totalSupply();
+        return supply == 0 ? shares : shares.mulDivUp(totalAssets(), supply);
+    }
+
+    /**
+     * @inheritdoc IERC4626
+     */
+    function previewWithdraw(uint256 assets) public view override returns (uint256) {
+        assets = assets - _getFee(assets);
+        uint256 supply = totalSupply();
+        return supply == 0 ? assets : assets.mulDivUp(supply, totalAssets());
+    }
+
+    /**
+     * @inheritdoc IERC4626
+     */
+    function previewRedeem(uint256 shares) public view override returns (uint256) {
+        uint256 assets = convertToAssets(shares);
+        return assets - _getFee(assets);
+    }
+
+    /**
+     * @inheritdoc IERC4626
+     */
+    function convertToShares(uint256 assets) public view override returns (uint256) {
+        uint256 supply = totalSupply();
+        return supply == 0 ? assets : assets.mulDivDown(supply, totalAssets());
+    }
+
+    /**
+     * @inheritdoc IERC4626
+     */
+    function convertToAssets(uint256 shares) public view override returns (uint256) {
+        uint256 supply = totalSupply();
+        return supply == 0 ? shares : shares.mulDivDown(totalAssets(), supply);
+    }
+
+    /**
+     * @inheritdoc IERC4626
+     */
+    function maxDeposit(address) public pure override returns (uint256) {
+        return type(uint256).max;
+    }
+
+    /**
+     * @inheritdoc IERC4626
+     */
+    function maxMint(address) public pure override returns (uint256) {
+        return type(uint256).max;
+    }
+
+    /**
+     * @inheritdoc IERC4626
+     */
+    function maxWithdraw(address owner) public view override returns (uint256) {
+        return convertToAssets(balanceOf(owner));
+    }
+
+    /**
+     * @inheritdoc IERC4626
+     */
+    function maxRedeem(address owner) public view override returns (uint256) {
+        return balanceOf(owner);
+    }
+
+    /**
+     * @inheritdoc IVault
      */
     function withdrawFeeRatio() public view override returns(uint256) {
         return configuration.getParameter("WITHDRAW_FEE_RATIO");
     }
 
     /**
-     * @dev See {IVault-allowance}.
-     */
-    function allowance(address owner, address spender) public view returns (uint256) {
-        return _allowances[owner][spender];
-    }
-
-    /**
-     * @dev See {IVault-approve}.
-     */
-    function approve(address spender, uint256 amount) external returns (bool) {
-        if (spender == address(0)) revert IVault__ApprovalToAddressZero();
-
-        _allowances[msg.sender][spender] = amount;
-        emit Approval(msg.sender, spender, amount);
-        return true;
-    }
-
-    /**
-     * @dev Outputs the amount of shares and the locked shares for a given `owner` address.
-     */
-    function sharesOf(address owner) public view virtual returns (uint256) {
-        return userShares[owner];
-    }
-
-    /**
-     * @dev Outputs the amount of shares that would be generated by depositing `assets`.
-     */
-    function previewShares(uint256 assets) public view virtual returns (uint256) {
-        uint256 shares = assets;
-
-        if (totalShares > 0) {
-            shares = assets.mulDivUp(totalShares, totalAssets());
-        }
-
-        return shares;
-    }
-
-    /**
-     * @dev Outputs the amount of underlying tokens would be withdrawn with a given amount of shares.
-     */
-    function previewWithdraw(uint256 shares) public view virtual returns (uint256) {
-        return shares.mulDivDown(totalAssets(), totalShares);
-    }
-
-    /**
-     * @dev Calculate the total amount of assets under management.
-     */
-    function totalAssets() public view virtual returns (uint256) {
-        return asset.balanceOf(address(this));
-    }
-
-    /**
-     * @dev Outputs the amount of asset tokens of an `owner` is idle, waiting for the next round.
+     * @inheritdoc IVault
      */
     function idleBalanceOf(address owner) public view virtual returns (uint256) {
         return depositQueue.balanceOf(owner);
     }
 
     /**
-     * @dev Outputs the amount of asset tokens is idle, waiting for the next round.
+     * @inheritdoc IVault
      */
     function totalIdleBalance() public view virtual returns (uint256) {
         return depositQueue.totalDeposited;
     }
 
     /**
-     * @dev Outputs current size of the deposit queue.
+     * @inheritdoc IVault
      */
     function depositQueueSize() external view returns (uint256) {
         return depositQueue.size();
     }
 
-    /** Vault Controller **/
-
-    modifier onlyController() {
-        if (msg.sender != controller()) revert IVault__CallerIsNotTheController();
-        _;
-    }
-
     /**
-     * @dev See {IVault-controller}.
+     * @inheritdoc IVault
      */
     function controller() public view returns(address) {
         return configuration.getParameter("VAULT_CONTROLLER").toAddress();
     }
 
     /**
-     * @dev Starts the next round, sending the idle funds to the
-     * strategy where it should start accruing yield.
+     * @inheritdoc IVault
      */
     function startRound() public virtual onlyController {
         if (!isProcessingDeposits) revert IVault__NotProcessingDeposits();
@@ -200,8 +273,7 @@ contract BaseVault is IVault, Capped {
     }
 
     /**
-     * @dev Closes the round, allowing deposits to the next round be processed.
-     * and opens the window for withdraws.
+     * @inheritdoc IVault
      */
     function endRound() public virtual onlyController {
         if(isProcessingDeposits) revert IVault__AlreadyProcessingDeposits();
@@ -213,22 +285,16 @@ contract BaseVault is IVault, Capped {
     }
 
     /**
-     * @dev Mint shares for deposits accumulated, effectively including their owners in the next round.
-     * `processQueuedDeposits` extracts up to but not including endIndex. For example, processQueuedDeposits(1,4)
-     * extracts the second element through the fourth element (elements indexed 1, 2, and 3).
-     *
-     * @param startIndex Zero-based index at which to start processing deposits
-     * @param endIndex The index of the first element to exclude from queue
+     * @inheritdoc IVault
      */
     function processQueuedDeposits(uint256 startIndex, uint256 endIndex) public {
         if (!isProcessingDeposits) revert IVault__NotProcessingDeposits();
 
-        uint256 processedDeposits;
+        uint256 processedDeposits = totalAssets();
         for (uint256 i = startIndex; i < endIndex; i++) {
             DepositQueueLib.DepositEntry memory depositEntry = depositQueue.get(i);
-            uint256 shares = _mintShares(depositEntry.owner, depositEntry.amount, processedDeposits);
+            _processDeposit(depositEntry, processedDeposits);
             processedDeposits += depositEntry.amount;
-            emit DepositProcessed(depositEntry.owner, currentRoundId, depositEntry.amount, shares);
         }
         depositQueue.remove(startIndex, endIndex);
     }
@@ -236,53 +302,18 @@ contract BaseVault is IVault, Capped {
     /** Internals **/
 
     /**
-     * @dev Mint new shares, effectively representing user participation in the Vault.
+     * @notice Mint new shares, effectively representing user participation in the Vault.
      */
-    function _mintShares(
-        address owner,
-        uint256 assets,
-        uint256 processedDeposits
-    ) internal virtual returns (uint256 shares) {
-        shares = assets;
-        processedDeposits += totalAssets();
-
-        if (totalShares > 0) {
-            shares = assets.mulDivUp(totalShares, processedDeposits);
-        }
-
-        userShares[owner] += shares;
-        totalShares += shares;
+    function _processDeposit(DepositQueueLib.DepositEntry memory depositEntry, uint256 processedDeposits) internal virtual {
+        uint256 supply = totalSupply();
+        uint256 assets = depositEntry.amount;
+        uint256 shares = processedDeposits == 0 || supply == 0 ? assets : assets.mulDivUp(supply, processedDeposits);
+        _mint(depositEntry.owner, shares);
+        emit DepositProcessed(depositEntry.owner, currentRoundId, assets, shares);
     }
 
-    /**
-     * @dev Burn shares.
-     * @param owner Address owner of the shares
-     * @param shares Amount of shares to lock
-     */
-    function _burnShares(address owner, uint256 shares) internal virtual returns (uint256 claimableUnderlying) {
-        if (shares > userShares[owner]) revert IVault__CallerHasNotEnoughShares();
-        claimableUnderlying = userShares[owner].mulDivDown(totalAssets(), totalShares);
-        userShares[owner] -= shares;
-        totalShares -= shares;
-    }
-
-    /**
-     * @dev Spend allowance on behalf of the shares owner.
-     * @param owner Address owner of the shares
-     * @param spender Address shares spender
-     * @param shares Amount of shares to spend
-     */
-    function _useAllowance(
-        address owner,
-        address spender,
-        uint256 shares
-    ) internal {
-        uint256 allowed = _allowances[owner][spender];
-        if (shares > allowed) revert IVault__SharesExceedAllowance();
-
-        if (allowed != type(uint256).max) {
-            _allowances[owner][spender] = allowed - shares;
-        }
+    function _getFee(uint256 assets) internal view returns(uint256) {
+        return (assets * withdrawFeeRatio()) / DENOMINATOR;
     }
 
     /** Hooks **/

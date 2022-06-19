@@ -9,13 +9,13 @@ contract YieldVaultMock is BaseVault {
 
     constructor(
         IConfigurationManager _configuration,
-        address _asset,
+        IERC20Metadata _asset,
         address _yieldSource
     ) BaseVault(_configuration, _asset) {
         yieldSource = YieldSourceMock(_yieldSource);
     }
 
-    function totalAssets() public override view returns(uint) {
+    function totalAssets() public override view returns(uint256) {
         return yieldSource.convertToAssets(yieldSource.balanceOf(address(this)));
     }
 
@@ -23,7 +23,7 @@ contract YieldVaultMock is BaseVault {
         yieldSource.withdraw(assets);
     }
 
-    function _afterRoundStart(uint assets) internal override {
+    function _afterRoundStart(uint256 assets) internal override {
         if (yieldSource.previewDeposit(assets) > 0) {
             yieldSource.asset().approve(address(yieldSource), assets);
             yieldSource.deposit(assets, address(this));

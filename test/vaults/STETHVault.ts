@@ -1,4 +1,3 @@
-import { Contract } from '@ethersproject/contracts'
 import { expect } from 'chai'
 import hre, { ethers } from 'hardhat'
 import { BigNumber } from 'ethers'
@@ -7,10 +6,15 @@ import minus from '../utils/minus'
 import { startMainnetFork, stopMainnetFork } from '../utils/mainnetFork'
 import createConfigurationManager from '../utils/createConfigurationManager'
 import feeExcluded from '../utils/feeExcluded'
+import { ConfigurationManager, ERC20, InvestorActorMock, STETHVault } from '../../typechain'
 
 describe('STETHVault', () => {
-  let asset: Contract, vault: Contract, investor: Contract, configuration: Contract
-  let user0: SignerWithAddress, user1: SignerWithAddress, yieldGenerator: SignerWithAddress, vaultController: SignerWithAddress
+  let asset: ERC20, vault: STETHVault, investor: InvestorActorMock,
+    configuration: ConfigurationManager
+
+  let user0: SignerWithAddress, user1: SignerWithAddress,
+    yieldGenerator: SignerWithAddress, vaultController: SignerWithAddress
+
   let snapshotId: BigNumber
 
   before(async () => {
@@ -85,21 +89,21 @@ describe('STETHVault', () => {
     const assetAmountEffective = assetAmount.sub(1)
 
     // User0 deposits to vault
-    await expect(() => vault.connect(user0).deposit(assetAmount, user0.address))
+    await expect(async () => await vault.connect(user0).deposit(assetAmount, user0.address))
       .to.changeTokenBalances(
         asset,
         [user0, vault],
         [minus(assetAmountEffective), assetAmountEffective]
       )
     expect(await vault.depositQueueSize()).to.be.equal(1)
-    expect(await vault.sharesOf(user0.address)).to.be.equal(0)
+    expect(await vault.balanceOf(user0.address)).to.be.equal(0)
     expect(await vault.idleBalanceOf(user0.address)).to.be.equal(assetAmount)
 
     // Process deposits
     await vault.connect(vaultController).endRound()
     await vault.connect(vaultController).processQueuedDeposits(0, await vault.depositQueueSize())
     expect(await vault.depositQueueSize()).to.be.equal(0)
-    expect(await vault.sharesOf(user0.address)).to.be.equal(assetAmount)
+    expect(await vault.balanceOf(user0.address)).to.be.equal(assetAmount)
     expect(await vault.idleBalanceOf(user0.address)).to.be.equal(0)
 
     // Start round
@@ -114,7 +118,7 @@ describe('STETHVault', () => {
     await vault.connect(vaultController).processQueuedDeposits(0, await vault.depositQueueSize())
 
     await expect(
-      vault.connect(user0).withdraw(user0.address)
+      vault.connect(user0).redeem(await vault.balanceOf(user0.address), user0.address, user0.address)
     ).to.be.revertedWith('IVault__ForbiddenWhileProcessingDeposits()')
   })
 
@@ -145,13 +149,13 @@ describe('STETHVault', () => {
     const effectiveTotal = assetAmountUser0Effective.add(assetAmountUser1Effective)
 
     // Users deposits to vault
-    await expect(() => vault.connect(user0).deposit(assetAmountUser0, user0.address))
+    await expect(async () => await vault.connect(user0).deposit(assetAmountUser0, user0.address))
       .to.changeTokenBalances(
         asset,
         [user0, vault],
         [minus(assetAmountUser0Effective), assetAmountUser0Effective]
       )
-    await expect(() => vault.connect(user1).deposit(assetAmountUser1, user1.address))
+    await expect(async () => await vault.connect(user1).deposit(assetAmountUser1, user1.address))
       .to.changeTokenBalances(
         asset,
         [user1, vault],
@@ -160,9 +164,9 @@ describe('STETHVault', () => {
 
     expect(await asset.balanceOf(vault.address)).to.be.equal(effectiveTotal)
     expect(await vault.depositQueueSize()).to.be.equal(2)
-    expect(await vault.sharesOf(user0.address)).to.be.equal(0)
+    expect(await vault.balanceOf(user0.address)).to.be.equal(0)
     expect(await vault.idleBalanceOf(user0.address)).to.be.equal(assetAmountUser0)
-    expect(await vault.sharesOf(user1.address)).to.be.equal(0)
+    expect(await vault.balanceOf(user1.address)).to.be.equal(0)
     expect(await vault.idleBalanceOf(user1.address)).to.be.equal(assetAmountUser1)
 
     // Process deposits
@@ -174,13 +178,13 @@ describe('STETHVault', () => {
     await vault.connect(vaultController).startRound()
 
     // User0 withdraws
-    await vault.connect(user0).withdraw(user0.address)
-    expect(await vault.sharesOf(user0.address)).to.be.equal(0)
+    await vault.connect(user0).redeem(await vault.balanceOf(user0.address), user0.address, user0.address)
+    expect(await vault.balanceOf(user0.address)).to.be.equal(0)
     expect(await vault.idleBalanceOf(user0.address)).to.be.equal(0)
 
     // User1 withdraws
-    await vault.connect(user1).withdraw(user1.address)
-    expect(await vault.sharesOf(user1.address)).to.be.equal(0)
+    await vault.connect(user1).redeem(await vault.balanceOf(user1.address), user1.address, user1.address)
+    expect(await vault.balanceOf(user1.address)).to.be.equal(0)
     expect(await vault.idleBalanceOf(user1.address)).to.be.equal(0)
   })
 
@@ -214,23 +218,23 @@ describe('STETHVault', () => {
     const expectedUser0Amount = BigNumber.from('803225806451612903218')
     const expectedUser1Amount = BigNumber.from('96774193548387096779')
 
-    await expect(() => vault.connect(user0).withdraw(user0.address))
+    await expect(async () => await vault.connect(user0).redeem(await vault.balanceOf(user0.address), user0.address, user0.address))
       .to.changeTokenBalances(
         asset,
         [vault, user0],
         [minus(expectedUser0Amount), feeExcluded(expectedUser0Amount)]
       )
-    await expect(() => vault.connect(user1).withdraw(user1.address))
+    await expect(async () => await vault.connect(user1).redeem(await vault.balanceOf(user1.address), user1.address, user1.address))
       .to.changeTokenBalances(
         asset,
         [vault, user1],
         [minus(expectedUser1Amount).add(2), feeExcluded(expectedUser1Amount)]
       )
 
-    expect(await vault.sharesOf(user0.address)).to.be.equal(0)
+    expect(await vault.balanceOf(user0.address)).to.be.equal(0)
     expect(await vault.idleBalanceOf(user0.address)).to.be.equal(0)
 
-    expect(await vault.sharesOf(user1.address)).to.be.equal(0)
+    expect(await vault.balanceOf(user1.address)).to.be.equal(0)
     expect(await vault.idleBalanceOf(user1.address)).to.be.equal(0)
   })
 })

@@ -7,7 +7,7 @@ contract Asset is ERC20 {
     // solhint-disable-next-line no-empty-blocks
     constructor(string memory name, string memory symbol) ERC20(name, symbol) {}
 
-    function mint(uint amount) public {
+    function mint(uint256 amount) public {
         _mint(msg.sender, amount);
     }
 
@@ -15,7 +15,7 @@ contract Asset is ERC20 {
         _mint(to, 10 ether);
     }
 
-    function burn(uint amount) public {
+    function burn(uint256 amount) public {
         _burn(msg.sender, amount);
     }
 }

@@ -7,7 +7,7 @@ import "../libs/FixedPointMath.sol";
 import "./Asset.sol";
 
 contract YieldSourceMock is ERC20("Interest Pool", "INTP") {
-    using FixedPointMath for uint;
+    using FixedPointMath for uint256;
 
     Asset public immutable asset;
 
@@ -23,11 +23,11 @@ contract YieldSourceMock is ERC20("Interest Pool", "INTP") {
         return string(abi.encodePacked("INTP-", asset.symbol()));
     }
 
-    function generateInterest(uint amount) external {
+    function generateInterest(uint256 amount) external {
         asset.mint(amount);
     }
 
-    function deposit(uint amount, address receiver) external returns(uint shares) {
+    function deposit(uint256 amount, address receiver) external returns(uint256 shares) {
         shares = previewDeposit(amount);
 
         // Check for rounding error since we round down in previewDeposit.
@@ -37,14 +37,14 @@ contract YieldSourceMock is ERC20("Interest Pool", "INTP") {
         _mint(receiver, shares);
     }
 
-    function withdraw(uint amount) external returns(uint shares) {
+    function withdraw(uint256 amount) external returns(uint256 shares) {
         shares = previewWithdraw(amount);
 
         _burn(msg.sender, shares);
         asset.transfer(msg.sender, amount);
     }
 
-    function redeem(uint shares) external returns(uint amount) {
+    function redeem(uint256 shares) external returns(uint256 amount) {
         amount = previewRedeem(shares);
 
         // Check for rounding error since we round down in previewRedeem.
@@ -54,30 +54,30 @@ contract YieldSourceMock is ERC20("Interest Pool", "INTP") {
         asset.transfer(msg.sender, amount);
     }
 
-    function previewDeposit(uint amount) public view returns (uint) {
+    function previewDeposit(uint256 amount) public view returns (uint256) {
         return convertToShares(amount);
     }
 
-    function previewWithdraw(uint amount) public view returns (uint) {
-        uint supply = totalSupply();
+    function previewWithdraw(uint256 amount) public view returns (uint256) {
+        uint256 supply = totalSupply();
         return supply == 0 ? amount : amount.mulDivUp(supply, totalAssets());
     }
 
-    function previewRedeem(uint shares) public view returns (uint) {
+    function previewRedeem(uint256 shares) public view returns (uint256) {
         return convertToAssets(shares);
     }
 
-    function totalAssets() public view returns(uint) {
+    function totalAssets() public view returns(uint256) {
         return asset.balanceOf(address(this));
     }
 
-    function convertToShares(uint amount) public view returns (uint) {
-        uint supply = totalSupply();
+    function convertToShares(uint256 amount) public view returns (uint256) {
+        uint256 supply = totalSupply();
         return supply == 0 ? amount : amount.mulDivDown(supply, totalAssets());
     }
 
-    function convertToAssets(uint shares) public view returns (uint) {
-        uint supply = totalSupply();
+    function convertToAssets(uint256 shares) public view returns (uint256) {
+        uint256 supply = totalSupply();
         return supply == 0 ? shares : shares.mulDivDown(totalAssets(), supply);
     }
 }

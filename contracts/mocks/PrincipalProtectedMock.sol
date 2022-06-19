@@ -33,7 +33,7 @@ contract PrincipalProtectedMock is BaseVault {
 
     constructor(
         IConfigurationManager _configuration,
-        address _asset,
+        IERC20Metadata _asset,
         address _investor,
         address _yieldSource
     ) BaseVault(_configuration, _asset) {
@@ -42,22 +42,17 @@ contract PrincipalProtectedMock is BaseVault {
         sharePriceDecimals = asset.decimals();
     }
 
-    /**
-     * @dev See {IVault-name}.
-     */
-    function name() external pure override returns (string memory) {
-        return "Principal Protected Mock";
-    }
-
     function _afterRoundStart(uint256 assets) internal override {
         if (assets > 0) {
             asset.approve(address(yieldSource), assets);
             yieldSource.deposit(assets, address(this));
         }
+        uint256 supply = totalSupply();
+
         lastRoundAssets = totalAssets();
         lastSharePrice = FixedPointMath.Fractional({
-            numerator: totalShares == 0 ? 0 : lastRoundAssets,
-            denominator: totalShares
+            numerator: supply == 0 ? 0 : lastRoundAssets,
+            denominator: supply
         });
 
         uint256 sharePrice = lastSharePrice.denominator == 0 ? 0 : lastSharePrice.mulDivDown(10**sharePriceDecimals);
@@ -69,9 +64,10 @@ contract PrincipalProtectedMock is BaseVault {
         uint256 endSharePrice;
         uint256 investmentYield = asset.balanceOf(investor);
         uint256 idleAssets = asset.balanceOf(address(this));
+        uint256 supply = totalSupply();
 
-        if (totalShares != 0) {
-            endSharePrice = (totalAssets() + investmentYield).mulDivDown(10**sharePriceDecimals, totalShares);
+        if (supply != 0) {
+            endSharePrice = (totalAssets() + investmentYield).mulDivDown(10**sharePriceDecimals, supply);
             roundAccruedInterest = totalAssets() - lastRoundAssets;
 
             // Pulls the yields from investor
