@@ -28,6 +28,12 @@
     "inputs": [
       {
         "indexed": true,
+        "internalType": "address",
+        "name": "target",
+        "type": "address"
+      },
+      {
+        "indexed": true,
         "internalType": "bytes32",
         "name": "name",
         "type": "bytes32"
@@ -88,6 +94,30 @@
         "type": "bytes32"
       }
     ],
+    "name": "getGlobalParameter",
+    "outputs": [
+      {
+        "internalType": "uint256",
+        "name": "",
+        "type": "uint256"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "address",
+        "name": "target",
+        "type": "address"
+      },
+      {
+        "internalType": "bytes32",
+        "name": "name",
+        "type": "bytes32"
+      }
+    ],
     "name": "getParameter",
     "outputs": [
       {
@@ -139,6 +169,11 @@
   },
   {
     "inputs": [
+      {
+        "internalType": "address",
+        "name": "target",
+        "type": "address"
+      },
       {
         "internalType": "bytes32",
         "name": "name",

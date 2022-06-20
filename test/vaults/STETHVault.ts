@@ -42,7 +42,7 @@ describe('STETHVault', () => {
     yieldGenerator = await ethers.getSigner('0xcebb2d6335ffa869f86f04a169015f9b613c2c04')
 
     ;[, , , , vaultController] = await ethers.getSigners()
-    configuration = await createConfigurationManager({ controller: vaultController.address })
+    configuration = await createConfigurationManager()
 
     const DepositQueueLib = await ethers.getContractFactory('DepositQueueLib')
     const depositQueueLib = await DepositQueueLib.deploy()
@@ -66,6 +66,9 @@ describe('STETHVault', () => {
 
     // Give approval upfront that the vault can pull money from the investor contract
     await investor.approveVaultToPull(vault.address)
+
+    await configuration.setParameter(vault.address, ethers.utils.formatBytes32String('VAULT_CONTROLLER'), vaultController.address)
+    await configuration.setParameter(vault.address, ethers.utils.formatBytes32String('WITHDRAW_FEE_RATIO'), BigNumber.from('100'))
 
     await asset.connect(user0).approve(vault.address, ethers.constants.MaxUint256)
     await asset.connect(user1).approve(vault.address, ethers.constants.MaxUint256)

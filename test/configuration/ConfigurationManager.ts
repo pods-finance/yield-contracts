@@ -18,13 +18,17 @@ describe('ConfigurationManager', () => {
     const parameterName = ethers.utils.formatBytes32String('CUSTOM_PARAMETER')
     const parameterValue = ethers.BigNumber.from(42)
 
-    const tx = configuration.setParameter(parameterName, parameterValue)
+    const tx = configuration.setParameter(ethers.constants.AddressZero, parameterName, parameterValue)
     await expect(tx)
       .to.emit(configuration, 'ParameterSet')
-      .withArgs(parameterName, parameterValue)
+      .withArgs(ethers.constants.AddressZero, parameterName, parameterValue)
 
-    expect(await configuration.getParameter(parameterName)).to.be.equal(parameterValue)
-    expect(await configuration.getParameter(unknownParameterName)).to.be.equal(0)
+    expect(await configuration.getParameter(ethers.constants.AddressZero, parameterName)).to.be.equal(parameterValue)
+    expect(await configuration.getGlobalParameter(parameterName)).to.be.equal(parameterValue)
+
+    // Unknown parameters
+    expect(await configuration.getParameter(ethers.constants.AddressZero, unknownParameterName)).to.be.equal(0)
+    expect(await configuration.getGlobalParameter(unknownParameterName)).to.be.equal(0)
   })
 
   it('sets caps', async () => {

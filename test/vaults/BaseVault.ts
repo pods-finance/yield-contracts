@@ -16,7 +16,7 @@ describe('BaseVault', () => {
 
   before(async () => {
     ;[, user0, user1, user2, vaultController, proxy] = await ethers.getSigners()
-    configuration = await createConfigurationManager({ controller: vaultController.address })
+    configuration = await createConfigurationManager()
 
     const DepositQueueLib = await ethers.getContractFactory('DepositQueueLib')
     const depositQueueLib = await DepositQueueLib.deploy()
@@ -40,6 +40,9 @@ describe('BaseVault', () => {
 
     await expect(vault.deployTransaction)
       .to.emit(vault, 'StartRound').withArgs(0, 0)
+
+    await configuration.setParameter(vault.address, ethers.utils.formatBytes32String('VAULT_CONTROLLER'), vaultController.address)
+    await configuration.setParameter(vault.address, ethers.utils.formatBytes32String('WITHDRAW_FEE_RATIO'), BigNumber.from('100'))
 
     await asset.connect(user0).approve(vault.address, ethers.constants.MaxUint256)
     await asset.connect(user1).approve(vault.address, ethers.constants.MaxUint256)

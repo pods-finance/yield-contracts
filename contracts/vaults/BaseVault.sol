@@ -232,7 +232,7 @@ abstract contract BaseVault is IVault, ERC20, ERC20Permit, Capped {
      * @inheritdoc IVault
      */
     function withdrawFeeRatio() public view override returns (uint256) {
-        return configuration.getParameter("WITHDRAW_FEE_RATIO");
+        return configuration.getParameter(address(this), "WITHDRAW_FEE_RATIO");
     }
 
     /**
@@ -260,7 +260,7 @@ abstract contract BaseVault is IVault, ERC20, ERC20Permit, Capped {
      * @inheritdoc IVault
      */
     function controller() public view returns (address) {
-        return configuration.getParameter("VAULT_CONTROLLER").toAddress();
+        return configuration.getParameter(address(this), "VAULT_CONTROLLER").toAddress();
     }
 
     /**

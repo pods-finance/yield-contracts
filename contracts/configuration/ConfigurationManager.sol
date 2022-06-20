@@ -11,25 +11,34 @@ import "../interfaces/IConfigurationManager.sol";
  * @notice Allows contracts to read protocol-wide settings
  */
 contract ConfigurationManager is IConfigurationManager, Ownable {
-    mapping(address => uint256) private _caps;
-    mapping(bytes32 => uint256) private _parameters;
+    mapping(address => mapping(bytes32 => uint256)) private _parameters;
+    address private immutable _global = address(0);
 
     /**
      * @dev Define a parameter
+     * @param target The parameter name
      * @param name The parameter name
      * @param value The parameter value
      */
-    function setParameter(bytes32 name, uint256 value) external override onlyOwner {
-        _parameters[name] = value;
-        emit ParameterSet(name, value);
+    function setParameter(address target, bytes32 name, uint256 value) public override onlyOwner {
+        _parameters[target][name] = value;
+        emit ParameterSet(target, name, value);
     }
 
     /**
      * @dev Get the value of a defined parameter
      * @param name The parameter name
      */
-    function getParameter(bytes32 name) external view override returns (uint256) {
-        return _parameters[name];
+    function getParameter(address target, bytes32 name) external view override returns (uint256) {
+        return _parameters[target][name];
+    }
+
+    /**
+     * @dev Get the value of a defined parameter
+     * @param name The parameter name
+     */
+    function getGlobalParameter(bytes32 name) external view override returns (uint256) {
+        return _parameters[_global][name];
     }
 
     /**
@@ -39,7 +48,7 @@ contract ConfigurationManager is IConfigurationManager, Ownable {
      */
     function setCap(address target, uint256 value) external override onlyOwner {
         if (target == address(0)) revert ConfigurationManager__InvalidCapTarget();
-        _caps[target] = value;
+        setParameter(target, "CAP", value);
         emit SetCap(target, value);
     }
 
@@ -49,6 +58,6 @@ contract ConfigurationManager is IConfigurationManager, Ownable {
      * @param target The contract address
      */
     function getCap(address target) external view override returns (uint256) {
-        return _caps[target];
+        return this.getParameter(target, "CAP");
     }
 }

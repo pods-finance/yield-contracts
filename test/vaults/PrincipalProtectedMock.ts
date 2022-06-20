@@ -17,7 +17,7 @@ describe('PrincipalProtectedMock', () => {
 
   before(async () => {
     ;[, user0, user1, user2, vaultController, user3, user4] = await ethers.getSigners()
-    configuration = await createConfigurationManager({ controller: vaultController.address })
+    configuration = await createConfigurationManager()
 
     const DepositQueueLib = await ethers.getContractFactory('DepositQueueLib')
     const depositQueueLib = await DepositQueueLib.deploy()
@@ -45,6 +45,9 @@ describe('PrincipalProtectedMock', () => {
 
     // Give approval upfront that the vault can pull money from the investor contract
     await investor.approveVaultToPull(vault.address)
+
+    await configuration.setParameter(vault.address, ethers.utils.formatBytes32String('VAULT_CONTROLLER'), vaultController.address)
+    await configuration.setParameter(vault.address, ethers.utils.formatBytes32String('WITHDRAW_FEE_RATIO'), BigNumber.from('100'))
 
     await asset.connect(user0).approve(vault.address, ethers.constants.MaxUint256)
     await asset.connect(user1).approve(vault.address, ethers.constants.MaxUint256)
