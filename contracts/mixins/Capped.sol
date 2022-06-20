@@ -17,7 +17,7 @@ abstract contract Capped {
     /**
      * @dev Returns the amount that could be used.
      */
-    function availableCap() public view returns(uint256) {
+    function availableCap() public view returns (uint256) {
         uint256 cap = _configuration.getCap(address(this));
         return cap == 0 ? type(uint256).max : cap - spentCap;
     }

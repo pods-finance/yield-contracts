@@ -4,7 +4,6 @@ pragma solidity >=0.8.6;
 
 import "../libs/DepositQueueLib.sol";
 
-
 contract DepositQueueMock {
     using DepositQueueLib for DepositQueueLib.DepositQueue;
 
@@ -18,19 +17,19 @@ contract DepositQueueMock {
         depositQueue.remove(startIndex, endIndex);
     }
 
-    function get(uint256 index) external view returns(DepositQueueLib.DepositEntry memory) {
+    function get(uint256 index) external view returns (DepositQueueLib.DepositEntry memory) {
         return depositQueue.get(index);
     }
 
-    function balanceOf(address owner) external view returns(uint256) {
+    function balanceOf(address owner) external view returns (uint256) {
         return depositQueue.balanceOf(owner);
     }
 
-    function size() external view returns(uint256) {
+    function size() external view returns (uint256) {
         return depositQueue.size();
     }
 
-    function totalDeposited() external view returns(uint) {
+    function totalDeposited() external view returns (uint256) {
         return depositQueue.totalDeposited;
     }
 }

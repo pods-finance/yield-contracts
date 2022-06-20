@@ -12,21 +12,21 @@ interface IVault is IERC4626 {
     error IVault__ZeroAssets();
     error IVault__ZeroShares();
 
-    event Deposit(address indexed owner, uint amountDeposited);
-    event Withdraw(address indexed owner, uint sharesBurnt, uint amountWithdrawn, uint fee);
-    event StartRound(uint indexed roundId, uint amountAddedToStrategy);
-    event EndRound(uint indexed roundId);
-    event DepositProcessed(address indexed owner, uint indexed roundId, uint assets, uint shares);
+    event Deposit(address indexed owner, uint256 amountDeposited);
+    event Withdraw(address indexed owner, uint256 sharesBurnt, uint256 amountWithdrawn, uint256 fee);
+    event StartRound(uint256 indexed roundId, uint256 amountAddedToStrategy);
+    event EndRound(uint256 indexed roundId);
+    event DepositProcessed(address indexed owner, uint256 indexed roundId, uint256 assets, uint256 shares);
 
     /**
      * @notice Returns the fee charged on withdraws.
      */
-    function withdrawFeeRatio() external view returns(uint256);
+    function withdrawFeeRatio() external view returns (uint256);
 
     /**
      * @notice Returns the vault controller
      */
-    function controller() external view returns(address);
+    function controller() external view returns (address);
 
     /**
      * @notice Outputs the amount of asset tokens of an `owner` is idle, waiting for the next round.
