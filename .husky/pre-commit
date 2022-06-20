@@ -3,3 +3,4 @@
 
 yarn compile
 yarn lint
+yarn prettier
