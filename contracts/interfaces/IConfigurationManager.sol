@@ -9,7 +9,10 @@ interface IConfigurationManager {
     error ConfigurationManager__InvalidCapTarget();
 
     function setParameter(bytes32 name, uint256 value) external;
+
     function getParameter(bytes32 name) external view returns (uint256);
+
     function setCap(address target, uint256 value) external;
+
     function getCap(address target) external view returns (uint256);
 }

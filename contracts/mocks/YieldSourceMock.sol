@@ -28,7 +28,7 @@ contract YieldSourceMock is ERC20("Interest Pool", "INTP") {
         asset.mint(amount);
     }
 
-    function deposit(uint256 amount, address receiver) external returns(uint256 shares) {
+    function deposit(uint256 amount, address receiver) external returns (uint256 shares) {
         shares = previewDeposit(amount);
 
         // Check for rounding error since we round down in previewDeposit.
@@ -38,14 +38,14 @@ contract YieldSourceMock is ERC20("Interest Pool", "INTP") {
         _mint(receiver, shares);
     }
 
-    function withdraw(uint256 amount) external returns(uint256 shares) {
+    function withdraw(uint256 amount) external returns (uint256 shares) {
         shares = previewWithdraw(amount);
 
         _burn(msg.sender, shares);
         asset.transfer(msg.sender, amount);
     }
 
-    function redeem(uint256 shares) external returns(uint256 amount) {
+    function redeem(uint256 shares) external returns (uint256 amount) {
         amount = previewRedeem(shares);
 
         // Check for rounding error since we round down in previewRedeem.
@@ -68,7 +68,7 @@ contract YieldSourceMock is ERC20("Interest Pool", "INTP") {
         return convertToAssets(shares);
     }
 
-    function totalAssets() public view returns(uint256) {
+    function totalAssets() public view returns (uint256) {
         return asset.balanceOf(address(this));
     }
 

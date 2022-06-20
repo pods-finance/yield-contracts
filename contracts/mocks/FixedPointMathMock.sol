@@ -8,11 +8,19 @@ contract FixedPointMathMock {
     using FixedPointMath for uint256;
     using FixedPointMath for FixedPointMath.Fractional;
 
-    function mulDivUp(uint256 x, uint256 y, uint256 denominator) external pure returns(uint256) {
+    function mulDivUp(
+        uint256 x,
+        uint256 y,
+        uint256 denominator
+    ) external pure returns (uint256) {
         return x.mulDivUp(y, denominator);
     }
 
-    function mulDivDown(uint256 x, uint256 y, uint256 denominator) external pure returns(uint256) {
+    function mulDivDown(
+        uint256 x,
+        uint256 y,
+        uint256 denominator
+    ) external pure returns (uint256) {
         return x.mulDivDown(y, denominator);
     }
 
