@@ -116,7 +116,7 @@ abstract contract BaseVault is IVault, ERC20, ERC20Permit, Capped {
         asset.safeTransfer(receiver, assets - fee);
         asset.safeTransfer(controller(), fee);
 
-        emit Withdraw(owner, shares, assets);
+        emit Withdraw(owner, shares, assets, fee);
     }
 
     /**
@@ -140,7 +140,7 @@ abstract contract BaseVault is IVault, ERC20, ERC20Permit, Capped {
         asset.safeTransfer(receiver, assets - fee);
         asset.safeTransfer(controller(), fee);
 
-        emit Withdraw(owner, shares, assets);
+        emit Withdraw(owner, shares, assets, fee);
     }
 
     /**

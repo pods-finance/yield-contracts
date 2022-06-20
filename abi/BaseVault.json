@@ -207,6 +207,12 @@
         "internalType": "uint256",
         "name": "amountWithdrawn",
         "type": "uint256"
+      },
+      {
+        "indexed": false,
+        "internalType": "uint256",
+        "name": "fee",
+        "type": "uint256"
       }
     ],
     "name": "Withdraw",
