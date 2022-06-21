@@ -20,7 +20,11 @@ contract ConfigurationManager is IConfigurationManager, Ownable {
      * @param name The parameter name
      * @param value The parameter value
      */
-    function setParameter(address target, bytes32 name, uint256 value) public override onlyOwner {
+    function setParameter(
+        address target,
+        bytes32 name,
+        uint256 value
+    ) public override onlyOwner {
         _parameters[target][name] = value;
         emit ParameterSet(target, name, value);
     }

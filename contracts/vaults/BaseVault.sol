@@ -31,6 +31,7 @@ abstract contract BaseVault is IVault, ERC20, ERC20Permit, Capped {
 
     uint256 public constant DENOMINATOR = 10000;
     uint256 public constant WITHDRAW_FEE = 100;
+    uint256 public processedDeposits = 0;
 
     DepositQueueLib.DepositQueue private depositQueue;
 
@@ -68,8 +69,8 @@ abstract contract BaseVault is IVault, ERC20, ERC20Permit, Capped {
         if (shares == 0) revert IVault__ZeroShares();
         _spendCap(shares);
 
-        asset.safeTransferFrom(msg.sender, address(this), assets);
         depositQueue.push(DepositQueueLib.DepositEntry(receiver, assets));
+        asset.safeTransferFrom(msg.sender, address(this), assets);
 
         emit Deposit(receiver, assets);
     }
@@ -80,11 +81,10 @@ abstract contract BaseVault is IVault, ERC20, ERC20Permit, Capped {
     function mint(uint256 shares, address receiver) public virtual override returns (uint256 assets) {
         if (isProcessingDeposits) revert IVault__ForbiddenWhileProcessingDeposits();
         assets = previewMint(shares);
-
         _spendCap(shares);
 
-        asset.safeTransferFrom(msg.sender, address(this), assets);
         depositQueue.push(DepositQueueLib.DepositEntry(receiver, assets));
+        asset.safeTransferFrom(msg.sender, address(this), assets);
 
         emit Deposit(receiver, assets);
     }
@@ -270,6 +270,7 @@ abstract contract BaseVault is IVault, ERC20, ERC20Permit, Capped {
         if (!isProcessingDeposits) revert IVault__NotProcessingDeposits();
 
         isProcessingDeposits = false;
+        processedDeposits = 0;
 
         uint256 idleBalance = asset.balanceOf(address(this));
         _afterRoundStart(idleBalance);
@@ -295,10 +296,10 @@ abstract contract BaseVault is IVault, ERC20, ERC20Permit, Capped {
     function processQueuedDeposits(uint256 startIndex, uint256 endIndex) public {
         if (!isProcessingDeposits) revert IVault__NotProcessingDeposits();
 
-        uint256 processedDeposits = totalAssets();
+        uint256 currentAssets = totalAssets() + processedDeposits;
         for (uint256 i = startIndex; i < endIndex; i++) {
             DepositQueueLib.DepositEntry memory depositEntry = depositQueue.get(i);
-            _processDeposit(depositEntry, processedDeposits);
+            _processDeposit(depositEntry, currentAssets);
             processedDeposits += depositEntry.amount;
         }
         depositQueue.remove(startIndex, endIndex);
@@ -309,13 +310,10 @@ abstract contract BaseVault is IVault, ERC20, ERC20Permit, Capped {
     /**
      * @notice Mint new shares, effectively representing user participation in the Vault.
      */
-    function _processDeposit(DepositQueueLib.DepositEntry memory depositEntry, uint256 processedDeposits)
-        internal
-        virtual
-    {
+    function _processDeposit(DepositQueueLib.DepositEntry memory depositEntry, uint256 currentAssets) internal virtual {
         uint256 supply = totalSupply();
         uint256 assets = depositEntry.amount;
-        uint256 shares = processedDeposits == 0 || supply == 0 ? assets : assets.mulDivUp(supply, processedDeposits);
+        uint256 shares = currentAssets == 0 || supply == 0 ? assets : assets.mulDivUp(supply, currentAssets);
         _mint(depositEntry.owner, shares);
         emit DepositProcessed(depositEntry.owner, currentRoundId, assets, shares);
     }

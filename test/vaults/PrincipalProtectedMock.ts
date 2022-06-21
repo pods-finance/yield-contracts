@@ -297,4 +297,43 @@ describe('PrincipalProtectedMock', () => {
     expect(await vault.idleBalanceOf(user3.address)).to.be.equal(0)
     expect(await vault.idleBalanceOf(user4.address)).to.be.equal(0)
   })
+
+  it('Should remove less amount than initial deposited - break process deposits in two steps', async () => {
+    // This test will only work if InvestRatio = 50%
+    const assetAmount = ethers.utils.parseEther('1')
+    const initialDeposit0 = assetAmount.mul(6)
+    const initialDeposit1 = assetAmount.mul(1)
+    const initialDeposit2 = assetAmount.mul(5)
+
+    await asset.connect(user0).mint(initialDeposit0.add(initialDeposit1))
+    await asset.connect(user1).mint(initialDeposit2)
+
+    // Round 0
+    await vault.connect(user0).deposit(initialDeposit0, user0.address)
+    await vault.connect(vaultController).endRound()
+    await vault.connect(vaultController).processQueuedDeposits(0, await vault.depositQueueSize())
+
+    // Round 1
+    await vault.connect(vaultController).startRound()
+    await yieldSource.generateInterest(ethers.utils.parseEther('8'))
+    await vault.connect(vaultController).endRound()
+
+    // Round 2
+    await vault.connect(vaultController).startRound()
+    await yieldSource.generateInterest(ethers.utils.parseEther('2'))
+    await vault.connect(vaultController).endRound()
+
+    await vault.connect(vaultController).startRound()
+    await vault.connect(user0).deposit(initialDeposit1, user0.address)
+    await vault.connect(user1).deposit(initialDeposit2, user1.address)
+
+    await vault.connect(vaultController).endRound()
+    await vault.connect(vaultController).processQueuedDeposits(0, 1)
+    await vault.connect(vaultController).processQueuedDeposits(0, 1)
+    await vault.connect(vaultController).startRound()
+
+    await vault.connect(user1).redeem(await vault.balanceOf(user1.address), user1.address, user1.address)
+
+    expect(await asset.balanceOf(user1.address)).to.be.lte(initialDeposit2)
+  })
 })
