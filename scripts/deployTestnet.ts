@@ -43,17 +43,7 @@ async function main (): Promise<void> {
   console.log(`\nInvestor deployed at: ${investor.address}\n`)
   await verifyContract(hre, investor.address, [asset.address])
 
-  const DepositQueueLib = await ethers.getContractFactory('DepositQueueLib')
-  const depositQueueLib = await DepositQueueLib.deploy()
-  await depositQueueLib.deployTransaction.wait(WAIT_CONFIRMATIONS)
-  await verifyContract(hre, depositQueueLib.address, [])
-
-  const Vault = await ethers.getContractFactory('PrincipalProtectedMock', {
-    libraries: {
-      DepositQueueLib: depositQueueLib.address
-    }
-  })
-
+  const Vault = await ethers.getContractFactory('PrincipalProtectedMock')
   const vaultConstructorArguments = [
     configurationManager.address,
     asset.address,
@@ -75,7 +65,6 @@ async function main (): Promise<void> {
     Asset: asset.address,
     YieldSourceMock: yieldSource.address,
     InvestorActorMock: investor.address,
-    DepositQueueLib: depositQueueLib.address,
     PrincipalProtectedMock: vault.address
   })
 }

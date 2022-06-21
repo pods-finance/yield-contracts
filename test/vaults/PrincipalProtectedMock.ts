@@ -19,9 +19,6 @@ describe('PrincipalProtectedMock', () => {
     ;[, user0, user1, user2, vaultController, user3, user4] = await ethers.getSigners()
     configuration = await createConfigurationManager()
 
-    const DepositQueueLib = await ethers.getContractFactory('DepositQueueLib')
-    const depositQueueLib = await DepositQueueLib.deploy()
-
     const Asset = await ethers.getContractFactory('Asset')
     asset = await Asset.deploy('Asset', 'AST')
 
@@ -31,11 +28,7 @@ describe('PrincipalProtectedMock', () => {
     const InvestorActorMock = await ethers.getContractFactory('InvestorActorMock')
     investor = await InvestorActorMock.deploy(asset.address)
 
-    const PrincipalProtectedETHBull = await ethers.getContractFactory('PrincipalProtectedMock', {
-      libraries: {
-        DepositQueueLib: depositQueueLib.address
-      }
-    })
+    const PrincipalProtectedETHBull = await ethers.getContractFactory('PrincipalProtectedMock')
     vault = await PrincipalProtectedETHBull.deploy(
       configuration.address,
       asset.address,
