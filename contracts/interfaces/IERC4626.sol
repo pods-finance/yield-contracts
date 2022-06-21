@@ -5,6 +5,16 @@ pragma solidity >=0.8.6;
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 
 interface IERC4626 is IERC20 {
+    event Deposit(address indexed caller, address indexed owner, uint256 assets, uint256 shares);
+
+    event Withdraw(
+        address indexed caller,
+        address indexed receiver,
+        address indexed owner,
+        uint256 assets,
+        uint256 shares
+    );
+
     /**
      * @notice Total amount of the underlying asset that is “managed” by Vault.
      */

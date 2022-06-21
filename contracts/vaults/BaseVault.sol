@@ -72,7 +72,7 @@ abstract contract BaseVault is IVault, ERC20, ERC20Permit, Capped {
         depositQueue.push(DepositQueueLib.DepositEntry(receiver, assets));
         asset.safeTransferFrom(msg.sender, address(this), assets);
 
-        emit Deposit(receiver, assets);
+        emit Deposit(msg.sender, receiver, assets, shares);
     }
 
     /**
@@ -86,7 +86,7 @@ abstract contract BaseVault is IVault, ERC20, ERC20Permit, Capped {
         depositQueue.push(DepositQueueLib.DepositEntry(receiver, assets));
         asset.safeTransferFrom(msg.sender, address(this), assets);
 
-        emit Deposit(receiver, assets);
+        emit Deposit(msg.sender, receiver, assets, shares);
     }
 
     /**
@@ -116,7 +116,8 @@ abstract contract BaseVault is IVault, ERC20, ERC20Permit, Capped {
         asset.safeTransfer(receiver, assets - fee);
         asset.safeTransfer(controller(), fee);
 
-        emit Withdraw(owner, shares, assets, fee);
+        emit Withdraw(msg.sender, receiver, owner, assets, shares);
+        emit FeeCollected(fee);
     }
 
     /**
@@ -144,7 +145,8 @@ abstract contract BaseVault is IVault, ERC20, ERC20Permit, Capped {
         asset.safeTransfer(receiver, assets - fee);
         asset.safeTransfer(controller(), fee);
 
-        emit Withdraw(owner, shares, assets, fee);
+        emit Withdraw(msg.sender, receiver, owner, assets, shares);
+        emit FeeCollected(fee);
     }
 
     /**

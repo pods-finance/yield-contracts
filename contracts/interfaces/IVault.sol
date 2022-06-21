@@ -12,8 +12,7 @@ interface IVault is IERC4626 {
     error IVault__ZeroAssets();
     error IVault__ZeroShares();
 
-    event Deposit(address indexed owner, uint256 amountDeposited);
-    event Withdraw(address indexed owner, uint256 sharesBurnt, uint256 amountWithdrawn, uint256 fee);
+    event FeeCollected(uint256 fee);
     event StartRound(uint256 indexed roundId, uint256 amountAddedToStrategy);
     event EndRound(uint256 indexed roundId);
     event DepositProcessed(address indexed owner, uint256 indexed roundId, uint256 assets, uint256 shares);
