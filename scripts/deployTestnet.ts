@@ -44,7 +44,6 @@ async function main (): Promise<void> {
   const vaultConstructorArguments = [
     configurationManager.address,
     asset.address,
-    deployer.address,
     investor.address,
     yieldSource.address
   ] as const
