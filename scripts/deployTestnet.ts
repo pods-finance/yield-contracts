@@ -17,9 +17,6 @@ async function main (): Promise<void> {
   await configurationManager.deployTransaction.wait(WAIT_CONFIRMATIONS)
   console.log(`\nConfigurationManager deployed at: ${configurationManager.address}\n`)
 
-  await configurationManager.setParameter(ethers.utils.formatBytes32String('VAULT_CONTROLLER'), deployer.address)
-  await configurationManager.setParameter(ethers.utils.formatBytes32String('WITHDRAW_FEE_RATIO'), BigNumber.from('100'))
-
   await verifyContract(hre, configurationManager.address, [])
 
   const assetName = 'Liquid staked Ether 2.0'
@@ -57,7 +54,6 @@ async function main (): Promise<void> {
   const vaultConstructorArguments = [
     configurationManager.address,
     asset.address,
-    deployer.address,
     investor.address,
     yieldSource.address
   ] as const
@@ -66,6 +62,9 @@ async function main (): Promise<void> {
   await vault.deployTransaction.wait(WAIT_CONFIRMATIONS)
   console.log(`\nVault deployed at: ${vault.address}\n`)
   await verifyContract(hre, vault.address, vaultConstructorArguments)
+
+  await configurationManager.setParameter(vault.address, ethers.utils.formatBytes32String('VAULT_CONTROLLER'), deployer.address)
+  await configurationManager.setParameter(vault.address, ethers.utils.formatBytes32String('WITHDRAW_FEE_RATIO'), BigNumber.from('100'))
 
   /* eslint-disable-next-line @typescript-eslint/no-floating-promises */
   await (await investor.approveVaultToPull(vault.address)).wait(WAIT_CONFIRMATIONS)
