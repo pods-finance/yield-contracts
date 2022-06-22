@@ -88,6 +88,13 @@ b) Store the initial round balance and initial round share price.
 ```shell
 npx hardhat test
 ```
+## Fuzz
+
+You will need to install [echidna](https://github.com/crytic/echidna) separately, and then run:
+
+```shell
+echidna-test test/invariants/ --contract STETHVaultInvariants --config test/invariants/config.yaml
+```
 ## Deploy and config
 
 Deploy the contracts
