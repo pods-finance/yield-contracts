@@ -254,7 +254,7 @@ abstract contract BaseVault is IVault, ERC20, ERC20Permit, Capped {
     /**
      * @inheritdoc IVault
      */
-    function depositQueueSize() external view returns (uint256) {
+    function depositQueueSize() public view returns (uint256) {
         return depositQueue.size();
     }
 

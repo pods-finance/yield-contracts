@@ -3,4 +3,4 @@
 
 yarn compile
 yarn lint
-yarn prettier
+yarn prettier --check

@@ -14,7 +14,7 @@ library DepositQueueLib {
         uint256 totalDeposited;
     }
 
-    function push(DepositQueue storage queue, DepositEntry memory deposit) external {
+    function push(DepositQueue storage queue, DepositEntry memory deposit) internal {
         if (queue.cache[deposit.owner] == 0) {
             queue.list.push(deposit.owner);
         }
@@ -27,7 +27,7 @@ library DepositQueueLib {
         DepositQueue storage queue,
         uint256 startIndex,
         uint256 endIndex
-    ) external {
+    ) internal {
         if (endIndex > startIndex) {
             // Remove the interval from the cache
             while (startIndex < endIndex) {
@@ -51,17 +51,17 @@ library DepositQueueLib {
         }
     }
 
-    function get(DepositQueue storage queue, uint256 index) external view returns (DepositEntry memory depositEntry) {
+    function get(DepositQueue storage queue, uint256 index) internal view returns (DepositEntry memory depositEntry) {
         address owner = queue.list[index];
         depositEntry.owner = owner;
         depositEntry.amount = queue.cache[owner];
     }
 
-    function balanceOf(DepositQueue storage queue, address owner) external view returns (uint256) {
+    function balanceOf(DepositQueue storage queue, address owner) internal view returns (uint256) {
         return queue.cache[owner];
     }
 
-    function size(DepositQueue storage queue) external view returns (uint256) {
+    function size(DepositQueue storage queue) internal view returns (uint256) {
         return queue.list.length;
     }
 }

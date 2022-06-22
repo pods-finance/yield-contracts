@@ -8,7 +8,8 @@
     "test": "hardhat test",
     "postinstall": "husky install",
     "prettier": "./node_modules/.bin/prettier contracts/**/*.sol",
-    "prettier:fix": "./node_modules/.bin/prettier --write contracts/**/*.sol"
+    "prettier:fix": "./node_modules/.bin/prettier --write contracts/**/*.sol",
+    "slither": "slither . --solc-remaps '@openzeppelin=node_modules/@openzeppelin' --exclude assembly,timestamp,missing-zero-check,external-function,low-level-calls"
   },
   "devDependencies": {
     "@nomiclabs/hardhat-ethers": "^2.0.5",

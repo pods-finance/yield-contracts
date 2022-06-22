@@ -44,20 +44,13 @@ describe('STETHVault', () => {
     ;[, , , , vaultController] = await ethers.getSigners()
     configuration = await createConfigurationManager()
 
-    const DepositQueueLib = await ethers.getContractFactory('DepositQueueLib')
-    const depositQueueLib = await DepositQueueLib.deploy()
-
     // Lido's stEth
     asset = await ethers.getContractAt('ERC20', '0xae7ab96520DE3A18E5e111B5EaAb095312D7fE84')
 
     const InvestorActorMock = await ethers.getContractFactory('InvestorActorMock')
     investor = await InvestorActorMock.deploy(asset.address)
 
-    const STETHVault = await ethers.getContractFactory('STETHVault', {
-      libraries: {
-        DepositQueueLib: depositQueueLib.address
-      }
-    })
+    const STETHVault = await ethers.getContractFactory('STETHVault')
     vault = await STETHVault.deploy(
       configuration.address,
       asset.address,

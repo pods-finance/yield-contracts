@@ -11,13 +11,7 @@ describe('DepositQueueLib', () => {
 
   before(async () => {
     [, user0, user1] = await ethers.getSigners()
-    const DepositQueueLib = await ethers.getContractFactory('DepositQueueLib')
-    const depositQueueLib = await DepositQueueLib.deploy()
-    const DepositQueueMock = await ethers.getContractFactory('DepositQueueMock', {
-      libraries: {
-        DepositQueueLib: depositQueueLib.address
-      }
-    })
+    const DepositQueueMock = await ethers.getContractFactory('DepositQueueMock')
     queue = await DepositQueueMock.deploy()
   })
 
