@@ -18,20 +18,13 @@ describe('BaseVault', () => {
     ;[, user0, user1, user2, vaultController, proxy] = await ethers.getSigners()
     configuration = await createConfigurationManager()
 
-    const DepositQueueLib = await ethers.getContractFactory('DepositQueueLib')
-    const depositQueueLib = await DepositQueueLib.deploy()
-
     const Asset = await ethers.getContractFactory('Asset')
     asset = await Asset.deploy('Asset', 'AST')
 
     const YieldSourceMock = await ethers.getContractFactory('YieldSourceMock')
     yieldSource = await YieldSourceMock.deploy(asset.address)
 
-    const Vault = await ethers.getContractFactory('YieldVaultMock', {
-      libraries: {
-        DepositQueueLib: depositQueueLib.address
-      }
-    })
+    const Vault = await ethers.getContractFactory('YieldVaultMock')
     vault = await Vault.deploy(
       configuration.address,
       asset.address,
