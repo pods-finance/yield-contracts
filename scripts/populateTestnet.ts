@@ -35,19 +35,19 @@ async function main (): Promise<void> {
   console.log('User1 Deposited')
 
   await (await vault.endRound()).wait(WAIT_CONFIRMATIONS)
-  console.log('Round Ended')
+  console.log('Round 0 Ended')
   await (await vault.processQueuedDeposits(0, 2)).wait(WAIT_CONFIRMATIONS)
   console.log('Payments processed')
   await (await vault.startRound()).wait(WAIT_CONFIRMATIONS)
-  console.log('Round Started')
+  console.log('Round 1 Started')
 
   await (await yieldSource.generateInterest(ethers.utils.parseEther('1'))).wait(WAIT_CONFIRMATIONS)
 
   await (await vault.endRound()).wait(WAIT_CONFIRMATIONS)
-  console.log('Round Ended 2')
+  console.log('Round 1 Ended')
 
   await (await vault.startRound()).wait(WAIT_CONFIRMATIONS)
-  console.log('Round Started 2')
+  console.log('Round 2 Started')
 
   await (await vault.connect(user1).redeem(await vault.balanceOf(user1.address), user1.address, user1.address)).wait(WAIT_CONFIRMATIONS)
   console.log('User1 Withdrew')
