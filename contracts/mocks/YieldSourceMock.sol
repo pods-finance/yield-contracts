@@ -6,9 +6,11 @@ import "@openzeppelin/contracts/token/ERC20/extensions/IERC20Metadata.sol";
 import "@openzeppelin/contracts/token/ERC20/ERC20.sol";
 import "../libs/FixedPointMath.sol";
 import "./Asset.sol";
+import "../libs/TransferUtils.sol";
 
 contract YieldSourceMock is ERC20("Interest Pool", "INTP") {
     using FixedPointMath for uint256;
+    using TransferUtils for Asset;
 
     Asset public immutable asset;
 
@@ -34,15 +36,15 @@ contract YieldSourceMock is ERC20("Interest Pool", "INTP") {
         // Check for rounding error since we round down in previewDeposit.
         require(amount != 0, "Shares too low");
 
-        asset.transferFrom(msg.sender, address(this), amount);
         _mint(receiver, shares);
+        asset.safeTransferFrom(msg.sender, address(this), amount);
     }
 
     function withdraw(uint256 amount) external returns (uint256 shares) {
         shares = previewWithdraw(amount);
 
         _burn(msg.sender, shares);
-        asset.transfer(msg.sender, amount);
+        asset.safeTransfer(msg.sender, amount);
     }
 
     function redeem(uint256 shares) external returns (uint256 amount) {
@@ -52,7 +54,7 @@ contract YieldSourceMock is ERC20("Interest Pool", "INTP") {
         require(amount != 0, "Shares too low");
 
         _burn(msg.sender, shares);
-        asset.transfer(msg.sender, amount);
+        asset.safeTransfer(msg.sender, amount);
     }
 
     function previewDeposit(uint256 amount) public view returns (uint256) {

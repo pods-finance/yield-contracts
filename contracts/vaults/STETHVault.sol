@@ -52,8 +52,8 @@ contract STETHVault is BaseVault {
     }
 
     function _afterRoundEnd() internal override {
-        uint256 roundAccruedInterest;
-        uint256 endSharePrice;
+        uint256 roundAccruedInterest = 0;
+        uint256 endSharePrice = 0;
         uint256 investmentYield = asset.balanceOf(investor);
         uint256 idleAssets = asset.balanceOf(address(this));
         uint256 supply = totalSupply();
