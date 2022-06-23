@@ -11,12 +11,12 @@ describe('PrincipalProtectedMock', () => {
     investor: InvestorActorMock, configuration: ConfigurationManager
 
   let user0: SignerWithAddress, user1: SignerWithAddress, user2: SignerWithAddress, user3: SignerWithAddress,
-    user4: SignerWithAddress, vaultController: SignerWithAddress
+    user4: SignerWithAddress, vaultController: SignerWithAddress, user5: SignerWithAddress, user6: SignerWithAddress
 
   let snapshotId: BigNumber
 
   before(async () => {
-    ;[, user0, user1, user2, vaultController, user3, user4] = await ethers.getSigners()
+    ;[, user0, user1, user2, vaultController, user3, user4, user5, user6] = await ethers.getSigners()
     configuration = await createConfigurationManager()
 
     const Asset = await ethers.getContractFactory('Asset')
@@ -45,6 +45,10 @@ describe('PrincipalProtectedMock', () => {
     await asset.connect(user0).approve(vault.address, ethers.constants.MaxUint256)
     await asset.connect(user1).approve(vault.address, ethers.constants.MaxUint256)
     await asset.connect(user2).approve(vault.address, ethers.constants.MaxUint256)
+    await asset.connect(user3).approve(vault.address, ethers.constants.MaxUint256)
+    await asset.connect(user4).approve(vault.address, ethers.constants.MaxUint256)
+    await asset.connect(user5).approve(vault.address, ethers.constants.MaxUint256)
+    await asset.connect(user6).approve(vault.address, ethers.constants.MaxUint256)
     await asset.connect(vaultController).approve(vault.address, ethers.constants.MaxUint256)
   })
 
@@ -328,5 +332,53 @@ describe('PrincipalProtectedMock', () => {
     await vault.connect(user1).redeem(await vault.balanceOf(user1.address), user1.address, user1.address)
 
     expect(await asset.balanceOf(user1.address)).to.be.lte(initialDeposit2)
+  })
+
+  it('Should remove less amount than initial deposited - 5 consecutive deposits', async () => {
+    // This test will only work if InvestRatio = 50%
+    const assetAmount = ethers.utils.parseEther('1')
+    const initialDeposit0 = assetAmount.mul(6)
+    const initialDeposit1 = assetAmount.mul(1)
+    const initialDeposit2 = assetAmount.mul(5)
+    const initialDeposit3 = assetAmount.mul(3)
+    const initialDeposit4 = assetAmount.mul(2)
+    const initialDeposit5 = assetAmount.mul(2)
+
+    await asset.connect(user0).mint(initialDeposit0.add(initialDeposit1))
+    await asset.connect(user1).mint(initialDeposit2)
+    await asset.connect(user2).mint(initialDeposit3)
+    await asset.connect(user3).mint(initialDeposit4)
+    await asset.connect(user4).mint(initialDeposit5)
+    await asset.connect(user5).mint(initialDeposit5)
+
+    // Round 0
+    await vault.connect(user0).deposit(initialDeposit0, user0.address)
+    await vault.connect(vaultController).endRound()
+    await vault.connect(vaultController).processQueuedDeposits(0, await vault.depositQueueSize())
+
+    // Round 1
+    await vault.connect(vaultController).startRound()
+    await yieldSource.generateInterest(ethers.utils.parseEther('8'))
+    await vault.connect(vaultController).endRound()
+
+    // Round 2
+    await vault.connect(vaultController).startRound()
+    await yieldSource.generateInterest(ethers.utils.parseEther('2'))
+    await vault.connect(vaultController).endRound()
+
+    await vault.connect(vaultController).startRound()
+    await vault.connect(user0).deposit(initialDeposit1, user0.address)
+    await vault.connect(user1).deposit(initialDeposit2, user1.address)
+    await vault.connect(user2).deposit(initialDeposit3, user2.address)
+    await vault.connect(user3).deposit(initialDeposit4, user3.address)
+    await vault.connect(user4).deposit(initialDeposit5, user4.address)
+
+    await vault.connect(vaultController).endRound()
+    await vault.connect(vaultController).processQueuedDeposits(0, 5)
+    await vault.connect(vaultController).startRound()
+
+    await vault.connect(user4).redeem(await vault.balanceOf(user4.address), user4.address, user4.address)
+
+    expect(await asset.balanceOf(user4.address)).to.be.lte(initialDeposit5)
   })
 })
