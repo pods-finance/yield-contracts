@@ -32,7 +32,17 @@ library String {
     }
 }
 
-contract STETHVaultInvariants is STETHVault {
+contract FuzzyAddresses {
+    address constant public user0 = address(0x10000);
+    address constant public user1 = address(0x20000);
+    address constant public vaultController = address(0x30000);
+
+    function _addressIsAllowed(address to) internal returns(bool) {
+        return to == user0 || to == user1 || to == vaultController;
+    }
+}
+
+contract STETHVaultInvariants is STETHVault, FuzzyAddresses {
     ConfigurationManager public $configuration = new ConfigurationManager();
     STETH public $asset = new STETH();
     InvestorActorMock public $investor = new InvestorActorMock(address($asset));
@@ -62,9 +72,9 @@ contract STETHVaultInvariants is STETHVault {
 
     //  ["0x10000", "0x20000", "0x30000"]
     function echidna_sum_total_supply() public returns (bool) {
-        uint256 balanceA = balanceOf(address(0x10000));
-        uint256 balanceB = balanceOf(address(0x20000));
-        uint256 balanceC = balanceOf(address(0x30000));
+        uint256 balanceA = balanceOf(user0);
+        uint256 balanceB = balanceOf(user1);
+        uint256 balanceC = balanceOf(vaultController);
 
         uint256 sumBalances = balanceA + balanceB + balanceC;
 
@@ -78,20 +88,16 @@ contract STETHVaultInvariants is STETHVault {
     }
 
     function deposit(uint256 assets, address) public override returns (uint256 shares) {
-        super.deposit(assets, msg.sender);
+        return super.deposit(assets, msg.sender);
     }
 
     function mint(uint256 shares, address) public override returns (uint256 assets) {
-        super.mint(shares, msg.sender);
+        return super.mint(shares, msg.sender);
     }
 
     function transfer(address to, uint256 amount) public override returns (bool) {
-        address owner = _msgSender();
-        if (to != address(0x10000) || to != address(0x20000) || to != address(0x30000)) {
-            return false;
-        }
-        _transfer(owner, to, amount);
-        return true;
+        if (!_addressIsAllowed(to)) return false;
+        return super.transfer(to, amount);
     }
 
     function transferFrom(
@@ -99,12 +105,7 @@ contract STETHVaultInvariants is STETHVault {
         address to,
         uint256 amount
     ) public override returns (bool) {
-        address spender = _msgSender();
-        if (to != address(0x10000) || to != address(0x20000) || to != address(0x30000)) {
-            return false;
-        }
-        _spendAllowance(from, spender, amount);
-        _transfer(from, to, amount);
-        return true;
+        if (!_addressIsAllowed(to)) return false;
+        return super.transferFrom(from, to, amount);
     }
 }
