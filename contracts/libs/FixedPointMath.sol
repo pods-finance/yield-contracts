@@ -54,4 +54,8 @@ library FixedPointMath {
     function fractionRoundDown(Fractional memory x) internal pure returns (uint256) {
         return x.numerator.mulDivDown(1, x.denominator);
     }
+
+    function min(uint256 x, uint256 y) internal pure returns (uint256) {
+        return x < y ? x : y;
+    }
 }

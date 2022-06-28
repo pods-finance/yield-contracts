@@ -47,4 +47,8 @@ contract FixedPointMathMock {
     function fractionRoundDown(FixedPointMath.Fractional memory x) external pure returns (uint256) {
         return x.fractionRoundDown();
     }
+
+    function min(uint256 x, uint256 y) external pure returns (uint256) {
+        return FixedPointMath.min(x, y);
+    }
 }

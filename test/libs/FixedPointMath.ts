@@ -39,4 +39,12 @@ describe('FixedPointMath', () => {
       expect(await math.fractionRoundUp({ numerator: 1000, denominator: 3 })).to.be.equal(334)
     })
   })
+
+  describe('min', () => {
+    it('should return the smaller value', async () => {
+      expect(await math.min(100, 10)).to.be.equal(10)
+      expect(await math.min(10, 100)).to.be.equal(10)
+      expect(await math.min(10, 10)).to.be.equal(10)
+    })
+  })
 })

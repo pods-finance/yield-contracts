@@ -384,7 +384,7 @@
   },
   {
     "inputs": [],
-    "name": "WITHDRAW_FEE",
+    "name": "MAX_WITHDRAW_FEE",
     "outputs": [
       {
         "internalType": "uint256",

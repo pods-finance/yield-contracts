@@ -30,7 +30,7 @@ abstract contract BaseVault is IVault, ERC20, ERC20Permit, Capped {
     bool public isProcessingDeposits = false;
 
     uint256 public constant DENOMINATOR = 10000;
-    uint256 public constant WITHDRAW_FEE = 100;
+    uint256 public constant MAX_WITHDRAW_FEE = 1000;
     uint256 public processedDeposits = 0;
 
     DepositQueueLib.DepositQueue private depositQueue;
@@ -234,7 +234,9 @@ abstract contract BaseVault is IVault, ERC20, ERC20Permit, Capped {
      * @inheritdoc IVault
      */
     function withdrawFeeRatio() public view override returns (uint256) {
-        return configuration.getParameter(address(this), "WITHDRAW_FEE_RATIO");
+        uint256 withdrawFeeRatio = configuration.getParameter(address(this), "WITHDRAW_FEE_RATIO");
+        // Fee is limited to MAX_WITHDRAW_FEE
+        return FixedPointMath.min(withdrawFeeRatio, MAX_WITHDRAW_FEE);
     }
 
     /**
