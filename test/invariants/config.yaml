@@ -1,9 +1,8 @@
 #format can be "text" or "json" for different output (human or machine readable)
 # format: 'text'
-#checkAsserts checks assertions
-# checkAsserts: true
 #coverage controls coverage guided testing
 coverage: false
+# testMode: "assertion"
 # #psender is the sender for property transactions; by default intentionally
 # #the same as contract deployer
 # psender: "0x00a329c0648769a73afac7f9381e08fb43dbea70"
@@ -42,7 +41,7 @@ sender: ["0x10000", "0x20000", "0x30000"]
 # #cryticArgs allows special args to crytic
 cryticArgs:
   [
-    "--solc-remaps", "@openzeppelin/contracts/=node_modules/@openzeppelin/contracts/",
+    "--solc-remaps", "@openzeppelin/contracts/=node_modules/@openzeppelin/contracts/ hardhat=node_modules/hardhat/"
 #    "--solc-libraries", "DepositQueueLib=0xf378794d7e6062ee64e53c8be33e9b16d5a034dc"
   ]
 # #quiet produces (much) less verbose output
