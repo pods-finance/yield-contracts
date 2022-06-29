@@ -33,7 +33,7 @@ abstract contract BaseVault is IVault, ERC20, ERC20Permit, Capped {
     uint256 public constant MAX_WITHDRAW_FEE = 1000;
     uint256 public processedDeposits = 0;
 
-    DepositQueueLib.DepositQueue private depositQueue;
+    DepositQueueLib.DepositQueue internal depositQueue;
 
     constructor(IConfigurationManager _configuration, IERC20Metadata _asset)
         ERC20(string(abi.encodePacked("Pods Yield ", _asset.symbol())), string(abi.encodePacked("py", _asset.symbol())))
