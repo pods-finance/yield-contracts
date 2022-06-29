@@ -3,7 +3,7 @@ import { ethers } from 'hardhat'
 import { BigNumber } from 'ethers'
 import { SignerWithAddress } from '@nomiclabs/hardhat-ethers/signers'
 import createConfigurationManager from '../utils/createConfigurationManager'
-import feeExcluded from '../utils/feeExcluded'
+import { feeExcluded } from '../utils/feeExcluded'
 import { Asset, ConfigurationManager, InvestorActorMock, PrincipalProtectedMock, YieldSourceMock } from '../../typechain'
 
 describe('PrincipalProtectedMock', () => {
@@ -58,6 +58,63 @@ describe('PrincipalProtectedMock', () => {
 
   afterEach(async () => {
     await ethers.provider.send('evm_revert', [snapshotId])
+  })
+
+  describe('Reading functions', () => {
+    it('should match maxWithdraw and real withdraw balances', async () => {
+      const assets = ethers.utils.parseEther('100')
+      const user0Deposit = assets.mul(2)
+      const user1Deposit = assets
+
+      await asset.connect(user0).mint(user0Deposit)
+      await asset.connect(user1).mint(user1Deposit)
+      // Round 0
+      await vault.connect(user0).deposit(user0Deposit, user0.address)
+      await vault.connect(user1).deposit(user1Deposit, user1.address)
+      await vault.connect(vaultController).endRound()
+      await vault.connect(vaultController).processQueuedDeposits(0, await vault.depositQueueSize())
+      // Round 1
+      await vault.connect(vaultController).startRound()
+      await yieldSource.generateInterest(ethers.utils.parseEther('100'))
+
+      const user0maxWithdraw = await vault.maxWithdraw(user0.address)
+      const user1maxWithdraw = await vault.maxWithdraw(user1.address)
+
+      await vault.connect(user0).redeem(await vault.balanceOf(user0.address), user0.address, user0.address)
+      await vault.connect(user1).redeem(await vault.balanceOf(user1.address), user1.address, user1.address)
+
+      const user0AfterBalance = await asset.balanceOf(user0.address)
+      const user1AfterBalance = await asset.balanceOf(user1.address)
+
+      expect(user0maxWithdraw).to.be.equal(user0AfterBalance)
+      expect(user1maxWithdraw).to.be.closeTo(user1AfterBalance, 1)
+    })
+
+    it('should match maxRedeem and real withdraw balances', async () => {
+      const assets = ethers.utils.parseEther('100')
+      const user0Deposit = assets.mul(2)
+      const user1Deposit = assets
+
+      await asset.connect(user0).mint(user0Deposit)
+      await asset.connect(user1).mint(user1Deposit)
+      // Round 0
+      await vault.connect(user0).deposit(user0Deposit, user0.address)
+      await vault.connect(user1).deposit(user1Deposit, user1.address)
+      await vault.connect(vaultController).endRound()
+      await vault.connect(vaultController).processQueuedDeposits(0, await vault.depositQueueSize())
+      // Round 1
+      await vault.connect(vaultController).startRound()
+      await yieldSource.generateInterest(ethers.utils.parseEther('100'))
+
+      const user0maxRedeem = await vault.maxRedeem(user0.address)
+      const user1maxRedeem = await vault.maxRedeem(user1.address)
+
+      const user0maxShares = await vault.balanceOf(user0.address)
+      const user1maxShares = await vault.balanceOf(user1.address)
+
+      expect(user0maxRedeem).to.be.equal(user0maxShares)
+      expect(user1maxRedeem).to.be.equal(user1maxShares)
+    })
   })
 
   it('should add collateral and receive shares', async () => {
@@ -382,7 +439,7 @@ describe('PrincipalProtectedMock', () => {
     expect(await asset.balanceOf(user4.address)).to.be.lte(initialDeposit5)
   })
 
-  it('Should remmove the same balances even if a queue no processed happened during a round interval', async () => {
+  it('Should remmove the same balances even if no processed queue happened during a round interval', async () => {
     // This test will only work if InvestRatio = 50%
     const user0Balance = ethers.utils.parseEther('100')
     const user1Balance = ethers.utils.parseEther('200')
@@ -406,9 +463,9 @@ describe('PrincipalProtectedMock', () => {
     const user1Moment1maxWithdraw = await vault.maxWithdraw(user1.address)
     const user2Moment1maxWithdraw = await vault.maxWithdraw(user2.address)
     // console.log('MOMENT 1 - Should have the same amounts')
-    expect(user0Moment1maxWithdraw).to.be.eq(user0Balance)
-    expect(user1Moment1maxWithdraw).to.be.eq(user1Balance)
-    expect(user2Moment1maxWithdraw).to.be.eq(user2Balance)
+    expect(user0Moment1maxWithdraw).to.be.eq(feeExcluded(user0Balance))
+    expect(user1Moment1maxWithdraw).to.be.eq(feeExcluded(user1Balance))
+    expect(user2Moment1maxWithdraw).to.be.eq(feeExcluded(user2Balance))
     // console.log((await vault.maxWithdraw(user0.address)).toString())
     // console.log((await vault.maxWithdraw(user1.address)).toString())
     // console.log((await vault.maxWithdraw(user2.address)).toString())
@@ -551,7 +608,7 @@ describe('PrincipalProtectedMock', () => {
     // console.log('MOMENT 10 - Should have the same amount as 8 and 9 minus fee')
     expect(user0Moment10Balance).to.be.lte(user0Moment9maxWithdraw)
     expect(user1Moment10Balance).to.be.lte(user1Moment9maxWithdraw)
-    expect(user2Moment10Balance).to.be.lte(user2Moment9maxWithdraw)
+    expect(user2Moment10Balance.sub(1)).to.be.lte(user2Moment9maxWithdraw)
 
     // console.log((await asset.balanceOf(user0.address)).toString())
     // console.log((await asset.balanceOf(user1.address)).toString())

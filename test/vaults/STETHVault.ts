@@ -5,7 +5,7 @@ import { SignerWithAddress } from '@nomiclabs/hardhat-ethers/signers'
 import minus from '../utils/minus'
 import { startMainnetFork, stopMainnetFork } from '../utils/mainnetFork'
 import createConfigurationManager from '../utils/createConfigurationManager'
-import feeExcluded from '../utils/feeExcluded'
+import { feeExcluded } from '../utils/feeExcluded'
 import { ConfigurationManager, ERC20, InvestorActorMock, STETHVault } from '../../typechain'
 
 describe('STETHVault', () => {
@@ -78,6 +78,70 @@ describe('STETHVault', () => {
 
   after(async () => {
     await stopMainnetFork()
+  })
+
+  describe('Reading functions', () => {
+    it('should match maxWithdraw and real withdraw balances', async () => {
+      const assets = ethers.utils.parseEther('100')
+      const user0Deposit = assets.mul(2)
+      const user1Deposit = assets
+
+      await vault.connect(user0).deposit(user0Deposit, user0.address)
+      await vault.connect(user1).deposit(user1Deposit, user1.address)
+      await vault.connect(vaultController).endRound()
+      await vault.connect(vaultController).processQueuedDeposits(0, await vault.depositQueueSize())
+      // Round 1
+      await vault.connect(vaultController).startRound()
+      await asset.connect(yieldGenerator).transfer(vault.address, ethers.utils.parseEther('103'))
+
+      const user0maxWithdraw = await vault.maxWithdraw(user0.address)
+      const user1maxWithdraw = await vault.maxWithdraw(user1.address)
+
+      await expect(async () => await vault.connect(user0).redeem(await vault.balanceOf(user0.address), user0.address, user0.address))
+        .to.changeTokenBalance(
+          asset,
+          user0,
+          user0maxWithdraw.sub(1)
+        )
+
+      await expect(async () => await vault.connect(user1).redeem(await vault.balanceOf(user1.address), user1.address, user1.address))
+        .to.changeTokenBalance(
+          asset,
+          user1,
+          user1maxWithdraw.add(2)
+        )
+
+      const vaultBalance = await asset.balanceOf(vault.address)
+      const user0BalanceOf = await vault.balanceOf(user0.address)
+      const user1BalanceOf = await vault.balanceOf(user1.address)
+
+      expect(vaultBalance).to.be.closeTo('0', 2)
+      expect(user0BalanceOf).to.be.equal('0')
+      expect(user1BalanceOf).to.be.equal('0')
+    })
+
+    it('should match maxRedeem and real withdraw balances', async () => {
+      const assets = ethers.utils.parseEther('100')
+      const user0Deposit = assets.mul(2)
+      const user1Deposit = assets
+
+      await vault.connect(user0).deposit(user0Deposit, user0.address)
+      await vault.connect(user1).deposit(user1Deposit, user1.address)
+      await vault.connect(vaultController).endRound()
+      await vault.connect(vaultController).processQueuedDeposits(0, await vault.depositQueueSize())
+      // Round 1
+      await vault.connect(vaultController).startRound()
+      await asset.connect(yieldGenerator).transfer(vault.address, ethers.utils.parseEther('103'))
+
+      const user0maxRedeem = await vault.maxRedeem(user0.address)
+      const user1maxRedeem = await vault.maxRedeem(user1.address)
+
+      const user0maxShares = await vault.balanceOf(user0.address)
+      const user1maxShares = await vault.balanceOf(user1.address)
+
+      expect(user0maxRedeem).to.be.equal(user0maxShares)
+      expect(user1maxRedeem).to.be.equal(user1maxShares)
+    })
   })
 
   it('should add collateral and receive shares', async () => {
