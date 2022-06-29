@@ -19,7 +19,7 @@ contract InvestorActorMock {
 
     function buyOptionsWithYield() external {
         uint256 ownBalance = asset.balanceOf(address(this));
-        asset.burn(ownBalance);
+        asset.transfer(address(0x1), ownBalance);
     }
 
     function approveVaultToPull(address vaultAddress) external {
