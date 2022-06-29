@@ -180,7 +180,7 @@ abstract contract BaseVault is IVault, ERC20, ERC20Permit, Capped {
      * @inheritdoc IERC4626
      */
     function previewRedeem(uint256 shares) public view override returns (uint256 assets) {
-        uint256 assets = convertToAssets(shares);
+        assets = convertToAssets(shares);
         return assets - _getFee(assets);
     }
 
