@@ -33,7 +33,7 @@ abstract contract BaseVault is IVault, ERC20, ERC20Permit, Capped {
     uint256 public constant MAX_WITHDRAW_FEE = 1000;
     uint256 public processedDeposits = 0;
 
-    DepositQueueLib.DepositQueue private depositQueue;
+    DepositQueueLib.DepositQueue internal depositQueue;
 
     constructor(IConfigurationManager _configuration, IERC20Metadata _asset)
         ERC20(string(abi.encodePacked("Pods Yield ", _asset.symbol())), string(abi.encodePacked("py", _asset.symbol())))
@@ -180,7 +180,7 @@ abstract contract BaseVault is IVault, ERC20, ERC20Permit, Capped {
      * @inheritdoc IERC4626
      */
     function previewRedeem(uint256 shares) public view override returns (uint256 assets) {
-        uint256 assets = convertToAssets(shares);
+        assets = convertToAssets(shares);
         return assets - _getFee(assets);
     }
 
@@ -232,9 +232,9 @@ abstract contract BaseVault is IVault, ERC20, ERC20Permit, Capped {
      * @inheritdoc IVault
      */
     function withdrawFeeRatio() public view override returns (uint256) {
-        uint256 withdrawFeeRatio = configuration.getParameter(address(this), "WITHDRAW_FEE_RATIO");
+        uint256 _withdrawFeeRatio = configuration.getParameter(address(this), "WITHDRAW_FEE_RATIO");
         // Fee is limited to MAX_WITHDRAW_FEE
-        return FixedPointMath.min(withdrawFeeRatio, MAX_WITHDRAW_FEE);
+        return FixedPointMath.min(_withdrawFeeRatio, MAX_WITHDRAW_FEE);
     }
 
     /**

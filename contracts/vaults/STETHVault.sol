@@ -12,6 +12,7 @@ contract STETHVault is BaseVault {
     using TransferUtils for IERC20Metadata;
     using FixedPointMath for uint256;
     using FixedPointMath for FixedPointMath.Fractional;
+    using DepositQueueLib for DepositQueueLib.DepositQueue;
 
     uint8 public immutable sharePriceDecimals;
     uint256 public lastRoundAssets;
@@ -38,6 +39,36 @@ contract STETHVault is BaseVault {
         sharePriceDecimals = asset.decimals();
     }
 
+    /**
+     * @inheritdoc IERC4626
+     */
+    function deposit(uint256 assets, address receiver) public virtual override returns (uint256 shares) {
+        if (isProcessingDeposits) revert IVault__ForbiddenWhileProcessingDeposits();
+        shares = previewDeposit(assets);
+
+        if (shares == 0) revert IVault__ZeroShares();
+        _spendCap(shares);
+
+        assets = _tryTransferSTETH(msg.sender, assets);
+        depositQueue.push(DepositQueueLib.DepositEntry(receiver, assets));
+
+        emit Deposit(msg.sender, receiver, assets, shares);
+    }
+
+    /**
+     * @inheritdoc IERC4626
+     */
+    function mint(uint256 shares, address receiver) public virtual override returns (uint256 assets) {
+        if (isProcessingDeposits) revert IVault__ForbiddenWhileProcessingDeposits();
+        assets = previewMint(shares);
+        _spendCap(shares);
+
+        assets = _tryTransferSTETH(msg.sender, assets);
+        depositQueue.push(DepositQueueLib.DepositEntry(receiver, assets));
+
+        emit Deposit(msg.sender, receiver, assets, shares);
+    }
+
     function _afterRoundStart(uint256) internal override {
         uint256 supply = totalSupply();
 
@@ -55,7 +86,6 @@ contract STETHVault is BaseVault {
         uint256 roundAccruedInterest = 0;
         uint256 endSharePrice = 0;
         uint256 investmentYield = asset.balanceOf(investor);
-        uint256 idleAssets = asset.balanceOf(address(this));
         uint256 supply = totalSupply();
 
         if (supply != 0) {
@@ -77,7 +107,7 @@ contract STETHVault is BaseVault {
             ? 0
             : lastSharePrice.mulDivDown(10**sharePriceDecimals);
 
-        emit EndRoundData(currentRoundId, roundAccruedInterest, investmentYield, idleAssets);
+        emit EndRoundData(currentRoundId, roundAccruedInterest, investmentYield, totalIdleBalance());
         emit SharePrice(currentRoundId, startSharePrice, endSharePrice);
     }
 
@@ -89,6 +119,22 @@ contract STETHVault is BaseVault {
      * @dev See {BaseVault-totalAssets}.
      */
     function totalAssets() public view override returns (uint256) {
-        return asset.balanceOf(address(this));
+        return asset.balanceOf(address(this)) - totalIdleBalance();
+    }
+
+    /**
+     * @dev Moves `amount` of stETH from `from` to this contract using the
+     * allowance mechanism.
+     *
+     * Note that due to division rounding, not always is not possible to move
+     * the entire amount, hence transfer is attempted, returning the
+     * `effectiveAmount` transferred.
+     *
+     * For more information refer to: https://docs.lido.fi/guides/steth-integration-guide#1-wei-corner-case
+     */
+    function _tryTransferSTETH(address from, uint256 amount) internal returns (uint256 effectiveAmount) {
+        uint256 balanceBefore = asset.balanceOf(address(this));
+        asset.safeTransferFrom(from, address(this), amount);
+        return asset.balanceOf(address(this)) - balanceBefore;
     }
 }
