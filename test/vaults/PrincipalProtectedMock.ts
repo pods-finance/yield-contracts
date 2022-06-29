@@ -381,4 +381,181 @@ describe('PrincipalProtectedMock', () => {
 
     expect(await asset.balanceOf(user4.address)).to.be.lte(initialDeposit5)
   })
+
+  it('Should remmove the same balances even if a queue no processed happened during a round interval', async () => {
+    // This test will only work if InvestRatio = 50%
+    const user0Balance = ethers.utils.parseEther('100')
+    const user1Balance = ethers.utils.parseEther('200')
+    const user2Balance = ethers.utils.parseEther('300')
+    const user3Balance = ethers.utils.parseEther('10003')
+
+    await asset.connect(user0).mint(user0Balance)
+    await asset.connect(user1).mint(user1Balance)
+    await asset.connect(user2).mint(user2Balance)
+    await asset.connect(user3).mint(user3Balance)
+
+    // Round 0
+    await vault.connect(user0).mint(user0Balance, user0.address)
+    await vault.connect(user1).mint(user1Balance, user1.address)
+    await vault.connect(user2).mint(user2Balance, user2.address)
+    await vault.connect(vaultController).endRound()
+    await vault.connect(vaultController).processQueuedDeposits(0, await vault.depositQueueSize())
+    await vault.connect(vaultController).startRound()
+
+    const user0Moment1maxWithdraw = await vault.maxWithdraw(user0.address)
+    const user1Moment1maxWithdraw = await vault.maxWithdraw(user1.address)
+    const user2Moment1maxWithdraw = await vault.maxWithdraw(user2.address)
+    // console.log('MOMENT 1 - Should have the same amounts')
+    expect(user0Moment1maxWithdraw).to.be.eq(user0Balance)
+    expect(user1Moment1maxWithdraw).to.be.eq(user1Balance)
+    expect(user2Moment1maxWithdraw).to.be.eq(user2Balance)
+    // console.log((await vault.maxWithdraw(user0.address)).toString())
+    // console.log((await vault.maxWithdraw(user1.address)).toString())
+    // console.log((await vault.maxWithdraw(user2.address)).toString())
+    // console.log('----------------')
+
+    await yieldSource.generateInterest(ethers.utils.parseEther('100'))
+
+    const user0Moment2maxWithdraw = await vault.maxWithdraw(user0.address)
+    const user1Moment2maxWithdraw = await vault.maxWithdraw(user1.address)
+    const user2Moment2maxWithdraw = await vault.maxWithdraw(user2.address)
+
+    // console.log('MOMENT 2 - Should have amounts greather than MOMENT 1')
+    expect(user0Moment2maxWithdraw).to.be.gte(user0Moment1maxWithdraw)
+    expect(user1Moment2maxWithdraw).to.be.gte(user1Moment1maxWithdraw)
+    expect(user2Moment2maxWithdraw).to.be.gte(user2Moment1maxWithdraw)
+
+    // console.log((await vault.maxWithdraw(user0.address)).toString())
+    // console.log((await vault.maxWithdraw(user1.address)).toString())
+    // console.log((await vault.maxWithdraw(user2.address)).toString())
+    // console.log('----------------')
+    await vault.connect(user3).deposit(user3Balance, user3.address)
+
+    const user0Moment3maxWithdraw = await vault.maxWithdraw(user0.address)
+    const user1Moment3maxWithdraw = await vault.maxWithdraw(user1.address)
+    const user2Moment3maxWithdraw = await vault.maxWithdraw(user2.address)
+
+    // console.log('MOMENT 3 - Should have same amounts of 2')
+    expect(user0Moment3maxWithdraw).to.be.eq(user0Moment2maxWithdraw)
+    expect(user1Moment3maxWithdraw).to.be.eq(user1Moment2maxWithdraw)
+    expect(user2Moment3maxWithdraw).to.be.eq(user2Moment2maxWithdraw)
+
+    // console.log((await vault.maxWithdraw(user0.address)).toString())
+    // console.log((await vault.maxWithdraw(user1.address)).toString())
+    // console.log((await vault.maxWithdraw(user2.address)).toString())
+    // console.log('----------------')
+
+    await vault.connect(vaultController).endRound()
+
+    const user0Moment4maxWithdraw = await vault.maxWithdraw(user0.address)
+    const user1Moment4maxWithdraw = await vault.maxWithdraw(user1.address)
+    const user2Moment4maxWithdraw = await vault.maxWithdraw(user2.address)
+
+    // console.log('MOMENT 4 - Should have less amount than 3 -> transfered some funds to investor')
+    expect(user0Moment4maxWithdraw).to.be.lte(user0Moment3maxWithdraw)
+    expect(user1Moment4maxWithdraw).to.be.lte(user1Moment3maxWithdraw)
+    expect(user2Moment4maxWithdraw).to.be.lte(user2Moment3maxWithdraw)
+    // console.log((await vault.maxWithdraw(user0.address)).toString())
+    // console.log((await vault.maxWithdraw(user1.address)).toString())
+    // console.log((await vault.maxWithdraw(user2.address)).toString())
+    // console.log('----------------')
+
+    await vault.connect(vaultController).startRound()
+
+    const user0Moment5maxWithdraw = await vault.maxWithdraw(user0.address)
+    const user1Moment5maxWithdraw = await vault.maxWithdraw(user1.address)
+    const user2Moment5maxWithdraw = await vault.maxWithdraw(user2.address)
+
+    // console.log('MOMENT 5 - Should have same amount as MOMENT 4')
+    expect(user0Moment5maxWithdraw).to.be.eq(user0Moment4maxWithdraw)
+    expect(user1Moment5maxWithdraw).to.be.eq(user1Moment4maxWithdraw)
+    expect(user2Moment5maxWithdraw).to.be.eq(user2Moment4maxWithdraw)
+
+    // console.log((await vault.maxWithdraw(user0.address)).toString())
+    // console.log((await vault.maxWithdraw(user1.address)).toString())
+    // console.log((await vault.maxWithdraw(user2.address)).toString())
+    // console.log('----------------')
+
+    await investor.buyOptionsWithYield()
+
+    const user0Moment6maxWithdraw = await vault.maxWithdraw(user0.address)
+    const user1Moment6maxWithdraw = await vault.maxWithdraw(user1.address)
+    const user2Moment6maxWithdraw = await vault.maxWithdraw(user2.address)
+
+    // console.log('MOMENT 6 - Should have same amount as MOMENT 5 and 4')
+    expect(user0Moment6maxWithdraw).to.be.eq(user0Moment5maxWithdraw)
+    expect(user1Moment6maxWithdraw).to.be.eq(user1Moment5maxWithdraw)
+    expect(user2Moment6maxWithdraw).to.be.eq(user2Moment5maxWithdraw)
+    // console.log((await vault.maxWithdraw(user0.address)).toString())
+    // console.log((await vault.maxWithdraw(user1.address)).toString())
+    // console.log((await vault.maxWithdraw(user2.address)).toString())
+    // console.log('----------------')
+
+    await investor.generatePremium(ethers.utils.parseEther('600'))
+
+    const user0Moment7maxWithdraw = await vault.maxWithdraw(user0.address)
+    const user1Moment7maxWithdraw = await vault.maxWithdraw(user1.address)
+    const user2Moment7maxWithdraw = await vault.maxWithdraw(user2.address)
+
+    // console.log('MOMENT 7 - Should have same amount as MOMENTS 6, 5, and 4')
+    expect(user0Moment7maxWithdraw).to.be.eq(user0Moment6maxWithdraw)
+    expect(user1Moment7maxWithdraw).to.be.eq(user1Moment6maxWithdraw)
+    expect(user2Moment7maxWithdraw).to.be.eq(user2Moment6maxWithdraw)
+    // console.log((await vault.maxWithdraw(user0.address)).toString())
+    // console.log((await vault.maxWithdraw(user1.address)).toString())
+    // console.log((await vault.maxWithdraw(user2.address)).toString())
+    // console.log('----------------')
+
+    await vault.connect(vaultController).endRound()
+
+    const user0Moment8maxWithdraw = await vault.maxWithdraw(user0.address)
+    const user1Moment8maxWithdraw = await vault.maxWithdraw(user1.address)
+    const user2Moment8maxWithdraw = await vault.maxWithdraw(user2.address)
+
+    // console.log('MOMENT 8 - Should have more amount than MOMENT 7')
+    expect(user0Moment8maxWithdraw).to.be.gt(user0Moment7maxWithdraw)
+    expect(user1Moment8maxWithdraw).to.be.gt(user1Moment7maxWithdraw)
+    expect(user2Moment8maxWithdraw).to.be.gt(user2Moment7maxWithdraw)
+    // console.log((await vault.maxWithdraw(user0.address)).toString())
+    // console.log((await vault.maxWithdraw(user1.address)).toString())
+    // console.log((await vault.maxWithdraw(user2.address)).toString())
+    // console.log('----------------')
+
+    await vault.connect(vaultController).startRound()
+
+    const user0Moment9maxWithdraw = await vault.maxWithdraw(user0.address)
+    const user1Moment9maxWithdraw = await vault.maxWithdraw(user1.address)
+    const user2Moment9maxWithdraw = await vault.maxWithdraw(user2.address)
+    // console.log('MOMENT 9 - Should have the same amount as MOMENT 8')
+    // console.log((await vault.maxWithdraw(user0.address)).toString())
+    // console.log((await vault.maxWithdraw(user1.address)).toString())
+    // console.log((await vault.maxWithdraw(user2.address)).toString())
+    // console.log('----------------')
+
+    expect(user0Moment9maxWithdraw).to.be.eq(user0Moment8maxWithdraw)
+    expect(user1Moment9maxWithdraw).to.be.eq(user1Moment8maxWithdraw)
+    expect(user2Moment9maxWithdraw).to.be.eq(user2Moment8maxWithdraw)
+
+    const sharesAmount0 = await vault.balanceOf(user0.address)
+    const sharesAmount1 = await vault.balanceOf(user1.address)
+    const sharesAmount2 = await vault.balanceOf(user2.address)
+
+    await vault.connect(user0).redeem(sharesAmount0, user0.address, user0.address)
+    await vault.connect(user1).redeem(sharesAmount1, user1.address, user1.address)
+    await vault.connect(user2).redeem(sharesAmount2, user2.address, user2.address)
+
+    const user0Moment10Balance = await asset.balanceOf(user0.address)
+    const user1Moment10Balance = await asset.balanceOf(user1.address)
+    const user2Moment10Balance = await asset.balanceOf(user2.address)
+
+    // console.log('MOMENT 10 - Should have the same amount as 8 and 9 minus fee')
+    expect(user0Moment10Balance).to.be.lte(user0Moment9maxWithdraw)
+    expect(user1Moment10Balance).to.be.lte(user1Moment9maxWithdraw)
+    expect(user2Moment10Balance).to.be.lte(user2Moment9maxWithdraw)
+
+    // console.log((await asset.balanceOf(user0.address)).toString())
+    // console.log((await asset.balanceOf(user1.address)).toString())
+    // console.log((await asset.balanceOf(user2.address)).toString())
+    // console.log('----------------')
+  })
 })

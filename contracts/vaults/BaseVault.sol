@@ -274,12 +274,10 @@ abstract contract BaseVault is IVault, ERC20, ERC20Permit, Capped {
         if (!isProcessingDeposits) revert IVault__NotProcessingDeposits();
 
         isProcessingDeposits = false;
+
+        _afterRoundStart(processedDeposits);
+        emit StartRound(currentRoundId, processedDeposits);
         processedDeposits = 0;
-
-        uint256 idleBalance = asset.balanceOf(address(this));
-        _afterRoundStart(idleBalance);
-
-        emit StartRound(currentRoundId, idleBalance);
     }
 
     /**
