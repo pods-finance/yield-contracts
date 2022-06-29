@@ -290,8 +290,8 @@ describe('STETHVault', () => {
     await vault.connect(vaultController).startRound()
     await asset.connect(yieldGenerator).transfer(vault.address, ethers.utils.parseEther('70'))
 
-    const expectedUser0Amount = BigNumber.from('1495424836601307189542')
-    const expectedUser1Amount = BigNumber.from('104575163398692810458')
+    const expectedUser0Amount = BigNumber.from('1495424836601307189536')
+    const expectedUser1Amount = BigNumber.from('104575163398692810460')
 
     await expect(async () =>
       await vault.connect(user0).redeem(await vault.balanceOf(user0.address), user0.address, user0.address)
@@ -308,7 +308,7 @@ describe('STETHVault', () => {
       .to.changeTokenBalances(
         asset,
         [vault, user1],
-        [minus(expectedUser1Amount), feeExcluded(expectedUser1Amount)]
+        [minus(expectedUser1Amount), feeExcluded(expectedUser1Amount).add(1)]
       )
 
     expect(await asset.balanceOf(vault.address)).to.be.closeTo(BigNumber.from(0), 1)
@@ -338,9 +338,9 @@ describe('STETHVault', () => {
     const user1Moment1maxWithdraw = await vault.maxWithdraw(user1.address)
     const user2Moment1maxWithdraw = await vault.maxWithdraw(user2.address)
     // console.log(‘MOMENT 1 - Should have the same amounts’)
-    expect(user0Moment1maxWithdraw).to.be.closeTo(user0Deposit, 1)
-    expect(user1Moment1maxWithdraw).to.be.closeTo(user1Deposit, 1)
-    expect(user2Moment1maxWithdraw).to.be.closeTo(user2Deposit, 1)
+    expect(user0Moment1maxWithdraw).to.be.closeTo(feeExcluded(user0Deposit), 1)
+    expect(user1Moment1maxWithdraw).to.be.closeTo(feeExcluded(user1Deposit), 1)
+    expect(user2Moment1maxWithdraw).to.be.closeTo(feeExcluded(user2Deposit), 1)
 
     await asset.connect(yieldGenerator).transfer(vault.address, ethers.utils.parseEther('100'))
 
@@ -439,28 +439,28 @@ describe('STETHVault', () => {
     await expect(async () =>
       await vault.connect(user0).redeem(sharesAmount0, user0.address, user0.address)
     )
-      .to.changeTokenBalances(
+      .to.changeTokenBalance(
         asset,
-        [vault, user0],
-        [minus(user0Moment9maxWithdraw.sub(1)), feeExcluded(user0Moment9maxWithdraw).sub(1)]
+        user0,
+        user0Moment9maxWithdraw.sub(1)
       )
 
     await expect(async () =>
       await vault.connect(user1).redeem(sharesAmount1, user1.address, user1.address)
     )
-      .to.changeTokenBalances(
+      .to.changeTokenBalance(
         asset,
-        [vault, user1],
-        [minus(user1Moment9maxWithdraw), feeExcluded(user1Moment9maxWithdraw)]
+        user1,
+        user1Moment9maxWithdraw
       )
 
     await expect(async () =>
       await vault.connect(user2).redeem(sharesAmount2, user2.address, user2.address)
     )
-      .to.changeTokenBalances(
+      .to.changeTokenBalance(
         asset,
-        [vault, user2],
-        [minus(user2Moment9maxWithdraw), feeExcluded(user2Moment9maxWithdraw)]
+        user2,
+        user2Moment9maxWithdraw
       )
   })
 })
