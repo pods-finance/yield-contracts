@@ -93,13 +93,13 @@ describe('STETHVault', () => {
       )
     expect(await vault.depositQueueSize()).to.be.equal(1)
     expect(await vault.balanceOf(user0.address)).to.be.equal(0)
-    expect(await vault.idleBalanceOf(user0.address)).to.be.equal(assetAmount)
+    expect(await vault.idleBalanceOf(user0.address)).to.be.closeTo(assetAmount, 1)
 
     // Process deposits
     await vault.connect(vaultController).endRound()
     await vault.connect(vaultController).processQueuedDeposits(0, await vault.depositQueueSize())
     expect(await vault.depositQueueSize()).to.be.equal(0)
-    expect(await vault.balanceOf(user0.address)).to.be.equal(assetAmount)
+    expect(await vault.balanceOf(user0.address)).to.be.closeTo(assetAmount, 1)
     expect(await vault.idleBalanceOf(user0.address)).to.be.equal(0)
 
     // Start round
@@ -161,9 +161,9 @@ describe('STETHVault', () => {
     expect(await asset.balanceOf(vault.address)).to.be.equal(effectiveTotal)
     expect(await vault.depositQueueSize()).to.be.equal(2)
     expect(await vault.balanceOf(user0.address)).to.be.equal(0)
-    expect(await vault.idleBalanceOf(user0.address)).to.be.equal(assetAmountUser0)
+    expect(await vault.idleBalanceOf(user0.address)).to.be.closeTo(assetAmountUser0, 1)
     expect(await vault.balanceOf(user1.address)).to.be.equal(0)
-    expect(await vault.idleBalanceOf(user1.address)).to.be.equal(assetAmountUser1)
+    expect(await vault.idleBalanceOf(user1.address)).to.be.closeTo(assetAmountUser1, 1)
 
     // Process deposits
     await vault.connect(vaultController).endRound()
@@ -195,7 +195,7 @@ describe('STETHVault', () => {
 
     // Round 1
     await vault.connect(vaultController).startRound()
-    await asset.connect(yieldGenerator).transfer(vault.address, ethers.utils.parseEther('20'))
+    // await asset.connect(yieldGenerator).transfer(vault.address, ethers.utils.parseEther('20'))
     await vault.connect(vaultController).endRound()
 
     // Round 2
@@ -203,34 +203,40 @@ describe('STETHVault', () => {
     await vault.connect(user1).deposit(assetAmount, user1.address)
     // await asset.connect(yieldGenerator).transfer(vault.address, ethers.utils.parseEther('20'))
     // await investor.generatePremium(ethers.utils.parseEther('1300'))
-    await asset.connect(yieldGenerator).transfer(vault.address, ethers.utils.parseEther('1320'))
+    // await asset.connect(yieldGenerator).transfer(vault.address, ethers.utils.parseEther('1320'))
     await vault.connect(vaultController).endRound()
     await vault.connect(vaultController).processQueuedDeposits(0, await vault.depositQueueSize())
 
     // Round 3
     await vault.connect(vaultController).startRound()
-    await asset.connect(yieldGenerator).transfer(vault.address, ethers.utils.parseEther('70'))
+    // await asset.connect(yieldGenerator).transfer(vault.address, ethers.utils.parseEther('70'))
 
-    const expectedUser0Amount = BigNumber.from('803225806451612903218')
-    const expectedUser1Amount = BigNumber.from('96774193548387096779')
+    // const expectedUser0Amount = BigNumber.from('803225806451612903218')
+    // const expectedUser1Amount = BigNumber.from('96774193548387096779')
+    const expectedUser0Amount = BigNumber.from('99999999999999999999')
+    const expectedUser1Amount = BigNumber.from('99999999999999999999')
 
-    await expect(async () => await vault.connect(user0).redeem(await vault.balanceOf(user0.address), user0.address, user0.address))
+    await expect(async () =>
+      await vault.connect(user0).redeem(await vault.balanceOf(user0.address), user0.address, user0.address)
+    )
       .to.changeTokenBalances(
         asset,
         [vault, user0],
-        [minus(expectedUser0Amount), feeExcluded(expectedUser0Amount)]
+        [minus(expectedUser0Amount.sub(1)), feeExcluded(expectedUser0Amount)]
       )
-    await expect(async () => await vault.connect(user1).redeem(await vault.balanceOf(user1.address), user1.address, user1.address))
+
+    await expect(async () =>
+      await vault.connect(user1).redeem(await vault.balanceOf(user1.address), user1.address, user1.address)
+    )
       .to.changeTokenBalances(
         asset,
         [vault, user1],
-        [minus(expectedUser1Amount).add(2), feeExcluded(expectedUser1Amount)]
+        [minus(expectedUser1Amount), feeExcluded(expectedUser1Amount)]
       )
 
+    expect(await asset.balanceOf(vault.address)).to.be.closeTo(BigNumber.from(0), 1)
     expect(await vault.balanceOf(user0.address)).to.be.equal(0)
-    expect(await vault.idleBalanceOf(user0.address)).to.be.equal(0)
-
     expect(await vault.balanceOf(user1.address)).to.be.equal(0)
-    expect(await vault.idleBalanceOf(user1.address)).to.be.equal(0)
+    expect(await vault.totalIdleBalance()).to.be.equal(0)
   })
 })
