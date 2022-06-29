@@ -157,14 +157,14 @@ abstract contract BaseVault is IVault, ERC20, ERC20Permit, Capped {
     /**
      * @inheritdoc IERC4626
      */
-    function previewDeposit(uint256 assets) public view override returns (uint256) {
+    function previewDeposit(uint256 assets) public view override returns (uint256 shares) {
         return convertToShares(assets);
     }
 
     /**
      * @inheritdoc IERC4626
      */
-    function previewMint(uint256 shares) public view override returns (uint256) {
+    function previewMint(uint256 shares) public view override returns (uint256 assets) {
         uint256 supply = totalSupply();
         return supply == 0 ? shares : shares.mulDivUp(totalAssets(), supply);
     }
@@ -172,16 +172,14 @@ abstract contract BaseVault is IVault, ERC20, ERC20Permit, Capped {
     /**
      * @inheritdoc IERC4626
      */
-    function previewWithdraw(uint256 assets) public view override returns (uint256) {
-        assets = assets - _getFee(assets);
-        uint256 supply = totalSupply();
-        return supply == 0 ? assets : assets.mulDivUp(supply, totalAssets());
+    function previewWithdraw(uint256 assets) public view override returns (uint256 shares) {
+        return convertToShares(assets - _getFee(assets));
     }
 
     /**
      * @inheritdoc IERC4626
      */
-    function previewRedeem(uint256 shares) public view override returns (uint256) {
+    function previewRedeem(uint256 shares) public view override returns (uint256 assets) {
         uint256 assets = convertToAssets(shares);
         return assets - _getFee(assets);
     }
@@ -189,7 +187,7 @@ abstract contract BaseVault is IVault, ERC20, ERC20Permit, Capped {
     /**
      * @inheritdoc IERC4626
      */
-    function convertToShares(uint256 assets) public view override returns (uint256) {
+    function convertToShares(uint256 assets) public view override returns (uint256 shares) {
         uint256 supply = totalSupply();
         return supply == 0 ? assets : assets.mulDivDown(supply, totalAssets());
     }
@@ -197,7 +195,7 @@ abstract contract BaseVault is IVault, ERC20, ERC20Permit, Capped {
     /**
      * @inheritdoc IERC4626
      */
-    function convertToAssets(uint256 shares) public view override returns (uint256) {
+    function convertToAssets(uint256 shares) public view override returns (uint256 assets) {
         uint256 supply = totalSupply();
         return supply == 0 ? shares : shares.mulDivDown(totalAssets(), supply);
     }
@@ -205,28 +203,28 @@ abstract contract BaseVault is IVault, ERC20, ERC20Permit, Capped {
     /**
      * @inheritdoc IERC4626
      */
-    function maxDeposit(address) public pure override returns (uint256) {
+    function maxDeposit(address) public pure override returns (uint256 assets) {
         return type(uint256).max;
     }
 
     /**
      * @inheritdoc IERC4626
      */
-    function maxMint(address) public pure override returns (uint256) {
+    function maxMint(address) public pure override returns (uint256 shares) {
         return type(uint256).max;
     }
 
     /**
      * @inheritdoc IERC4626
      */
-    function maxWithdraw(address owner) public view override returns (uint256) {
-        return convertToAssets(balanceOf(owner));
+    function maxWithdraw(address owner) public view override returns (uint256 assets) {
+        return previewRedeem(balanceOf(owner));
     }
 
     /**
      * @inheritdoc IERC4626
      */
-    function maxRedeem(address owner) public view override returns (uint256) {
+    function maxRedeem(address owner) public view override returns (uint256 shares) {
         return balanceOf(owner);
     }
 
@@ -274,12 +272,10 @@ abstract contract BaseVault is IVault, ERC20, ERC20Permit, Capped {
         if (!isProcessingDeposits) revert IVault__NotProcessingDeposits();
 
         isProcessingDeposits = false;
+
+        _afterRoundStart(processedDeposits);
+        emit StartRound(currentRoundId, processedDeposits);
         processedDeposits = 0;
-
-        uint256 idleBalance = asset.balanceOf(address(this));
-        _afterRoundStart(idleBalance);
-
-        emit StartRound(currentRoundId, idleBalance);
     }
 
     /**
