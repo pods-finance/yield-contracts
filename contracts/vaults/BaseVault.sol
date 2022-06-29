@@ -234,9 +234,9 @@ abstract contract BaseVault is IVault, ERC20, ERC20Permit, Capped {
      * @inheritdoc IVault
      */
     function withdrawFeeRatio() public view override returns (uint256) {
-        uint256 withdrawFeeRatio = configuration.getParameter(address(this), "WITHDRAW_FEE_RATIO");
+        uint256 _withdrawFeeRatio = configuration.getParameter(address(this), "WITHDRAW_FEE_RATIO");
         // Fee is limited to MAX_WITHDRAW_FEE
-        return FixedPointMath.min(withdrawFeeRatio, MAX_WITHDRAW_FEE);
+        return FixedPointMath.min(_withdrawFeeRatio, MAX_WITHDRAW_FEE);
     }
 
     /**
