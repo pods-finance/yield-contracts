@@ -7,7 +7,6 @@
     "lint": "yarn lint:ts && yarn solhint",
     "lint:ts": "ts-standard",
     "test": "hardhat test",
-    "postinstall": "husky install",
     "prettier": "./node_modules/.bin/prettier contracts/**/*.sol",
     "prettier:fix": "./node_modules/.bin/prettier --write contracts/**/*.sol",
     "slither": "slither . --solc-remaps '@openzeppelin=node_modules/@openzeppelin' --exclude assembly,timestamp,missing-zero-check,external-function,low-level-calls"
