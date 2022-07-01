@@ -154,6 +154,7 @@ describe('BaseVault', () => {
     expect(await vault.isProcessingDeposits()).to.be.equal(true)
     const depositProcessingTx = vault.connect(vaultController).processQueuedDeposits(0, await vault.depositQueueSize())
     await expect(depositProcessingTx).to.emit(vault, 'DepositProcessed').withArgs(user0.address, 1, assets, expectedShares)
+    expect(await vault.assetsOf(user0.address)).to.be.equal(assets)
     expect(await vault.totalSupply()).to.be.equal(expectedShares)
     expect(await vault.depositQueueSize()).to.be.equal(0)
     expect(await vault.balanceOf(user0.address)).to.be.equal(expectedShares)
@@ -163,6 +164,7 @@ describe('BaseVault', () => {
     // Start round
     await vault.connect(vaultController).startRound()
     expect(await vault.totalAssets()).to.be.equal(assets)
+    expect(await vault.assetsOf(user0.address)).to.be.equal(assets)
     expect(await asset.balanceOf(vault.address)).to.be.equal(0)
   })
 
@@ -384,7 +386,11 @@ describe('BaseVault', () => {
 
     // Process deposits
     await vault.connect(vaultController).endRound()
+    expect(await vault.assetsOf(user0.address)).to.be.equal(assets.mul(2))
+    expect(await vault.assetsOf(user1.address)).to.be.equal(assets)
     await vault.connect(vaultController).processQueuedDeposits(0, await vault.depositQueueSize())
+    expect(await vault.assetsOf(user0.address)).to.be.equal(assets.mul(2))
+    expect(await vault.assetsOf(user1.address)).to.be.equal(assets)
     expect(await vault.depositQueueSize()).to.be.equal(0)
     const expectedUser0Shares = ethers.utils.parseEther('20')
     expect(await vault.balanceOf(user0.address)).to.be.equal(expectedUser0Shares)
@@ -394,6 +400,8 @@ describe('BaseVault', () => {
 
     // Starts round 1
     await vault.connect(vaultController).startRound()
+    expect(await vault.assetsOf(user0.address)).to.be.equal(assets.mul(2))
+    expect(await vault.assetsOf(user1.address)).to.be.equal(assets)
 
     // User0 withdraws
     expect(await vault.previewRedeem(await vault.balanceOf(user0.address))).to.be.equal(feeExcluded(assets.mul(2)))
