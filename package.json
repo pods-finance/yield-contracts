@@ -1,5 +1,6 @@
 {
-  "name": "lisbon",
+  "name": "@pods/yield-contracts",
+  "version": "1.0.0",
   "scripts": {
     "compile": "hardhat compile",
     "solhint": "./node_modules/.bin/solhint -f table contracts/**/*.sol",
