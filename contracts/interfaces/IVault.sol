@@ -33,6 +33,12 @@ interface IVault is IERC4626 {
     function idleBalanceOf(address owner) external view returns (uint256);
 
     /**
+     * @notice Outputs the amount of asset tokens of an `owner` are either waiting for the next round,
+     * deposited or committed.
+     */
+    function assetsOf(address owner) external view returns (uint256);
+
+    /**
      * @notice Outputs the amount of asset tokens is idle, waiting for the next round.
      */
     function totalIdleBalance() external view returns (uint256);
