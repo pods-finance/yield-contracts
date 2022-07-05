@@ -96,6 +96,20 @@ describe('STETHVault', () => {
     await stopMainnetFork()
   })
 
+  describe('ERC20 checks', () => {
+    it('has a name', async () => {
+      expect(await vault.name()).to.be.equal(`${await asset.symbol()} Volatility Vault`)
+    })
+
+    it('has a symbol', async () => {
+      expect(await vault.symbol()).to.be.equal(`${await asset.symbol()}vv`)
+    })
+
+    it('has decimals', async () => {
+      expect(await vault.decimals()).to.be.equal(await asset.decimals())
+    })
+  })
+
   describe('Reading functions', () => {
     it('should match maxWithdraw and real withdraw balances', async () => {
       const assets = ethers.utils.parseEther('100')

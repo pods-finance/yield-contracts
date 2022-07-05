@@ -40,6 +40,20 @@ contract STETHVault is BaseVault {
     }
 
     /**
+     * @inheritdoc ERC20
+     */
+    function name() public view override returns (string memory) {
+        return string(abi.encodePacked(asset.symbol(), " Volatility Vault"));
+    }
+
+    /**
+     * @inheritdoc ERC20
+     */
+    function symbol() public view override returns (string memory) {
+        return string(abi.encodePacked(asset.symbol(), "vv"));
+    }
+
+    /**
      * @inheritdoc IERC4626
      */
     function deposit(uint256 assets, address receiver) public virtual override returns (uint256 shares) {
