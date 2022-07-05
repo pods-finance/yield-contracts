@@ -187,14 +187,14 @@ describe('STETHVault', () => {
       )
     expect(await vault.depositQueueSize()).to.be.equal(1)
     expect(await vault.balanceOf(user0.address)).to.be.equal(0)
-    expect(await vault.idleBalanceOf(user0.address)).to.be.closeTo(assetAmount, 1)
+    expect(await vault.idleAssetsOf(user0.address)).to.be.closeTo(assetAmount, 1)
 
     // Process deposits
     await vault.connect(vaultController).endRound()
     await vault.connect(vaultController).processQueuedDeposits(0, await vault.depositQueueSize())
     expect(await vault.depositQueueSize()).to.be.equal(0)
     expect(await vault.balanceOf(user0.address)).to.be.closeTo(assetAmount, 1)
-    expect(await vault.idleBalanceOf(user0.address)).to.be.equal(0)
+    expect(await vault.idleAssetsOf(user0.address)).to.be.equal(0)
 
     // Start round
     await vault.connect(vaultController).startRound()
@@ -255,9 +255,9 @@ describe('STETHVault', () => {
     expect(await asset.balanceOf(vault.address)).to.be.equal(effectiveTotal)
     expect(await vault.depositQueueSize()).to.be.equal(2)
     expect(await vault.balanceOf(user0.address)).to.be.equal(0)
-    expect(await vault.idleBalanceOf(user0.address)).to.be.closeTo(assetAmountUser0, 1)
+    expect(await vault.idleAssetsOf(user0.address)).to.be.closeTo(assetAmountUser0, 1)
     expect(await vault.balanceOf(user1.address)).to.be.equal(0)
-    expect(await vault.idleBalanceOf(user1.address)).to.be.closeTo(assetAmountUser1, 1)
+    expect(await vault.idleAssetsOf(user1.address)).to.be.closeTo(assetAmountUser1, 1)
 
     // Process deposits
     await vault.connect(vaultController).endRound()
@@ -270,12 +270,12 @@ describe('STETHVault', () => {
     // User0 withdraws
     await vault.connect(user0).redeem(await vault.balanceOf(user0.address), user0.address, user0.address)
     expect(await vault.balanceOf(user0.address)).to.be.equal(0)
-    expect(await vault.idleBalanceOf(user0.address)).to.be.equal(0)
+    expect(await vault.idleAssetsOf(user0.address)).to.be.equal(0)
 
     // User1 withdraws
     await vault.connect(user1).redeem(await vault.balanceOf(user1.address), user1.address, user1.address)
     expect(await vault.balanceOf(user1.address)).to.be.equal(0)
-    expect(await vault.idleBalanceOf(user1.address)).to.be.equal(0)
+    expect(await vault.idleAssetsOf(user1.address)).to.be.equal(0)
   })
 
   it('full cycle test case', async () => {
@@ -328,7 +328,7 @@ describe('STETHVault', () => {
     expect(await asset.balanceOf(vault.address)).to.be.closeTo(BigNumber.from(0), 1)
     expect(await vault.balanceOf(user0.address)).to.be.equal(0)
     expect(await vault.balanceOf(user1.address)).to.be.equal(0)
-    expect(await vault.totalIdleBalance()).to.be.equal(0)
+    expect(await vault.totalIdleAssets()).to.be.equal(0)
   })
 
   it('sanity check + startRound forgetting the process the queue case', async () => {

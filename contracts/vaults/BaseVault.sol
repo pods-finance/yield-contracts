@@ -240,7 +240,7 @@ abstract contract BaseVault is IVault, ERC20, ERC20Permit, Capped {
     /**
      * @inheritdoc IVault
      */
-    function idleBalanceOf(address owner) public view virtual returns (uint256) {
+    function idleAssetsOf(address owner) public view virtual returns (uint256) {
         return depositQueue.balanceOf(owner);
     }
 
@@ -251,13 +251,13 @@ abstract contract BaseVault is IVault, ERC20, ERC20Permit, Capped {
         uint256 supply = totalSupply();
         uint256 shares = balanceOf(owner);
         uint256 committedAssets = supply == 0 ? 0 : shares.mulDivDown(asset.balanceOf(address(this)), supply);
-        return convertToAssets(shares) + idleBalanceOf(owner) + committedAssets;
+        return convertToAssets(shares) + idleAssetsOf(owner) + committedAssets;
     }
 
     /**
      * @inheritdoc IVault
      */
-    function totalIdleBalance() public view virtual returns (uint256) {
+    function totalIdleAssets() public view virtual returns (uint256) {
         return depositQueue.totalDeposited;
     }
 

@@ -121,7 +121,7 @@ contract STETHVault is BaseVault {
             ? 0
             : lastSharePrice.mulDivDown(10**sharePriceDecimals);
 
-        emit EndRoundData(currentRoundId, roundAccruedInterest, investmentYield, totalIdleBalance());
+        emit EndRoundData(currentRoundId, roundAccruedInterest, investmentYield, totalIdleAssets());
         emit SharePrice(currentRoundId, startSharePrice, endSharePrice);
     }
 
@@ -133,7 +133,7 @@ contract STETHVault is BaseVault {
      * @dev See {BaseVault-totalAssets}.
      */
     function totalAssets() public view override returns (uint256) {
-        return asset.balanceOf(address(this)) - totalIdleBalance();
+        return asset.balanceOf(address(this)) - totalIdleAssets();
     }
 
     /**

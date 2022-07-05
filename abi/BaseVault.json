@@ -566,7 +566,7 @@
         "type": "address"
       }
     ],
-    "name": "idleBalanceOf",
+    "name": "idleAssetsOf",
     "outputs": [
       {
         "internalType": "uint256",
@@ -973,7 +973,7 @@
   },
   {
     "inputs": [],
-    "name": "totalIdleBalance",
+    "name": "totalIdleAssets",
     "outputs": [
       {
         "internalType": "uint256",
