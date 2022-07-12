@@ -18,8 +18,8 @@ contract STETHVault is BaseVault {
     uint256 public lastRoundAssets;
     FixedPointMath.Fractional public lastSharePrice;
 
-    uint256 public investorRatio = 5000;
-    address public investor;
+    uint256 public constant investorRatio = 5000;
+    address public immutable investor;
 
     event StartRoundData(uint256 indexed roundId, uint256 lastRoundAssets, uint256 sharePrice);
     event EndRoundData(
