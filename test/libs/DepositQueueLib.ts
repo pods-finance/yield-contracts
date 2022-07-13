@@ -6,11 +6,11 @@ import { SignerWithAddress } from '@nomiclabs/hardhat-ethers/signers'
 
 describe('DepositQueueLib', () => {
   let queue: Contract
-  let user0: SignerWithAddress, user1: SignerWithAddress
+  let user0: SignerWithAddress, user1: SignerWithAddress, user2: SignerWithAddress
   let snapshotId: BigNumber
 
   before(async () => {
-    [, user0, user1] = await ethers.getSigners()
+    [, user0, user1, user2] = await ethers.getSigners()
     const DepositQueueMock = await ethers.getContractFactory('DepositQueueMock')
     queue = await DepositQueueMock.deploy()
   })
@@ -44,6 +44,19 @@ describe('DepositQueueLib', () => {
     expect(await queue.totalDeposited()).to.be.equal(11)
   })
 
+  it('cannot get a queue position out of the bounds', async () => {
+    let deposit
+    await queue.connect(user0).push(1)
+    expect(await queue.size()).to.be.equal(1)
+    deposit = await queue.get(0)
+    expect(deposit.owner).to.be.equal(user0.address)
+    expect(deposit.amount).to.be.equal(1)
+
+    deposit = await queue.get(1)
+    expect(deposit.owner).to.be.equal(ethers.constants.AddressZero)
+    expect(deposit.amount).to.be.equal(0)
+  })
+
   it('re-adds the user to the queue', async () => {
     let deposit
     expect(await queue.size()).to.be.equal(0)
@@ -66,21 +79,28 @@ describe('DepositQueueLib', () => {
   })
 
   it('removes users from the queue and reorganize queue', async () => {
+    let deposit
     expect(await queue.size()).to.be.equal(0)
 
     await queue.connect(user0).push(42)
     await queue.connect(user1).push(160)
+    await queue.connect(user2).push(8)
+    expect(await queue.size()).to.be.equal(3)
+    expect(await queue.totalDeposited()).to.be.equal(210)
+
+    await queue.remove(1, 2)
     expect(await queue.size()).to.be.equal(2)
-    expect(await queue.totalDeposited()).to.be.equal(202)
+    expect(await queue.totalDeposited()).to.be.equal(50)
 
-    await queue.remove(0, 1)
-    const deposit = await queue.get(0)
-    expect(deposit.owner).to.be.equal(user1.address)
-    expect(deposit.amount).to.be.equal(160)
-    expect(await queue.size()).to.be.equal(1)
-    expect(await queue.totalDeposited()).to.be.equal(160)
+    deposit = await queue.get(0)
+    expect(deposit.owner).to.be.equal(user0.address)
+    expect(deposit.amount).to.be.equal(42)
 
-    await queue.connect(user0).push(42)
+    deposit = await queue.get(1)
+    expect(deposit.owner).to.be.equal(user2.address)
+    expect(deposit.amount).to.be.equal(8)
+
+    await queue.connect(user1).push(160)
     await queue.remove(0, await queue.size())
     expect(await queue.size()).to.be.equal(0)
     expect(await queue.totalDeposited()).to.be.equal(0)
