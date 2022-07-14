@@ -5,12 +5,14 @@ import { SignerWithAddress } from '@nomiclabs/hardhat-ethers/signers'
 import { startMainnetFork, stopMainnetFork } from '../utils/mainnetFork'
 import createConfigurationManager from '../utils/createConfigurationManager'
 import { ConfigurationManager, ERC20, InvestorActorMock, Migration, STETHVault } from '../../typechain'
+import { signERC2612Permit } from 'eth-permit'
 
 describe('Migration', () => {
   let asset: ERC20, vaultFrom: STETHVault, vaultTo: STETHVault, investor: InvestorActorMock,
     configuration: ConfigurationManager, migration: Migration
 
-  let user0: SignerWithAddress, user1: SignerWithAddress, user2: SignerWithAddress, vaultController: SignerWithAddress
+  let user0: SignerWithAddress, user1: SignerWithAddress, user2: SignerWithAddress, vaultController: SignerWithAddress,
+    userPermit: SignerWithAddress
 
   let snapshotId: BigNumber
 
@@ -43,7 +45,7 @@ describe('Migration', () => {
 
     user2 = await ethers.getSigner('0x0c67f4ffc902140c972ecab356c9993e6ce8caf3')
 
-    ;[, , , , vaultController] = await ethers.getSigners()
+    ;[, , , , vaultController, userPermit] = await ethers.getSigners()
     configuration = await createConfigurationManager()
 
     // Lido's stEth
@@ -128,6 +130,28 @@ describe('Migration', () => {
     expect(await asset.balanceOf(migration.address)).to.be.closeTo(BigNumber.from('0'), 1)
     expect(await asset.balanceOf(vaultTo.address)).to.be.closeTo(vaultToTotalAssets.add(user1Withdrawable), 2)
     expect(await vaultTo.idleAssetsOf(user1.address)).to.be.closeTo(user1Deposit, 3)
+  })
+
+  it('migrates assets from one vault to the other with permit', async () => {
+    const userDeposit = ethers.utils.parseEther('100')
+    await asset.connect(user0).transfer(userPermit.address, userDeposit)
+    await asset.connect(userPermit).approve(vaultFrom.address, userDeposit)
+
+    await vaultFrom.connect(userPermit).deposit(userDeposit, userPermit.address)
+    await vaultFrom.connect(vaultController).endRound()
+    await vaultFrom.connect(vaultController).processQueuedDeposits(0, await vaultFrom.depositQueueSize())
+    await vaultFrom.connect(vaultController).startRound()
+
+    // Execute migration
+    const result = await signERC2612Permit(userPermit, vaultTo.address, userPermit.address, migration.address)
+    await migration.connect(userPermit).migrateWithPermit(
+      vaultFrom.address,
+      vaultTo.address,
+      result.deadline,
+      result.v,
+      result.r,
+      result.s
+    )
   })
 
   it('cannot migrate between vaults with different assets', async () => {
