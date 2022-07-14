@@ -19,7 +19,7 @@ async function main (): Promise<void> {
 
   await verifyContract(hre, configurationManager.address, [])
 
-  const assetName = 'stETH'
+  const assetName = 'Liquid staked Ether 2.0'
   const assetSymbol = 'stETH'
 
   const Asset = await ethers.getContractFactory('Asset')
