@@ -29,6 +29,15 @@ library DepositQueueLib {
         uint256 endIndex
     ) internal {
         if (endIndex > startIndex) {
+            address[] memory newList = new address[](queue.list.length - (endIndex - startIndex));
+            uint256 i = 0;
+
+            // Copying the skipped interval to the new array
+            while (i < startIndex) {
+                newList[i] = queue.list[i];
+                i++;
+            }
+
             // Remove the interval from the cache
             while (startIndex < endIndex) {
                 // No need to check, it can't go below 0
@@ -39,10 +48,7 @@ library DepositQueueLib {
                 startIndex++;
             }
 
-            // Update the list with the remaining entries
-            address[] memory newList = new address[](queue.list.length - endIndex);
-            uint256 i = 0;
-
+            // Copying the rest of the list with the remaining entries
             while (endIndex < queue.list.length) {
                 newList[i++] = queue.list[endIndex++];
             }
@@ -52,9 +58,11 @@ library DepositQueueLib {
     }
 
     function get(DepositQueue storage queue, uint256 index) internal view returns (DepositEntry memory depositEntry) {
-        address owner = queue.list[index];
-        depositEntry.owner = owner;
-        depositEntry.amount = queue.cache[owner];
+        if (index < queue.list.length) {
+            address owner = queue.list[index];
+            depositEntry.owner = owner;
+            depositEntry.amount = queue.cache[owner];
+        }
     }
 
     function balanceOf(DepositQueue storage queue, address owner) internal view returns (uint256) {
