@@ -28,24 +28,17 @@ async function main (): Promise<void> {
   console.log(`\n${await asset.symbol()} deployed at: ${asset.address}\n`)
   await verifyContract(hre, asset.address, [assetName, assetSymbol])
 
-  const YieldSource = await ethers.getContractFactory('YieldSourceMock')
-  const yieldSource = await YieldSource.deploy(asset.address)
-  await yieldSource.deployTransaction.wait(WAIT_CONFIRMATIONS)
-  console.log(`\nYieldSource ${await yieldSource.symbol()} deployed at: ${yieldSource.address}\n`)
-  await verifyContract(hre, yieldSource.address, [asset.address])
-
   const InvestorActorMock = await ethers.getContractFactory('InvestorActorMock')
   const investor = await InvestorActorMock.deploy(asset.address)
   await investor.deployTransaction.wait(WAIT_CONFIRMATIONS)
   console.log(`\nInvestor deployed at: ${investor.address}\n`)
   await verifyContract(hre, investor.address, [asset.address])
 
-  const Vault = await ethers.getContractFactory('PrincipalProtectedMock')
+  const Vault = await ethers.getContractFactory('STETHVault')
   const vaultConstructorArguments = [
     configurationManager.address,
     asset.address,
-    investor.address,
-    yieldSource.address
+    investor.address
   ] as const
 
   const vault = await Vault.deploy(...vaultConstructorArguments)
@@ -69,7 +62,6 @@ async function main (): Promise<void> {
   console.table({
     ConfigurationManager: configurationManager.address,
     Asset: asset.address,
-    YieldSourceMock: yieldSource.address,
     InvestorActorMock: investor.address,
     PrincipalProtectedMock: vault.address
   })
