@@ -30,9 +30,7 @@ library TransferUtils {
         address spender,
         uint256 amount
     ) internal {
-        if (!token.approve(spender, amount)) {
-            revert TransferUtils__ApproveDidNotSucceed();
-        }
+        _callOptionalReturn(token, abi.encodeWithSelector(token.approve.selector, spender, amount));
     }
 
     function _callOptionalReturn(IERC20 token, bytes memory data) private {
