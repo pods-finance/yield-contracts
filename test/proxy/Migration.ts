@@ -143,14 +143,26 @@ describe('Migration', () => {
     await vaultFrom.connect(vaultController).startRound()
 
     // Execute migration
-    const result = await signERC2612Permit(userPermit, vaultTo.address, userPermit.address, migration.address)
+    const shares = await vaultFrom.balanceOf(userPermit.address)
+    const permit = await signERC2612Permit(
+      userPermit,
+      {
+        name: 'Pods Yield stETH',
+        version: '1',
+        chainId: hre.network.config.chainId as number,
+        verifyingContract: vaultFrom.address
+      },
+      userPermit.address,
+      migration.address,
+      shares.toString()
+    )
     await migration.connect(userPermit).migrateWithPermit(
       vaultFrom.address,
       vaultTo.address,
-      result.deadline,
-      result.v,
-      result.r,
-      result.s
+      permit.deadline,
+      permit.v,
+      permit.r,
+      permit.s
     )
   })
 

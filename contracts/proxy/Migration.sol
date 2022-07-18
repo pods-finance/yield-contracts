@@ -12,12 +12,13 @@ contract Migration {
     function migrate(IVaultMetadata from, IVaultMetadata to) external {
         require(from.asset() == to.asset(), "Vault assets must be the same");
 
+        uint256 shares = from.balanceOf(msg.sender);
+        from.redeem(shares, address(this), msg.sender);
+
         IERC20 asset = IERC20(from.asset());
-
-        from.redeem(from.balanceOf(msg.sender), address(this), msg.sender);
-
-        asset.approve(address(to), asset.balanceOf(address(this)));
-        to.deposit(asset.balanceOf(address(this)), msg.sender);
+        uint256 balance = asset.balanceOf(address(this));
+        asset.approve(address(to), balance);
+        to.deposit(balance, msg.sender);
     }
 
     function migrateWithPermit(
@@ -29,14 +30,14 @@ contract Migration {
         bytes32 s
     ) external {
         require(from.asset() == to.asset(), "Vault assets must be the same");
+
         uint256 shares = from.balanceOf(msg.sender);
-
-        IERC20 asset = IERC20(from.asset());
-
         IERC20Permit(address(from)).permit(msg.sender, address(this), shares, deadline, v, r, s);
         from.redeem(shares, address(this), msg.sender);
 
-        asset.approve(address(to), asset.balanceOf(address(this)));
-        to.deposit(asset.balanceOf(address(this)), msg.sender);
+        IERC20 asset = IERC20(from.asset());
+        uint256 balance = asset.balanceOf(address(this));
+        asset.approve(address(to), balance);
+        to.deposit(balance, msg.sender);
     }
 }
