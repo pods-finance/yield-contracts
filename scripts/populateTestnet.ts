@@ -45,7 +45,6 @@ async function main (): Promise<void> {
   await (await asset.connect(user0).transfer(vault.address, ethers.utils.parseEther('0.9'))).wait(WAIT_CONFIRMATIONS)
   console.log('User0 Transfered')
 
-
   await (await vault.endRound()).wait(WAIT_CONFIRMATIONS)
   console.log('Round 1 Ended')
 
