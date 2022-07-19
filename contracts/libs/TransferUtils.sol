@@ -6,6 +6,7 @@ import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 
 library TransferUtils {
     error TransferUtils__TransferDidNotSucceed();
+    error TransferUtils__ApproveDidNotSucceed();
 
     function safeTransfer(
         IERC20 token,
@@ -22,6 +23,14 @@ library TransferUtils {
         uint256 value
     ) internal {
         _callOptionalReturn(token, abi.encodeWithSelector(token.transferFrom.selector, from, to, value));
+    }
+
+    function safeApprove(
+        IERC20 token,
+        address spender,
+        uint256 amount
+    ) internal {
+        _callOptionalReturn(token, abi.encodeWithSelector(token.approve.selector, spender, amount));
     }
 
     function _callOptionalReturn(IERC20 token, bytes memory data) private {
