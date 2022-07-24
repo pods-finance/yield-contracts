@@ -659,6 +659,50 @@
     "type": "function"
   },
   {
+    "inputs": [
+      {
+        "internalType": "uint256",
+        "name": "assets",
+        "type": "uint256"
+      },
+      {
+        "internalType": "address",
+        "name": "receiver",
+        "type": "address"
+      },
+      {
+        "internalType": "uint256",
+        "name": "deadline",
+        "type": "uint256"
+      },
+      {
+        "internalType": "uint8",
+        "name": "v",
+        "type": "uint8"
+      },
+      {
+        "internalType": "bytes32",
+        "name": "r",
+        "type": "bytes32"
+      },
+      {
+        "internalType": "bytes32",
+        "name": "s",
+        "type": "bytes32"
+      }
+    ],
+    "name": "depositWithPermit",
+    "outputs": [
+      {
+        "internalType": "uint256",
+        "name": "shares",
+        "type": "uint256"
+      }
+    ],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
     "inputs": [],
     "name": "endRound",
     "outputs": [],
@@ -868,6 +912,50 @@
       }
     ],
     "name": "mint",
+    "outputs": [
+      {
+        "internalType": "uint256",
+        "name": "assets",
+        "type": "uint256"
+      }
+    ],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "uint256",
+        "name": "shares",
+        "type": "uint256"
+      },
+      {
+        "internalType": "address",
+        "name": "receiver",
+        "type": "address"
+      },
+      {
+        "internalType": "uint256",
+        "name": "deadline",
+        "type": "uint256"
+      },
+      {
+        "internalType": "uint8",
+        "name": "v",
+        "type": "uint8"
+      },
+      {
+        "internalType": "bytes32",
+        "name": "r",
+        "type": "bytes32"
+      },
+      {
+        "internalType": "bytes32",
+        "name": "s",
+        "type": "bytes32"
+      }
+    ],
+    "name": "mintWithPermit",
     "outputs": [
       {
         "internalType": "uint256",
