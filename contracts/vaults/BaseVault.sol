@@ -69,10 +69,10 @@ abstract contract BaseVault is IVault, ERC20, ERC20Permit, Capped {
         if (shares == 0) revert IVault__ZeroShares();
         _spendCap(shares);
 
+        emit Deposit(msg.sender, receiver, assets, shares);
+
         depositQueue.push(DepositQueueLib.DepositEntry(receiver, assets));
         asset.safeTransferFrom(msg.sender, address(this), assets);
-
-        emit Deposit(msg.sender, receiver, assets, shares);
     }
 
     /**
@@ -83,10 +83,10 @@ abstract contract BaseVault is IVault, ERC20, ERC20Permit, Capped {
         assets = previewMint(shares);
         _spendCap(shares);
 
+        emit Deposit(msg.sender, receiver, assets, shares);
+
         depositQueue.push(DepositQueueLib.DepositEntry(receiver, assets));
         asset.safeTransferFrom(msg.sender, address(this), assets);
-
-        emit Deposit(msg.sender, receiver, assets, shares);
     }
 
     /**
@@ -113,11 +113,13 @@ abstract contract BaseVault is IVault, ERC20, ERC20Permit, Capped {
         _beforeWithdraw(shares, assets);
 
         uint256 fee = _getFee(assets);
-        asset.safeTransfer(receiver, assets - fee);
-        asset.safeTransfer(controller(), fee);
+        uint256 receiverAssets = assets - fee;
 
-        emit Withdraw(msg.sender, receiver, owner, assets, shares);
+        emit Withdraw(msg.sender, receiver, owner, receiverAssets, shares);
         emit FeeCollected(fee);
+
+        asset.safeTransfer(receiver, receiverAssets);
+        asset.safeTransfer(controller(), fee);
     }
 
     /**
@@ -142,11 +144,13 @@ abstract contract BaseVault is IVault, ERC20, ERC20Permit, Capped {
         _beforeWithdraw(shares, assets);
 
         uint256 fee = _getFee(assets);
-        asset.safeTransfer(receiver, assets - fee);
-        asset.safeTransfer(controller(), fee);
+        uint256 receiverAssets = assets - fee;
 
-        emit Withdraw(msg.sender, receiver, owner, assets, shares);
+        emit Withdraw(msg.sender, receiver, owner, receiverAssets, shares);
         emit FeeCollected(fee);
+
+        asset.safeTransfer(receiver, receiverAssets);
+        asset.safeTransfer(controller(), fee);
     }
 
     /**
