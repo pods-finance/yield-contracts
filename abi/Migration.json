@@ -1,0 +1,63 @@
+[
+  {
+    "inputs": [],
+    "name": "TransferUtils__TransferDidNotSucceed",
+    "type": "error"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "contract IVaultMetadata",
+        "name": "from",
+        "type": "address"
+      },
+      {
+        "internalType": "contract IVaultMetadata",
+        "name": "to",
+        "type": "address"
+      }
+    ],
+    "name": "migrate",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "contract IVaultMetadata",
+        "name": "from",
+        "type": "address"
+      },
+      {
+        "internalType": "contract IVaultMetadata",
+        "name": "to",
+        "type": "address"
+      },
+      {
+        "internalType": "uint256",
+        "name": "deadline",
+        "type": "uint256"
+      },
+      {
+        "internalType": "uint8",
+        "name": "v",
+        "type": "uint8"
+      },
+      {
+        "internalType": "bytes32",
+        "name": "r",
+        "type": "bytes32"
+      },
+      {
+        "internalType": "bytes32",
+        "name": "s",
+        "type": "bytes32"
+      }
+    ],
+    "name": "migrateWithPermit",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  }
+]
