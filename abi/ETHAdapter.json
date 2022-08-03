@@ -1,0 +1,188 @@
+[
+  {
+    "inputs": [
+      {
+        "internalType": "contract IConfigurationManager",
+        "name": "_configuration",
+        "type": "address"
+      },
+      {
+        "internalType": "contract ICurvePool",
+        "name": "_pool",
+        "type": "address"
+      }
+    ],
+    "stateMutability": "nonpayable",
+    "type": "constructor"
+  },
+  {
+    "inputs": [],
+    "name": "TransferUtils__TransferDidNotSucceed",
+    "type": "error"
+  },
+  {
+    "inputs": [],
+    "name": "configuration",
+    "outputs": [
+      {
+        "internalType": "contract IConfigurationManager",
+        "name": "",
+        "type": "address"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "uint256",
+        "name": "stETHAmount",
+        "type": "uint256"
+      }
+    ],
+    "name": "convertToETH",
+    "outputs": [
+      {
+        "internalType": "uint256",
+        "name": "ethAmount",
+        "type": "uint256"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "uint256",
+        "name": "ethAmount",
+        "type": "uint256"
+      }
+    ],
+    "name": "convertToSTETH",
+    "outputs": [
+      {
+        "internalType": "uint256",
+        "name": "stETHAmount",
+        "type": "uint256"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "contract IVaultMetadata",
+        "name": "vault",
+        "type": "address"
+      },
+      {
+        "internalType": "address",
+        "name": "receiver",
+        "type": "address"
+      },
+      {
+        "internalType": "uint256",
+        "name": "minOutput",
+        "type": "uint256"
+      }
+    ],
+    "name": "deposit",
+    "outputs": [
+      {
+        "internalType": "uint256",
+        "name": "shares",
+        "type": "uint256"
+      }
+    ],
+    "stateMutability": "payable",
+    "type": "function"
+  },
+  {
+    "inputs": [],
+    "name": "pool",
+    "outputs": [
+      {
+        "internalType": "contract ICurvePool",
+        "name": "",
+        "type": "address"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "contract IVaultMetadata",
+        "name": "vault",
+        "type": "address"
+      },
+      {
+        "internalType": "uint256",
+        "name": "shares",
+        "type": "uint256"
+      },
+      {
+        "internalType": "address",
+        "name": "receiver",
+        "type": "address"
+      },
+      {
+        "internalType": "uint256",
+        "name": "minOutput",
+        "type": "uint256"
+      }
+    ],
+    "name": "redeem",
+    "outputs": [
+      {
+        "internalType": "uint256",
+        "name": "assets",
+        "type": "uint256"
+      }
+    ],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "contract IVaultMetadata",
+        "name": "vault",
+        "type": "address"
+      },
+      {
+        "internalType": "uint256",
+        "name": "assets",
+        "type": "uint256"
+      },
+      {
+        "internalType": "address",
+        "name": "receiver",
+        "type": "address"
+      },
+      {
+        "internalType": "uint256",
+        "name": "minOutput",
+        "type": "uint256"
+      }
+    ],
+    "name": "withdraw",
+    "outputs": [
+      {
+        "internalType": "uint256",
+        "name": "shares",
+        "type": "uint256"
+      }
+    ],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "stateMutability": "payable",
+    "type": "receive"
+  }
+]
