@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 
-pragma solidity >=0.8.6;
+pragma solidity 0.8.9;
 
 import "@openzeppelin/contracts/token/ERC20/extensions/IERC20Metadata.sol";
 import "@openzeppelin/contracts/token/ERC20/extensions/draft-ERC20Permit.sol";
@@ -62,7 +62,7 @@ abstract contract BaseVault is IVault, ERC20, ERC20Permit, Capped {
     /**
      * @inheritdoc IERC4626
      */
-    function deposit(uint256 assets, address receiver) public virtual override returns (uint256 shares) {
+    function deposit(uint256 assets, address receiver) external virtual override returns (uint256 shares) {
         if (isProcessingDeposits) revert IVault__ForbiddenWhileProcessingDeposits();
         shares = previewDeposit(assets);
 
@@ -78,7 +78,7 @@ abstract contract BaseVault is IVault, ERC20, ERC20Permit, Capped {
     /**
      * @inheritdoc IERC4626
      */
-    function mint(uint256 shares, address receiver) public virtual override returns (uint256 assets) {
+    function mint(uint256 shares, address receiver) external virtual override returns (uint256 assets) {
         if (isProcessingDeposits) revert IVault__ForbiddenWhileProcessingDeposits();
         assets = previewMint(shares);
         _spendCap(shares);
@@ -96,7 +96,7 @@ abstract contract BaseVault is IVault, ERC20, ERC20Permit, Capped {
         uint256 shares,
         address receiver,
         address owner
-    ) public virtual override returns (uint256 assets) {
+    ) external virtual override returns (uint256 assets) {
         if (isProcessingDeposits) revert IVault__ForbiddenWhileProcessingDeposits();
         assets = convertToAssets(shares);
 
@@ -129,7 +129,7 @@ abstract contract BaseVault is IVault, ERC20, ERC20Permit, Capped {
         uint256 assets,
         address receiver,
         address owner
-    ) public virtual override returns (uint256 shares) {
+    ) external virtual override returns (uint256 shares) {
         if (isProcessingDeposits) revert IVault__ForbiddenWhileProcessingDeposits();
         shares = convertToShares(assets);
 
@@ -282,7 +282,7 @@ abstract contract BaseVault is IVault, ERC20, ERC20Permit, Capped {
     /**
      * @inheritdoc IVault
      */
-    function startRound() public virtual onlyController {
+    function startRound() external virtual onlyController {
         if (!isProcessingDeposits) revert IVault__NotProcessingDeposits();
 
         isProcessingDeposits = false;
@@ -295,7 +295,7 @@ abstract contract BaseVault is IVault, ERC20, ERC20Permit, Capped {
     /**
      * @inheritdoc IVault
      */
-    function endRound() public virtual onlyController {
+    function endRound() external virtual onlyController {
         if (isProcessingDeposits) revert IVault__AlreadyProcessingDeposits();
 
         isProcessingDeposits = true;
@@ -307,7 +307,7 @@ abstract contract BaseVault is IVault, ERC20, ERC20Permit, Capped {
     /**
      * @inheritdoc IVault
      */
-    function processQueuedDeposits(uint256 startIndex, uint256 endIndex) public {
+    function processQueuedDeposits(uint256 startIndex, uint256 endIndex) external {
         if (!isProcessingDeposits) revert IVault__NotProcessingDeposits();
 
         uint256 _totalAssets = totalAssets();
