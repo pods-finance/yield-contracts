@@ -79,8 +79,12 @@ abstract contract BaseVault is IVault, ERC20, ERC20Permit, Capped {
         bytes32 r,
         bytes32 s
     ) public returns (uint256 shares) {
+        if (isProcessingDeposits) revert IVault__ForbiddenWhileProcessingDeposits();
+        shares = previewDeposit(assets);
+
+        if (shares == 0) revert IVault__ZeroShares();
         IERC20Permit(address(asset)).permit(msg.sender, address(this), assets, deadline, v, r, s);
-        return deposit(assets, receiver);
+        _deposit(assets, shares, receiver);
     }
 
     /**
@@ -364,9 +368,9 @@ abstract contract BaseVault is IVault, ERC20, ERC20Permit, Capped {
         _spendCap(shares);
 
         depositQueue.push(DepositQueueLib.DepositEntry(receiver, assets));
-        asset.safeTransferFrom(msg.sender, address(this), assets);
 
         emit Deposit(msg.sender, receiver, assets, shares);
+        asset.safeTransferFrom(msg.sender, address(this), assets);
     }
 
     /** Hooks **/
