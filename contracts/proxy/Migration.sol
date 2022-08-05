@@ -9,9 +9,16 @@ import "../libs/TransferUtils.sol";
 contract Migration {
     using TransferUtils for IERC20;
 
-    function migrate(IVaultMetadata from, IVaultMetadata to) external {
-        require(from.asset() == to.asset(), "Vault assets must be the same");
+    IVaultMetadata immutable from;
+    IVaultMetadata immutable to;
 
+    constructor(IVaultMetadata _from, IVaultMetadata _to) {
+        require(_from.asset() == _to.asset(), "Vault assets must be the same");
+        from = _from;
+        to = _to;
+    }
+
+    function migrate() external {
         uint256 shares = from.balanceOf(msg.sender);
         from.redeem(shares, address(this), msg.sender);
 
@@ -22,15 +29,11 @@ contract Migration {
     }
 
     function migrateWithPermit(
-        IVaultMetadata from,
-        IVaultMetadata to,
         uint256 deadline,
         uint8 v,
         bytes32 r,
         bytes32 s
     ) external {
-        require(from.asset() == to.asset(), "Vault assets must be the same");
-
         uint256 shares = from.balanceOf(msg.sender);
         IERC20Permit(address(from)).permit(msg.sender, address(this), shares, deadline, v, r, s);
         from.redeem(shares, address(this), msg.sender);

@@ -68,7 +68,7 @@ describe('Migration', () => {
     )
 
     const Migration = await ethers.getContractFactory('Migration')
-    migration = await Migration.deploy()
+    migration = await Migration.deploy(vaultFrom.address, vaultTo.address)
 
     // Give approval upfront that the vault can pull money from the investor contract
     await investor.approveVaultToPull(vaultFrom.address)
@@ -124,7 +124,7 @@ describe('Migration', () => {
 
     // Execute migration
     await vaultFrom.connect(user1).approve(migration.address, ethers.constants.MaxUint256)
-    await migration.connect(user1).migrate(vaultFrom.address, vaultTo.address)
+    await migration.connect(user1).migrate()
 
     expect(await vaultFrom.totalAssets()).to.be.closeTo(vaultFromTotalAssets.sub(user1Withdrawable), 1)
     expect(await asset.balanceOf(migration.address)).to.be.closeTo(BigNumber.from('0'), 1)
@@ -157,8 +157,6 @@ describe('Migration', () => {
       shares.toString()
     )
     await migration.connect(userPermit).migrateWithPermit(
-      vaultFrom.address,
-      vaultTo.address,
       permit.deadline,
       permit.v,
       permit.r,
@@ -172,14 +170,8 @@ describe('Migration', () => {
     const STETHVault = await ethers.getContractFactory('STETHVault')
     vaultTo = await STETHVault.deploy(configuration.address, asset.address, investor.address)
 
-    await vaultFrom.connect(user0).deposit(ethers.utils.parseEther('100'), user0.address)
-    await vaultFrom.connect(vaultController).endRound()
-    await vaultFrom.connect(vaultController).processQueuedDeposits(0, await vaultFrom.depositQueueSize())
-    await vaultFrom.connect(vaultController).startRound()
-
-    // Execute migration
-    await vaultFrom.connect(user0).approve(migration.address, ethers.constants.MaxUint256)
-    await expect(migration.connect(user0).migrate(vaultFrom.address, vaultTo.address))
+    const Migration = await ethers.getContractFactory('Migration')
+    await expect(Migration.deploy(vaultFrom.address, vaultTo.address))
       .to.be.revertedWith('Vault assets must be the same')
   })
 })
