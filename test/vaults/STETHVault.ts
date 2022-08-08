@@ -174,6 +174,48 @@ describe('STETHVault', () => {
     })
   })
 
+  describe('Lifecycle', () => {
+    it('cannot withdraw between a round\'s end and the beginning of the next', async () => {
+      const assetAmount = ethers.utils.parseEther('100')
+
+      await vault.connect(user0).deposit(assetAmount, user0.address)
+      await vault.connect(vaultController).endRound()
+      await vault.connect(vaultController).processQueuedDeposits(0, await vault.depositQueueSize())
+
+      await expect(
+        vault.connect(user0).redeem(await vault.balanceOf(user0.address), user0.address, user0.address)
+      ).to.be.revertedWith('IVault__ForbiddenWhileProcessingDeposits()')
+    })
+
+    it('cannot deposit between a round\'s end and the beginning of the next', async () => {
+      const assetAmount = ethers.utils.parseEther('10')
+
+      await vault.connect(vaultController).endRound()
+      await expect(
+        vault.connect(user0).deposit(assetAmount, user0.address)
+      ).to.be.revertedWith('IVault__ForbiddenWhileProcessingDeposits()')
+    })
+
+    it('cannot processQueue After round started', async () => {
+      const assetAmount = ethers.utils.parseEther('10')
+
+      await vault.connect(user0).deposit(assetAmount, user0.address)
+      await vault.connect(vaultController).endRound()
+      await vault.connect(vaultController).startRound()
+      await expect(vault.connect(vaultController).processQueuedDeposits(0, await vault.depositQueueSize())).to.be.revertedWith('IVault__NotProcessingDeposits()')
+    })
+
+    it('cannot start or end rounds twice', async () => {
+      await vault.connect(vaultController).endRound()
+      await expect(vault.connect(vaultController).endRound())
+        .to.be.revertedWith('IVault__AlreadyProcessingDeposits()')
+
+      await vault.connect(vaultController).startRound()
+      await expect(vault.connect(vaultController).startRound())
+        .to.be.revertedWith('IVault__NotProcessingDeposits()')
+    })
+  })
+
   it('should add collateral and receive shares', async () => {
     const assetAmount = ethers.utils.parseEther('10')
     const assetAmountEffective = assetAmount.sub(1)
@@ -198,36 +240,6 @@ describe('STETHVault', () => {
 
     // Start round
     await vault.connect(vaultController).startRound()
-  })
-
-  it('cannot withdraw between a round\'s end and the beginning of the next', async () => {
-    const assetAmount = ethers.utils.parseEther('100')
-
-    await vault.connect(user0).deposit(assetAmount, user0.address)
-    await vault.connect(vaultController).endRound()
-    await vault.connect(vaultController).processQueuedDeposits(0, await vault.depositQueueSize())
-
-    await expect(
-      vault.connect(user0).redeem(await vault.balanceOf(user0.address), user0.address, user0.address)
-    ).to.be.revertedWith('IVault__ForbiddenWhileProcessingDeposits()')
-  })
-
-  it('cannot deposit between a round\'s end and the beginning of the next', async () => {
-    const assetAmount = ethers.utils.parseEther('10')
-
-    await vault.connect(vaultController).endRound()
-    await expect(
-      vault.connect(user0).deposit(assetAmount, user0.address)
-    ).to.be.revertedWith('IVault__ForbiddenWhileProcessingDeposits()')
-  })
-
-  it('cannot processQueue After round started', async () => {
-    const assetAmount = ethers.utils.parseEther('10')
-
-    await vault.connect(user0).deposit(assetAmount, user0.address)
-    await vault.connect(vaultController).endRound()
-    await vault.connect(vaultController).startRound()
-    await expect(vault.connect(vaultController).processQueuedDeposits(0, await vault.depositQueueSize())).to.be.revertedWith('IVault__NotProcessingDeposits()')
   })
 
   it('withdraws proportionally', async () => {

@@ -324,6 +324,25 @@ abstract contract BaseVault is IVault, ERC20, ERC20Permit, Capped {
     /**
      * @inheritdoc IVault
      */
+    function refund() external {
+        uint256 assets = depositQueue.balanceOf(msg.sender);
+        if (assets == 0) revert IVault__ZeroAssets();
+
+        for (uint256 i = 0; i < depositQueue.size(); i++) {
+            DepositQueueLib.DepositEntry memory depositEntry = depositQueue.get(i);
+            if (depositEntry.owner == msg.sender) {
+                depositQueue.remove(i, i + 1);
+                break;
+            }
+        }
+
+        emit DepositRefunded(msg.sender, currentRoundId, assets);
+        asset.safeTransfer(msg.sender, assets);
+    }
+
+    /**
+     * @inheritdoc IVault
+     */
     function processQueuedDeposits(uint256 startIndex, uint256 endIndex) public {
         if (!isProcessingDeposits) revert IVault__NotProcessingDeposits();
 
