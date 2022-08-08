@@ -1,22 +1,27 @@
 [
   {
+    "inputs": [
+      {
+        "internalType": "contract IVaultMetadata",
+        "name": "_from",
+        "type": "address"
+      },
+      {
+        "internalType": "contract IVaultMetadata",
+        "name": "_to",
+        "type": "address"
+      }
+    ],
+    "stateMutability": "nonpayable",
+    "type": "constructor"
+  },
+  {
     "inputs": [],
     "name": "TransferUtils__TransferDidNotSucceed",
     "type": "error"
   },
   {
-    "inputs": [
-      {
-        "internalType": "contract IVaultMetadata",
-        "name": "from",
-        "type": "address"
-      },
-      {
-        "internalType": "contract IVaultMetadata",
-        "name": "to",
-        "type": "address"
-      }
-    ],
+    "inputs": [],
     "name": "migrate",
     "outputs": [],
     "stateMutability": "nonpayable",
@@ -24,16 +29,6 @@
   },
   {
     "inputs": [
-      {
-        "internalType": "contract IVaultMetadata",
-        "name": "from",
-        "type": "address"
-      },
-      {
-        "internalType": "contract IVaultMetadata",
-        "name": "to",
-        "type": "address"
-      },
       {
         "internalType": "uint256",
         "name": "deadline",

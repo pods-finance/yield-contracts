@@ -69,6 +69,7 @@ const config: HardhatUserConfig = {
       'PrincipalProtectedMock',
       'STETHVault',
       'ConfigurationManager',
+      'ETHAdapter',
       'Migration'
     ]
   },
