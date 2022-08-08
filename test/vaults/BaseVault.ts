@@ -210,89 +210,113 @@ describe('BaseVault', () => {
     await expect(vault.connect(user0).endRound()).to.be.revertedWith('IVault__CallerIsNotTheController()')
   })
 
-  it('can deposit and withdraw on behalf', async () => {
-    const assets = ethers.utils.parseEther('10')
-    const expectedShares = assets
+  describe('Lifecycle', () => {
+    it('cannot withdraw between a round\'s end and the beginning of the next', async () => {
+      const assets = ethers.utils.parseEther('10')
 
-    expect(await asset.balanceOf(user0.address)).to.be.equal(0)
-    await asset.connect(proxy).mint(assets)
-    await asset.connect(proxy).approve(vault.address, assets)
-    await vault.connect(proxy).deposit(assets, user0.address)
-    expect(await vault.depositQueueSize()).to.be.equal(1)
-    expect(await asset.balanceOf(vault.address)).to.be.equal(assets)
-    expect(await vault.idleAssetsOf(user0.address)).to.be.equal(assets)
+      await asset.connect(user0).mint(assets)
+      await vault.connect(user0).deposit(assets, user0.address)
+      await vault.connect(vaultController).endRound()
+      await vault.connect(vaultController).processQueuedDeposits(0, await vault.depositQueueSize())
 
-    await vault.connect(vaultController).endRound()
-    await vault.connect(vaultController).processQueuedDeposits(0, await vault.depositQueueSize())
-    expect(await vault.totalSupply()).to.be.equal(expectedShares)
-    expect(await vault.depositQueueSize()).to.be.equal(0)
-    expect(await vault.balanceOf(user0.address)).to.be.equal(expectedShares)
-    expect(await vault.idleAssetsOf(user0.address)).to.be.equal(0)
+      await expect(
+        vault.connect(user0).redeem(await vault.balanceOf(user0.address), user0.address, user0.address)
+      ).to.be.revertedWith('IVault__ForbiddenWhileProcessingDeposits()')
+    })
 
-    await vault.connect(vaultController).startRound()
-    expect(await vault.allowance(user0.address, proxy.address)).to.be.equal(0)
-    const snapshotId = await ethers.provider.send('evm_snapshot', [])
+    it('cannot deposit between a round\'s end and the beginning of the next', async () => {
+      const assets = ethers.utils.parseEther('10')
 
-    // Spending allowance
-    await vault.connect(user0).approve(proxy.address, expectedShares)
-    expect(await vault.allowance(user0.address, proxy.address)).to.be.equal(expectedShares)
-    await vault.connect(proxy).redeem(await vault.balanceOf(user0.address), user0.address, user0.address)
-    expect(await vault.allowance(user0.address, proxy.address)).to.be.equal(0)
-    expect(await asset.balanceOf(user0.address)).to.be.equal(feeExcluded(assets))
+      await asset.connect(user0).mint(assets)
+      await vault.connect(vaultController).endRound()
+      await expect(
+        vault.connect(user0).deposit(assets, user0.address)
+      ).to.be.revertedWith('IVault__ForbiddenWhileProcessingDeposits()')
+    })
 
-    // If MaxUint256 allowance was given, it should not be spent
-    await ethers.provider.send('evm_revert', [snapshotId])
-    await vault.connect(user0).approve(proxy.address, ethers.constants.MaxUint256)
-    expect(await vault.allowance(user0.address, proxy.address)).to.be.equal(ethers.constants.MaxUint256)
-    await vault.connect(proxy).redeem(await vault.balanceOf(user0.address), user0.address, user0.address)
-    expect(await vault.allowance(user0.address, proxy.address)).to.be.equal(ethers.constants.MaxUint256)
-    expect(await asset.balanceOf(user0.address)).to.be.equal(feeExcluded(assets))
+    it('cannot processQueue After round started', async () => {
+      const assets = ethers.utils.parseEther('10')
+
+      await asset.connect(user0).mint(assets)
+      await vault.connect(user0).deposit(assets, user0.address)
+      await vault.connect(vaultController).endRound()
+      await vault.connect(vaultController).startRound()
+      await expect(vault.connect(vaultController).processQueuedDeposits(0, await vault.depositQueueSize())).to.be.revertedWith('IVault__NotProcessingDeposits()')
+    })
+
+    it('cannot start or end rounds twice', async () => {
+      await vault.connect(vaultController).endRound()
+      await expect(vault.connect(vaultController).endRound())
+        .to.be.revertedWith('IVault__AlreadyProcessingDeposits()')
+
+      await vault.connect(vaultController).startRound()
+      await expect(vault.connect(vaultController).startRound())
+        .to.be.revertedWith('IVault__NotProcessingDeposits()')
+    })
   })
 
-  it('cannot withdraw on behalf without allowance', async () => {
-    const assets = ethers.utils.parseEther('10')
-    const expectedShares = assets
+  describe('Proxy', () => {
+    it('can deposit and withdraw on behalf', async () => {
+      const assets = ethers.utils.parseEther('10')
+      const expectedShares = assets
 
-    await asset.connect(user0).mint(assets)
-    await vault.connect(user0).deposit(assets, user0.address)
-    expect(await vault.depositQueueSize()).to.be.equal(1)
-    expect(await asset.balanceOf(vault.address)).to.be.equal(assets)
-    expect(await vault.idleAssetsOf(user0.address)).to.be.equal(assets)
+      expect(await asset.balanceOf(user0.address)).to.be.equal(0)
+      await asset.connect(proxy).mint(assets)
+      await asset.connect(proxy).approve(vault.address, assets)
+      await vault.connect(proxy).deposit(assets, user0.address)
+      expect(await vault.depositQueueSize()).to.be.equal(1)
+      expect(await asset.balanceOf(vault.address)).to.be.equal(assets)
+      expect(await vault.idleAssetsOf(user0.address)).to.be.equal(assets)
 
-    await vault.connect(vaultController).endRound()
-    await vault.connect(vaultController).processQueuedDeposits(0, await vault.depositQueueSize())
-    expect(await vault.totalSupply()).to.be.equal(expectedShares)
-    expect(await vault.depositQueueSize()).to.be.equal(0)
-    expect(await vault.balanceOf(user0.address)).to.be.equal(expectedShares)
-    expect(await vault.idleAssetsOf(user0.address)).to.be.equal(0)
+      await vault.connect(vaultController).endRound()
+      await vault.connect(vaultController).processQueuedDeposits(0, await vault.depositQueueSize())
+      expect(await vault.totalSupply()).to.be.equal(expectedShares)
+      expect(await vault.depositQueueSize()).to.be.equal(0)
+      expect(await vault.balanceOf(user0.address)).to.be.equal(expectedShares)
+      expect(await vault.idleAssetsOf(user0.address)).to.be.equal(0)
 
-    await vault.connect(vaultController).startRound()
-    await expect(
-      vault.connect(proxy).redeem(await vault.balanceOf(user0.address), user0.address, user0.address)
-    ).to.be.revertedWith('ERC20: insufficient allowance')
-  })
+      await vault.connect(vaultController).startRound()
+      expect(await vault.allowance(user0.address, proxy.address)).to.be.equal(0)
+      const snapshotId = await ethers.provider.send('evm_snapshot', [])
 
-  it('cannot withdraw between a round\'s end and the beginning of the next', async () => {
-    const assets = ethers.utils.parseEther('10')
+      // Spending allowance
+      await vault.connect(user0).approve(proxy.address, expectedShares)
+      expect(await vault.allowance(user0.address, proxy.address)).to.be.equal(expectedShares)
+      await vault.connect(proxy).redeem(await vault.balanceOf(user0.address), user0.address, user0.address)
+      expect(await vault.allowance(user0.address, proxy.address)).to.be.equal(0)
+      expect(await asset.balanceOf(user0.address)).to.be.equal(feeExcluded(assets))
 
-    await asset.connect(user0).mint(assets)
-    await vault.connect(user0).deposit(assets, user0.address)
-    await vault.connect(vaultController).endRound()
-    await vault.connect(vaultController).processQueuedDeposits(0, await vault.depositQueueSize())
+      // If MaxUint256 allowance was given, it should not be spent
+      await ethers.provider.send('evm_revert', [snapshotId])
+      await vault.connect(user0).approve(proxy.address, ethers.constants.MaxUint256)
+      expect(await vault.allowance(user0.address, proxy.address)).to.be.equal(ethers.constants.MaxUint256)
+      await vault.connect(proxy).redeem(await vault.balanceOf(user0.address), user0.address, user0.address)
+      expect(await vault.allowance(user0.address, proxy.address)).to.be.equal(ethers.constants.MaxUint256)
+      expect(await asset.balanceOf(user0.address)).to.be.equal(feeExcluded(assets))
+    })
 
-    await expect(
-      vault.connect(user0).redeem(await vault.balanceOf(user0.address), user0.address, user0.address)
-    ).to.be.revertedWith('IVault__ForbiddenWhileProcessingDeposits()')
-  })
+    it('cannot withdraw on behalf without allowance', async () => {
+      const assets = ethers.utils.parseEther('10')
+      const expectedShares = assets
 
-  it('cannot deposit between a round\'s end and the beginning of the next', async () => {
-    const assets = ethers.utils.parseEther('10')
+      await asset.connect(user0).mint(assets)
+      await vault.connect(user0).deposit(assets, user0.address)
+      expect(await vault.depositQueueSize()).to.be.equal(1)
+      expect(await asset.balanceOf(vault.address)).to.be.equal(assets)
+      expect(await vault.idleAssetsOf(user0.address)).to.be.equal(assets)
 
-    await asset.connect(user0).mint(assets)
-    await vault.connect(vaultController).endRound()
-    await expect(
-      vault.connect(user0).deposit(assets, user0.address)
-    ).to.be.revertedWith('IVault__ForbiddenWhileProcessingDeposits()')
+      await vault.connect(vaultController).endRound()
+      await vault.connect(vaultController).processQueuedDeposits(0, await vault.depositQueueSize())
+      expect(await vault.totalSupply()).to.be.equal(expectedShares)
+      expect(await vault.depositQueueSize()).to.be.equal(0)
+      expect(await vault.balanceOf(user0.address)).to.be.equal(expectedShares)
+      expect(await vault.idleAssetsOf(user0.address)).to.be.equal(0)
+
+      await vault.connect(vaultController).startRound()
+      await expect(
+        vault.connect(proxy).redeem(await vault.balanceOf(user0.address), user0.address, user0.address)
+      ).to.be.revertedWith('ERC20: insufficient allowance')
+    })
   })
 
   describe('Cap', () => {
@@ -481,26 +505,6 @@ describe('BaseVault', () => {
       expect(await vault.balanceOf(user0.address)).to.be.equal(shares)
       expect(await vault.idleAssetsOf(user0.address)).to.be.equal(0)
     })
-  })
-
-  it('cannot processQueue After round started', async () => {
-    const assets = ethers.utils.parseEther('10')
-
-    await asset.connect(user0).mint(assets)
-    await vault.connect(user0).deposit(assets, user0.address)
-    await vault.connect(vaultController).endRound()
-    await vault.connect(vaultController).startRound()
-    await expect(vault.connect(vaultController).processQueuedDeposits(0, await vault.depositQueueSize())).to.be.revertedWith('IVault__NotProcessingDeposits()')
-  })
-
-  it('cannot start or end rounds twice', async () => {
-    await vault.connect(vaultController).endRound()
-    await expect(vault.connect(vaultController).endRound())
-      .to.be.revertedWith('IVault__AlreadyProcessingDeposits()')
-
-    await vault.connect(vaultController).startRound()
-    await expect(vault.connect(vaultController).startRound())
-      .to.be.revertedWith('IVault__NotProcessingDeposits()')
   })
 
   it('withdraws proportionally', async () => {
