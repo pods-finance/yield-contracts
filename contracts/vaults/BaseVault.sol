@@ -4,6 +4,7 @@ pragma solidity >=0.8.6;
 
 import "@openzeppelin/contracts/token/ERC20/extensions/IERC20Metadata.sol";
 import "@openzeppelin/contracts/token/ERC20/extensions/draft-ERC20Permit.sol";
+import "@openzeppelin/contracts/token/ERC20/extensions/draft-IERC20Permit.sol";
 import "@openzeppelin/contracts/token/ERC20/ERC20.sol";
 import "../interfaces/IConfigurationManager.sol";
 import "../interfaces/IVault.sol";
@@ -67,12 +68,23 @@ abstract contract BaseVault is IVault, ERC20, ERC20Permit, Capped {
         shares = previewDeposit(assets);
 
         if (shares == 0) revert IVault__ZeroShares();
-        _spendCap(shares);
+        _deposit(assets, shares, receiver);
+    }
 
-        depositQueue.push(DepositQueueLib.DepositEntry(receiver, assets));
-        asset.safeTransferFrom(msg.sender, address(this), assets);
+    function depositWithPermit(
+        uint256 assets,
+        address receiver,
+        uint256 deadline,
+        uint8 v,
+        bytes32 r,
+        bytes32 s
+    ) public returns (uint256 shares) {
+        if (isProcessingDeposits) revert IVault__ForbiddenWhileProcessingDeposits();
+        shares = previewDeposit(assets);
 
-        emit Deposit(msg.sender, receiver, assets, shares);
+        if (shares == 0) revert IVault__ZeroShares();
+        IERC20Permit(address(asset)).permit(msg.sender, address(this), assets, deadline, v, r, s);
+        _deposit(assets, shares, receiver);
     }
 
     /**
@@ -81,12 +93,21 @@ abstract contract BaseVault is IVault, ERC20, ERC20Permit, Capped {
     function mint(uint256 shares, address receiver) public virtual override returns (uint256 assets) {
         if (isProcessingDeposits) revert IVault__ForbiddenWhileProcessingDeposits();
         assets = previewMint(shares);
-        _spendCap(shares);
+        _deposit(assets, shares, receiver);
+    }
 
-        depositQueue.push(DepositQueueLib.DepositEntry(receiver, assets));
-        asset.safeTransferFrom(msg.sender, address(this), assets);
-
-        emit Deposit(msg.sender, receiver, assets, shares);
+    function mintWithPermit(
+        uint256 shares,
+        address receiver,
+        uint256 deadline,
+        uint8 v,
+        bytes32 r,
+        bytes32 s
+    ) public returns (uint256 assets) {
+        if (isProcessingDeposits) revert IVault__ForbiddenWhileProcessingDeposits();
+        assets = previewMint(shares);
+        IERC20Permit(address(asset)).permit(msg.sender, address(this), assets, deadline, v, r, s);
+        _deposit(assets, shares, receiver);
     }
 
     /**
@@ -334,6 +355,22 @@ abstract contract BaseVault is IVault, ERC20, ERC20Permit, Capped {
      */
     function _getFee(uint256 assets) internal view returns (uint256) {
         return (assets * withdrawFeeRatio()) / DENOMINATOR;
+    }
+
+    /**
+     * @dev Pull assets from the caller and create shares to the receiver
+     */
+    function _deposit(
+        uint256 assets,
+        uint256 shares,
+        address receiver
+    ) internal {
+        _spendCap(shares);
+
+        depositQueue.push(DepositQueueLib.DepositEntry(receiver, assets));
+
+        emit Deposit(msg.sender, receiver, assets, shares);
+        asset.safeTransferFrom(msg.sender, address(this), assets);
     }
 
     /** Hooks **/

@@ -5,6 +5,7 @@ import { SignerWithAddress } from '@nomiclabs/hardhat-ethers/signers'
 import createConfigurationManager from '../utils/createConfigurationManager'
 import { feeExcluded } from '../utils/feeExcluded'
 import { Asset, ConfigurationManager, YieldSourceMock, YieldVaultMock } from '../../typechain'
+import { signERC2612Permit } from 'eth-permit'
 
 describe('BaseVault', () => {
   let asset: Asset, vault: YieldVaultMock, yieldSource: YieldSourceMock, configuration: ConfigurationManager
@@ -342,6 +343,74 @@ describe('BaseVault', () => {
 
       expect(await vault.availableCap()).to.be.equal(ethers.constants.MaxUint256)
       expect(await vault.spentCap()).to.be.equal(assets)
+    })
+  })
+
+  describe('Permit', () => {
+    it('can deposit with permits', async () => {
+      const assets = ethers.utils.parseEther('10')
+      const expectedShares = await vault.previewDeposit(assets)
+
+      await asset.connect(user0).mint(assets)
+      const permit = await signERC2612Permit(
+        user0,
+        asset.address,
+        user0.address,
+        vault.address,
+        assets.toString()
+      )
+
+      await vault.connect(user0).depositWithPermit(
+        assets,
+        user0.address,
+        permit.deadline,
+        permit.v,
+        permit.r,
+        permit.s
+      )
+      expect(await vault.depositQueueSize()).to.be.equal(1)
+      expect(await asset.balanceOf(vault.address)).to.be.equal(assets)
+      expect(await vault.idleAssetsOf(user0.address)).to.be.equal(assets)
+
+      await vault.connect(vaultController).endRound()
+      await vault.connect(vaultController).processQueuedDeposits(0, await vault.depositQueueSize())
+      expect(await vault.totalSupply()).to.be.equal(expectedShares)
+      expect(await vault.depositQueueSize()).to.be.equal(0)
+      expect(await vault.balanceOf(user0.address)).to.be.equal(expectedShares)
+      expect(await vault.idleAssetsOf(user0.address)).to.be.equal(0)
+    })
+
+    it('can mint with permits', async () => {
+      const shares = ethers.utils.parseEther('10')
+      const expectedAssets = await vault.previewMint(shares)
+
+      await asset.connect(user0).mint(expectedAssets)
+      const permit = await signERC2612Permit(
+        user0,
+        asset.address,
+        user0.address,
+        vault.address,
+        shares.toString()
+      )
+
+      await vault.connect(user0).mintWithPermit(
+        shares,
+        user0.address,
+        permit.deadline,
+        permit.v,
+        permit.r,
+        permit.s
+      )
+      expect(await vault.depositQueueSize()).to.be.equal(1)
+      expect(await asset.balanceOf(vault.address)).to.be.equal(expectedAssets)
+      expect(await vault.idleAssetsOf(user0.address)).to.be.equal(expectedAssets)
+
+      await vault.connect(vaultController).endRound()
+      await vault.connect(vaultController).processQueuedDeposits(0, await vault.depositQueueSize())
+      expect(await vault.totalSupply()).to.be.equal(shares)
+      expect(await vault.depositQueueSize()).to.be.equal(0)
+      expect(await vault.balanceOf(user0.address)).to.be.equal(shares)
+      expect(await vault.idleAssetsOf(user0.address)).to.be.equal(0)
     })
   })
 
