@@ -68,7 +68,9 @@ const config: HardhatUserConfig = {
       'BaseVault',
       'PrincipalProtectedMock',
       'STETHVault',
-      'ConfigurationManager'
+      'ConfigurationManager',
+      'ETHAdapter',
+      'Migration'
     ]
   },
   contractSizer: {

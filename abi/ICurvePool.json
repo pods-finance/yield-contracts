@@ -1,0 +1,65 @@
+[
+  {
+    "inputs": [
+      {
+        "internalType": "int128",
+        "name": "from",
+        "type": "int128"
+      },
+      {
+        "internalType": "int128",
+        "name": "to",
+        "type": "int128"
+      },
+      {
+        "internalType": "uint256",
+        "name": "input",
+        "type": "uint256"
+      },
+      {
+        "internalType": "uint256",
+        "name": "minOutput",
+        "type": "uint256"
+      }
+    ],
+    "name": "exchange",
+    "outputs": [
+      {
+        "internalType": "uint256",
+        "name": "output",
+        "type": "uint256"
+      }
+    ],
+    "stateMutability": "payable",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "int128",
+        "name": "from",
+        "type": "int128"
+      },
+      {
+        "internalType": "int128",
+        "name": "to",
+        "type": "int128"
+      },
+      {
+        "internalType": "uint256",
+        "name": "input",
+        "type": "uint256"
+      }
+    ],
+    "name": "get_dy",
+    "outputs": [
+      {
+        "internalType": "uint256",
+        "name": "output",
+        "type": "uint256"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  }
+]

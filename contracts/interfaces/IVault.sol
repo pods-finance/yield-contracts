@@ -16,6 +16,7 @@ interface IVault is IERC4626 {
     event StartRound(uint256 indexed roundId, uint256 amountAddedToStrategy);
     event EndRound(uint256 indexed roundId);
     event DepositProcessed(address indexed owner, uint256 indexed roundId, uint256 assets, uint256 shares);
+    event DepositRefunded(address indexed owner, uint256 indexed roundId, uint256 assets);
 
     /**
      * @notice Returns the fee charged on withdraws.
@@ -59,6 +60,11 @@ interface IVault is IERC4626 {
      * and opens the window for withdraws.
      */
     function endRound() external;
+
+    /**
+     * @notice Withdraw all user assets in unprocessed deposits.
+     */
+    function refund() external;
 
     /**
      * @notice Mint shares for deposits accumulated, effectively including their owners in the next round.
