@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 
-pragma solidity >=0.8.6;
+pragma solidity 0.8.9;
 
 import "./BaseVault.sol";
 
@@ -56,7 +56,7 @@ contract STETHVault is BaseVault {
     /**
      * @inheritdoc IERC4626
      */
-    function deposit(uint256 assets, address receiver) public virtual override returns (uint256 shares) {
+    function deposit(uint256 assets, address receiver) external virtual override returns (uint256 shares) {
         if (isProcessingDeposits) revert IVault__ForbiddenWhileProcessingDeposits();
         shares = previewDeposit(assets);
 
@@ -72,7 +72,7 @@ contract STETHVault is BaseVault {
     /**
      * @inheritdoc IERC4626
      */
-    function mint(uint256 shares, address receiver) public virtual override returns (uint256 assets) {
+    function mint(uint256 shares, address receiver) external virtual override returns (uint256 assets) {
         if (isProcessingDeposits) revert IVault__ForbiddenWhileProcessingDeposits();
         assets = previewMint(shares);
         _spendCap(shares);
