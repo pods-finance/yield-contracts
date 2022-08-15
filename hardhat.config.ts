@@ -70,7 +70,8 @@ const config: HardhatUserConfig = {
       'STETHVault',
       'ConfigurationManager',
       'ETHAdapter',
-      'Migration'
+      'Migration',
+      'MockCurvePool'
     ]
   },
   contractSizer: {
