@@ -4,6 +4,7 @@ pragma solidity 0.8.9;
 
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "../interfaces/ICurvePool.sol";
+import "../libs/FixedPointMath.sol";
 import "../libs/TransferUtils.sol";
 
 contract MockCurvePool is ICurvePool {
@@ -62,13 +63,26 @@ contract MockCurvePool is ICurvePool {
         int128 from,
         int128 to,
         uint256 input
-    ) public pure returns (uint256 output) {
+    ) public view returns (uint256 output) {
         uint256 diff = (input * RATIO) / DENOMINATOR;
+        uint256 balance;
 
         if (from == 0 && to == 1) {
-            return input + diff;
+            balance = balances(0);
+            output = input + diff;
         } else if (from == 1 && to == 0) {
-            return input - diff;
+            balance = balances(1);
+            output = input - diff;
+        }
+
+        return FixedPointMath.min(output, balance);
+    }
+
+    function balances(uint256 i) public view returns (uint256 balance) {
+        if (i == 0) {
+            balance = address(this).balance;
+        } else if (i == 1) {
+            balance = IERC20(coins[1]).balanceOf(address(this));
         }
     }
 
