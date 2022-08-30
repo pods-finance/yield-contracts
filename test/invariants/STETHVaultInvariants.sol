@@ -61,11 +61,11 @@ contract STETHVaultInvariants is STETHVault, FuzzyAddresses {
     }
 
     function echidna_test_name() public view returns (bool) {
-        return String.equal(name(), "Pods Yield stETH");
+        return String.equal(name(), "stETH Volatility Vault");
     }
 
     function echidna_test_symbol() public returns (bool) {
-        return String.equal(symbol(), "pystETH");
+        return String.equal(symbol(), "stETHvv");
     }
 
     function echidna_test_decimals() public returns (bool) {
@@ -98,21 +98,21 @@ contract STETHVaultInvariants is STETHVault, FuzzyAddresses {
     function helpProcessQueue(uint256 endIndex) public {
         if (endIndex > depositQueueSize()) return;
         uint256 startIndex = 0;
-        processQueuedDeposits(startIndex, endIndex);
+        this.processQueuedDeposits(startIndex, endIndex);
     }
 
     function deposit(uint256 assets, address) public override returns (uint256 shares) {
         uint256 createdShares = convertToShares(assets);
         LastDeposit memory newDeposit = LastDeposit({ amount: assets, roundId: currentRoundId, shares: createdShares });
         lastDeposits[msg.sender] = newDeposit;
-        return super.deposit(assets, msg.sender);
+        return this.deposit(assets, msg.sender);
     }
 
     function mint(uint256 shares, address) public override returns (uint256 assets) {
         uint256 assets2 = convertToAssets(shares);
         LastDeposit memory newDeposit = LastDeposit({ amount: assets2, roundId: currentRoundId, shares: shares });
         lastDeposits[msg.sender] = newDeposit;
-        return super.mint(shares, msg.sender);
+        return this.mint(shares, msg.sender);
     }
 
     function withdraw(
@@ -121,7 +121,7 @@ contract STETHVaultInvariants is STETHVault, FuzzyAddresses {
         address
     ) public override returns (uint256 shares) {
         bool isNextRound = currentRoundId == lastDeposits[msg.sender].roundId + 1;
-        super.withdraw(assets, msg.sender, msg.sender);
+        this.withdraw(assets, msg.sender, msg.sender);
 
         if (isNextRound && assets > 0) {
             uint256 burnShares = previewWithdraw(assets);
@@ -140,7 +140,7 @@ contract STETHVaultInvariants is STETHVault, FuzzyAddresses {
         address
     ) public override returns (uint256 assets) {
         bool isNextRound = currentRoundId == lastDeposits[msg.sender].roundId + 1;
-        super.redeem(shares, msg.sender, msg.sender);
+        this.redeem(shares, msg.sender, msg.sender);
         if (isNextRound && shares > 0) {
             if (shares <= lastDeposits[msg.sender].shares) {
                 uint256 withdrawAssets = convertToAssets(shares);
