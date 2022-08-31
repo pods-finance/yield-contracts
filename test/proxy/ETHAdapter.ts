@@ -7,12 +7,13 @@ import { startMainnetFork, stopMainnetFork } from '../utils/mainnetFork'
 import createConfigurationManager from '../utils/createConfigurationManager'
 import { feeExcluded } from '../utils/feeExcluded'
 import { ConfigurationManager, ERC20, ETHAdapter, ICurvePool, InvestorActorMock, STETHVault } from '../../typechain'
+import { signERC2612Permit } from 'eth-permit'
 
 describe('ETHAdapter', () => {
   let asset: ERC20, vault: STETHVault, investor: InvestorActorMock,
     configuration: ConfigurationManager, adapter: ETHAdapter, pool: ICurvePool
 
-  let user0: SignerWithAddress, vaultController: SignerWithAddress
+  let user0: SignerWithAddress, vaultController: SignerWithAddress, userPermit: SignerWithAddress
 
   let snapshotId: BigNumber
 
@@ -26,7 +27,7 @@ describe('ETHAdapter', () => {
 
     user0 = await ethers.getSigner('0x06601571aa9d3e8f5f7cdd5b993192618964bab5')
 
-    ;[, , , , vaultController] = await ethers.getSigners()
+    ;[, , , , vaultController, userPermit] = await ethers.getSigners()
     configuration = await createConfigurationManager()
 
     // Lido's stEth
@@ -146,6 +147,64 @@ describe('ETHAdapter', () => {
       expect(await ethers.provider.getBalance(adapter.address)).to.be.equal(0)
     })
 
+    it('withdrawWithPermit', async () => {
+      const assets = ethers.utils.parseEther('10')
+      const actualAssets = await adapter.convertToSTETH(assets)
+      const actualShares = (await vault.convertToShares(actualAssets)).sub(1)
+
+      await asset.connect(user0).transfer(userPermit.address, assets)
+      await adapter.connect(userPermit).deposit(vault.address, userPermit.address, assets, {
+        value: assets
+      })
+
+      await vault.connect(vaultController).endRound()
+      await vault.connect(vaultController).processQueuedDeposits(0, 1)
+      await vault.connect(vaultController).startRound()
+
+      expect(await vault.balanceOf(userPermit.address)).to.be.equal(actualShares)
+      expect(await vault.maxWithdraw(userPermit.address)).to.be.closeTo(feeExcluded(actualAssets), 1)
+
+      const expectedAssets = await vault.maxRedeem(userPermit.address)
+      const expectedETH = await adapter.convertToETH(feeExcluded(expectedAssets.sub(1)))
+
+      const permit = await signERC2612Permit(
+        userPermit,
+        {
+          name: 'Pods Yield stETH',
+          version: '1',
+          chainId: hre.network.config.chainId as number,
+          verifyingContract: vault.address
+        },
+        userPermit.address,
+        adapter.address,
+        actualShares.toString()
+      )
+
+      const withdrawTx = adapter.connect(userPermit).withdrawWithPermit(
+        vault.address,
+        expectedAssets,
+        userPermit.address,
+        expectedETH,
+        permit.deadline,
+        permit.v,
+        permit.r,
+        permit.s
+      )
+
+      await expect(async () => await withdrawTx)
+        .to.changeEtherBalances(
+          [pool, userPermit],
+          [minus(expectedETH), expectedETH]
+        )
+
+      expect(await vault.balanceOf(userPermit.address)).to.be.equal(0)
+      expect(await asset.balanceOf(vault.address)).to.be.closeTo(BigNumber.from(0), 1)
+
+      // Adapter shouldn't retain user assets
+      expect(await asset.balanceOf(adapter.address)).to.be.closeTo(BigNumber.from(0), 1)
+      expect(await ethers.provider.getBalance(adapter.address)).to.be.equal(0)
+    })
+
     it('redeem', async () => {
       const assets = ethers.utils.parseEther('10')
       const actualAssets = await adapter.convertToSTETH(assets)
@@ -179,6 +238,64 @@ describe('ETHAdapter', () => {
         )
 
       expect(await vault.balanceOf(user0.address)).to.be.equal(0)
+      expect(await asset.balanceOf(vault.address)).to.be.closeTo(BigNumber.from(0), 1)
+
+      // Adapter shouldn't retain user assets
+      expect(await asset.balanceOf(adapter.address)).to.be.closeTo(BigNumber.from(0), 1)
+      expect(await ethers.provider.getBalance(adapter.address)).to.be.equal(0)
+    })
+
+    it('redeemWithPermit', async () => {
+      const assets = ethers.utils.parseEther('10')
+      const actualAssets = await adapter.convertToSTETH(assets)
+      const actualShares = (await vault.convertToShares(actualAssets)).sub(1)
+      await asset.connect(user0).transfer(userPermit.address, assets)
+
+      await adapter.connect(userPermit).deposit(vault.address, userPermit.address, assets, {
+        value: assets
+      })
+
+      await vault.connect(vaultController).endRound()
+      await vault.connect(vaultController).processQueuedDeposits(0, 1)
+      await vault.connect(vaultController).startRound()
+
+      expect(await vault.balanceOf(userPermit.address)).to.be.closeTo(actualShares, 1)
+      expect(await vault.maxWithdraw(userPermit.address)).to.be.closeTo(feeExcluded(actualAssets), 1)
+
+      const expectedAssets = await vault.maxRedeem(userPermit.address)
+      const expectedETH = await adapter.convertToETH(feeExcluded(expectedAssets.sub(1)))
+
+      const permit = await signERC2612Permit(
+        userPermit,
+        {
+          name: 'Pods Yield stETH',
+          version: '1',
+          chainId: hre.network.config.chainId as number,
+          verifyingContract: vault.address
+        },
+        userPermit.address,
+        adapter.address,
+        actualShares.toString()
+      )
+
+      const redeemTx = adapter.connect(userPermit).redeemWithPermit(
+        vault.address,
+        actualShares,
+        userPermit.address,
+        expectedETH,
+        permit.deadline,
+        permit.v,
+        permit.r,
+        permit.s
+      )
+
+      await expect(async () => await redeemTx)
+        .to.changeEtherBalances(
+          [pool, userPermit],
+          [minus(expectedETH), expectedETH]
+        )
+
+      expect(await vault.balanceOf(userPermit.address)).to.be.equal(0)
       expect(await asset.balanceOf(vault.address)).to.be.closeTo(BigNumber.from(0), 1)
 
       // Adapter shouldn't retain user assets
