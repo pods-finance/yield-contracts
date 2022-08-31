@@ -3,10 +3,11 @@
 pragma solidity 0.8.9;
 
 import "@openzeppelin/contracts/token/ERC20/ERC20.sol";
+import "@openzeppelin/contracts/token/ERC20/extensions/draft-ERC20Permit.sol";
 
-contract Asset is ERC20 {
+contract Asset is ERC20, ERC20Permit {
     // solhint-disable-next-line no-empty-blocks
-    constructor(string memory name, string memory symbol) ERC20(name, symbol) {}
+    constructor(string memory name, string memory symbol) ERC20(name, symbol) ERC20Permit(name) {}
 
     function mint(uint256 amount) public {
         _mint(msg.sender, amount);
