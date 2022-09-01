@@ -46,12 +46,43 @@ contract ETHAdapter {
         _returnETH(vault, receiver, minOutput);
     }
 
+    function redeemWithPermit(
+        IVaultMetadata vault,
+        uint256 shares,
+        address receiver,
+        uint256 minOutput,
+        uint256 deadline,
+        uint8 v,
+        bytes32 r,
+        bytes32 s
+    ) external returns (uint256 assets) {
+        vault.permit(msg.sender, address(this), shares, deadline, v, r, s);
+        assets = vault.redeem(shares, address(this), msg.sender);
+        _returnETH(vault, receiver, minOutput);
+    }
+
     function withdraw(
         IVaultMetadata vault,
         uint256 assets,
         address receiver,
         uint256 minOutput
     ) external returns (uint256 shares) {
+        shares = vault.withdraw(assets, address(this), msg.sender);
+        _returnETH(vault, receiver, minOutput);
+    }
+
+    function withdrawWithPermit(
+        IVaultMetadata vault,
+        uint256 assets,
+        address receiver,
+        uint256 minOutput,
+        uint256 deadline,
+        uint8 v,
+        bytes32 r,
+        bytes32 s
+    ) external returns (uint256 shares) {
+        shares = vault.convertToShares(assets);
+        vault.permit(msg.sender, address(this), shares, deadline, v, r, s);
         shares = vault.withdraw(assets, address(this), msg.sender);
         _returnETH(vault, receiver, minOutput);
     }
