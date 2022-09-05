@@ -78,7 +78,7 @@ abstract contract BaseVault is IVault, ERC20, ERC20Permit, Capped {
         uint8 v,
         bytes32 r,
         bytes32 s
-    ) public returns (uint256 shares) {
+    ) external returns (uint256 shares) {
         if (isProcessingDeposits) revert IVault__ForbiddenWhileProcessingDeposits();
         shares = previewDeposit(assets);
 

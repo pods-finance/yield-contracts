@@ -216,6 +216,38 @@ describe('STETHVault', () => {
     })
   })
 
+  describe('Events', () => {
+    it('endSharePrice should be consistent with the vault state', async () => {
+      // This test will only work if InvestRatio = 50%
+      const assetAmount = ethers.utils.parseEther('100')
+
+      // Round 0
+      await vault.connect(user0).deposit(assetAmount, user0.address)
+      await vault.connect(vaultController).endRound()
+      await vault.connect(vaultController).processQueuedDeposits(0, await vault.depositQueueSize())
+
+      // Round 1 - Earned 10% during the week
+      await vault.connect(vaultController).startRound()
+      await asset.connect(yieldGenerator).transfer(vault.address, ethers.utils.parseEther('10'))
+      await vault.connect(user1).deposit(assetAmount, user1.address)
+      const endRoundTx = await vault.connect(vaultController).endRound()
+      await expect(endRoundTx).to.emit(vault, 'SharePrice').withArgs('1', ethers.utils.parseEther('1'), ethers.utils.parseEther('1.05'))
+      await vault.connect(vaultController).processQueuedDeposits(0, await vault.depositQueueSize())
+      await vault.connect(vaultController).startRound()
+
+      // IMPORTANT => Empty investor wallet to simulate that we bought options during this round
+      await investor.buyOptionsWithYield()
+
+      // Round 2 - Starting the Round with 205 assets
+      // Round 2 - Earned 10% during the week (+20.5) + 20x of premium (5 used to buy options times 20 = 100)
+      // Round 2 - total assets in the end = 205 + 20.5 (yield) + 100 (premium) - 10.25 (buying new options) = 315.25
+      await asset.connect(yieldGenerator).transfer(vault.address, ethers.utils.parseEther('20.5'))
+      await asset.connect(yieldGenerator).transfer(investor.address, ethers.utils.parseEther('100'))
+      const endRoundTx2 = await vault.connect(vaultController).endRound()
+      await expect(endRoundTx2).to.emit(vault, 'SharePrice').withArgs('2', '1049999999999999999', '1614695121951219512')
+    })
+  })
+
   it('should add collateral and receive shares', async () => {
     const assetAmount = ethers.utils.parseEther('10')
     const assetAmountEffective = assetAmount.sub(1)

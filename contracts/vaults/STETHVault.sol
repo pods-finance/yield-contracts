@@ -103,19 +103,20 @@ contract STETHVault is BaseVault {
         uint256 supply = totalSupply();
 
         if (supply != 0) {
-            endSharePrice = (totalAssets() + investmentYield).mulDivDown(10**sharePriceDecimals, supply);
             roundAccruedInterest = totalAssets() - lastRoundAssets;
+            uint256 investmentAmount = (roundAccruedInterest * investorRatio) / DENOMINATOR;
 
             // Pulls the yields from investor
             if (investmentYield > 0) {
                 asset.safeTransferFrom(investor, address(this), investmentYield);
             }
 
-            // Sends another batch to Investor
-            uint256 investmentAmount = (roundAccruedInterest * investorRatio) / DENOMINATOR;
             if (investmentAmount > 0) {
                 asset.safeTransfer(investor, investmentAmount);
             }
+
+            // End Share price needs to be calculated after the transfers between investor and vault
+            endSharePrice = (totalAssets()).mulDivDown(10**sharePriceDecimals, supply);
         }
         uint256 startSharePrice = lastSharePrice.denominator == 0
             ? 0
