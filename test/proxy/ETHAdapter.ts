@@ -46,7 +46,7 @@ describe('ETHAdapter', () => {
     pool = await ethers.getContractAt('ICurvePool', '0xdc24316b9ae028f1497c275eb9192a3ea0f67022')
 
     const ETHAdapter = await ethers.getContractFactory('ETHAdapter')
-    adapter = await ETHAdapter.deploy(configuration.address, pool.address)
+    adapter = await ETHAdapter.deploy(pool.address)
 
     // Give approval upfront that the vault can pull money from the investor contract
     await investor.approveVaultToPull(vault.address)

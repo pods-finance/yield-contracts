@@ -2,11 +2,6 @@
   {
     "inputs": [
       {
-        "internalType": "contract IConfigurationManager",
-        "name": "_configuration",
-        "type": "address"
-      },
-      {
         "internalType": "contract ICurvePool",
         "name": "_pool",
         "type": "address"
@@ -19,19 +14,6 @@
     "inputs": [],
     "name": "TransferUtils__TransferDidNotSucceed",
     "type": "error"
-  },
-  {
-    "inputs": [],
-    "name": "configuration",
-    "outputs": [
-      {
-        "internalType": "contract IConfigurationManager",
-        "name": "",
-        "type": "address"
-      }
-    ],
-    "stateMutability": "view",
-    "type": "function"
   },
   {
     "inputs": [
