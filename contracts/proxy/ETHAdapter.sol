@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 
-pragma solidity >=0.8.6;
+pragma solidity 0.8.9;
 
 import "../interfaces/IConfigurationManager.sol";
 import "../interfaces/ICurvePool.sol";
@@ -10,11 +10,9 @@ import "../libs/TransferUtils.sol";
 contract ETHAdapter {
     using TransferUtils for IERC20;
 
-    IConfigurationManager public immutable configuration;
     ICurvePool public immutable pool;
 
-    constructor(IConfigurationManager _configuration, ICurvePool _pool) {
-        configuration = _configuration;
+    constructor(ICurvePool _pool) {
         pool = _pool;
     }
 
