@@ -53,36 +53,6 @@ contract STETHVault is BaseVault {
         return string(abi.encodePacked(asset.symbol(), "vv"));
     }
 
-    /**
-     * @inheritdoc IERC4626
-     */
-    function deposit(uint256 assets, address receiver) external virtual override returns (uint256 shares) {
-        if (isProcessingDeposits) revert IVault__ForbiddenWhileProcessingDeposits();
-        shares = previewDeposit(assets);
-
-        if (shares == 0) revert IVault__ZeroShares();
-        _spendCap(shares);
-
-        assets = _tryTransferSTETH(msg.sender, assets);
-        depositQueue.push(DepositQueueLib.DepositEntry(receiver, assets));
-
-        emit Deposit(msg.sender, receiver, assets, shares);
-    }
-
-    /**
-     * @inheritdoc IERC4626
-     */
-    function mint(uint256 shares, address receiver) external virtual override returns (uint256 assets) {
-        if (isProcessingDeposits) revert IVault__ForbiddenWhileProcessingDeposits();
-        assets = previewMint(shares);
-        _spendCap(shares);
-
-        assets = _tryTransferSTETH(msg.sender, assets);
-        depositQueue.push(DepositQueueLib.DepositEntry(receiver, assets));
-
-        emit Deposit(msg.sender, receiver, assets, shares);
-    }
-
     function _afterRoundStart(uint256) internal override {
         uint256 supply = totalSupply();
 
@@ -135,6 +105,22 @@ contract STETHVault is BaseVault {
      */
     function totalAssets() public view override returns (uint256) {
         return asset.balanceOf(address(this)) - totalIdleAssets();
+    }
+
+    /**
+     * @dev Pull assets from the caller and create shares to the receiver
+     */
+    function _deposit(
+        uint256 assets,
+        uint256 shares,
+        address receiver
+    ) internal override {
+        _spendCap(shares);
+
+        assets = _tryTransferSTETH(msg.sender, assets);
+        depositQueue.push(DepositQueueLib.DepositEntry(receiver, assets));
+
+        emit Deposit(msg.sender, receiver, assets, shares);
     }
 
     /**
