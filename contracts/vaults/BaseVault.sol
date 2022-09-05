@@ -387,7 +387,7 @@ abstract contract BaseVault is IVault, ERC20, ERC20Permit, Capped {
         uint256 assets,
         uint256 shares,
         address receiver
-    ) internal {
+    ) internal virtual {
         _spendCap(shares);
 
         depositQueue.push(DepositQueueLib.DepositEntry(receiver, assets));
