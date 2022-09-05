@@ -122,25 +122,7 @@ abstract contract BaseVault is IVault, ERC20, ERC20Permit, Capped {
         assets = convertToAssets(shares);
 
         if (assets == 0) revert IVault__ZeroAssets();
-
-        if (msg.sender != owner) {
-            _spendAllowance(owner, msg.sender, shares);
-        }
-
-        _burn(owner, shares);
-        _restoreCap(shares);
-
-        // Apply custom withdraw logic
-        _beforeWithdraw(shares, assets);
-
-        uint256 fee = _getFee(assets);
-        uint256 receiverAssets = assets - fee;
-
-        emit Withdraw(msg.sender, receiver, owner, receiverAssets, shares);
-        emit FeeCollected(fee);
-
-        asset.safeTransfer(receiver, receiverAssets);
-        asset.safeTransfer(controller(), fee);
+        _withdraw(assets, shares, receiver, owner);
     }
 
     /**
@@ -153,25 +135,7 @@ abstract contract BaseVault is IVault, ERC20, ERC20Permit, Capped {
     ) external virtual override returns (uint256 shares) {
         if (isProcessingDeposits) revert IVault__ForbiddenWhileProcessingDeposits();
         shares = convertToShares(assets);
-
-        if (msg.sender != owner) {
-            _spendAllowance(owner, msg.sender, shares);
-        }
-
-        _burn(owner, shares);
-        _restoreCap(shares);
-
-        // Apply custom withdraw logic
-        _beforeWithdraw(shares, assets);
-
-        uint256 fee = _getFee(assets);
-        uint256 receiverAssets = assets - fee;
-
-        emit Withdraw(msg.sender, receiver, owner, receiverAssets, shares);
-        emit FeeCollected(fee);
-
-        asset.safeTransfer(receiver, receiverAssets);
-        asset.safeTransfer(controller(), fee);
+        _withdraw(assets, shares, receiver, owner);
     }
 
     /**
@@ -394,6 +358,35 @@ abstract contract BaseVault is IVault, ERC20, ERC20Permit, Capped {
 
         emit Deposit(msg.sender, receiver, assets, shares);
         asset.safeTransferFrom(msg.sender, address(this), assets);
+    }
+
+    /**
+     * @dev Burn shares from the caller and release assets to the receiver
+     */
+    function _withdraw(
+        uint256 assets,
+        uint256 shares,
+        address receiver,
+        address owner
+    ) internal virtual {
+        if (msg.sender != owner) {
+            _spendAllowance(owner, msg.sender, shares);
+        }
+
+        _burn(owner, shares);
+        _restoreCap(shares);
+
+        // Apply custom withdraw logic
+        _beforeWithdraw(shares, assets);
+
+        uint256 fee = _getFee(assets);
+        uint256 receiverAssets = assets - fee;
+
+        emit Withdraw(msg.sender, receiver, owner, receiverAssets, shares);
+        emit FeeCollected(fee);
+
+        asset.safeTransfer(receiver, receiverAssets);
+        asset.safeTransfer(controller(), fee);
     }
 
     /** Hooks **/
