@@ -3,12 +3,14 @@
 pragma solidity 0.8.9;
 
 import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
+import "@openzeppelin/contracts/utils/Address.sol";
 import "../interfaces/IConfigurationManager.sol";
 import "../interfaces/ICurvePool.sol";
 import "../interfaces/IVaultMetadata.sol";
 
 contract ETHAdapter {
     using SafeERC20 for IERC20;
+    using Address for address payable;
 
     ICurvePool public immutable pool;
 
@@ -98,7 +100,6 @@ contract ETHAdapter {
         asset.safeApprove(address(pool), balance);
         pool.exchange(1, 0, balance, minOutput);
 
-        (bool success, ) = payable(receiver).call{ value: address(this).balance }("");
-        require(success, "Unable to send value");
+        payable(receiver).sendValue(address(this).balance);
     }
 }
