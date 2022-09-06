@@ -9,7 +9,7 @@ import "./BaseVault.sol";
  * @author Pods Finance
  */
 contract STETHVault is BaseVault {
-    using TransferUtils for IERC20Metadata;
+    using SafeERC20 for IERC20Metadata;
     using FixedPointMath for uint256;
     using FixedPointMath for FixedPointMath.Fractional;
     using DepositQueueLib for DepositQueueLib.DepositQueue;

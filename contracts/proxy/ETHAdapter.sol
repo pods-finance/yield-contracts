@@ -2,13 +2,13 @@
 
 pragma solidity 0.8.9;
 
+import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import "../interfaces/IConfigurationManager.sol";
 import "../interfaces/ICurvePool.sol";
 import "../interfaces/IVaultMetadata.sol";
-import "../libs/TransferUtils.sol";
 
 contract ETHAdapter {
-    using TransferUtils for IERC20;
+    using SafeERC20 for IERC20;
 
     ICurvePool public immutable pool;
 

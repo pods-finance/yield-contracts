@@ -3,12 +3,12 @@
 pragma solidity 0.8.9;
 
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
+import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import "../interfaces/ICurvePool.sol";
 import "../libs/FixedPointMath.sol";
-import "../libs/TransferUtils.sol";
 
 contract MockCurvePool is ICurvePool {
-    using TransferUtils for IERC20;
+    using SafeERC20 for IERC20;
 
     uint256 constant DENOMINATOR = 10000;
     uint256 constant N_COINS = 2;

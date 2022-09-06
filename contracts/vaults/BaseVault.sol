@@ -5,10 +5,10 @@ pragma solidity 0.8.9;
 import "@openzeppelin/contracts/token/ERC20/extensions/IERC20Metadata.sol";
 import "@openzeppelin/contracts/token/ERC20/extensions/draft-ERC20Permit.sol";
 import "@openzeppelin/contracts/token/ERC20/extensions/draft-IERC20Permit.sol";
+import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import "@openzeppelin/contracts/token/ERC20/ERC20.sol";
 import "../interfaces/IConfigurationManager.sol";
 import "../interfaces/IVault.sol";
-import "../libs/TransferUtils.sol";
 import "../libs/FixedPointMath.sol";
 import "../libs/DepositQueueLib.sol";
 import "../libs/CastUint.sol";
@@ -19,7 +19,7 @@ import "../mixins/Capped.sol";
  * @author Pods Finance
  */
 abstract contract BaseVault is IVault, ERC20, ERC20Permit, Capped {
-    using TransferUtils for IERC20Metadata;
+    using SafeERC20 for IERC20Metadata;
     using FixedPointMath for uint256;
     using CastUint for uint256;
     using DepositQueueLib for DepositQueueLib.DepositQueue;
