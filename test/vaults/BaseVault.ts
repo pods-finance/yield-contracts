@@ -575,6 +575,31 @@ describe('BaseVault', () => {
     })
   })
 
+  it('cannot deposit an amount that results in zero shares', async () => {
+    await expect(
+      vault.connect(user0).deposit(0, user0.address)
+    ).to.be.revertedWith('IVault__ZeroShares()')
+
+    const permit = await signERC2612Permit(
+      user0,
+      asset.address,
+      user0.address,
+      vault.address,
+      ethers.constants.MaxUint256.toString()
+    )
+
+    await expect(
+      vault.connect(user0).depositWithPermit(
+        0,
+        user0.address,
+        permit.deadline,
+        permit.v,
+        permit.r,
+        permit.s
+      )
+    ).to.be.revertedWith('IVault__ZeroShares()')
+  })
+
   it('withdraws proportionally', async () => {
     const assets = ethers.utils.parseEther('10')
 
