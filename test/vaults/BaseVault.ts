@@ -216,6 +216,20 @@ describe('BaseVault', () => {
   })
 
   describe('Lifecycle', () => {
+    it('cannot redeem between a round\'s end and the beginning of the next', async () => {
+      const assets = ethers.utils.parseEther('10')
+
+      await asset.connect(user0).mint(assets)
+      await vault.connect(user0).deposit(assets, user0.address)
+      await vault.connect(vaultController).endRound()
+      await vault.connect(vaultController).processQueuedDeposits(0, await vault.depositQueueSize())
+      const shares = await vault.balanceOf(user0.address)
+
+      await expect(
+        vault.connect(user0).redeem(shares, user0.address, user0.address)
+      ).to.be.revertedWith('IVault__ForbiddenWhileProcessingDeposits()')
+    })
+
     it('cannot withdraw between a round\'s end and the beginning of the next', async () => {
       const assets = ethers.utils.parseEther('10')
 
@@ -225,7 +239,7 @@ describe('BaseVault', () => {
       await vault.connect(vaultController).processQueuedDeposits(0, await vault.depositQueueSize())
 
       await expect(
-        vault.connect(user0).redeem(await vault.balanceOf(user0.address), user0.address, user0.address)
+        vault.connect(user0).withdraw(assets, user0.address, user0.address)
       ).to.be.revertedWith('IVault__ForbiddenWhileProcessingDeposits()')
     })
 
@@ -236,6 +250,55 @@ describe('BaseVault', () => {
       await vault.connect(vaultController).endRound()
       await expect(
         vault.connect(user0).deposit(assets, user0.address)
+      ).to.be.revertedWith('IVault__ForbiddenWhileProcessingDeposits()')
+
+      const permit = await signERC2612Permit(
+        user0,
+        asset.address,
+        user0.address,
+        vault.address,
+        assets.toString()
+      )
+
+      await expect(
+        vault.connect(user0).depositWithPermit(
+          assets,
+          user0.address,
+          permit.deadline,
+          permit.v,
+          permit.r,
+          permit.s
+        )
+      ).to.be.revertedWith('IVault__ForbiddenWhileProcessingDeposits()')
+    })
+
+    it('cannot mint between a round\'s end and the beginning of the next', async () => {
+      const shares = ethers.utils.parseEther('10')
+      const expectedAssets = await vault.previewMint(shares)
+
+      await asset.connect(user0).mint(expectedAssets)
+      await vault.connect(vaultController).endRound()
+      await expect(
+        vault.connect(user0).mint(shares, user0.address)
+      ).to.be.revertedWith('IVault__ForbiddenWhileProcessingDeposits()')
+
+      const permit = await signERC2612Permit(
+        user0,
+        asset.address,
+        user0.address,
+        vault.address,
+        expectedAssets.toString()
+      )
+
+      await expect(
+        vault.connect(user0).mintWithPermit(
+          shares,
+          user0.address,
+          permit.deadline,
+          permit.v,
+          permit.r,
+          permit.s
+        )
       ).to.be.revertedWith('IVault__ForbiddenWhileProcessingDeposits()')
     })
 
