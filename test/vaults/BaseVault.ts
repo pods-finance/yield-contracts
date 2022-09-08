@@ -122,6 +122,11 @@ describe('BaseVault', () => {
       expect(user0maxRedeem).to.be.equal(user0maxShares)
       expect(user1maxRedeem).to.be.equal(user1maxShares)
     })
+
+    it('both maxDeposit and maxMint should be MAX_UINT', async () => {
+      expect(await vault.maxDeposit(user0.address)).to.be.equal(ethers.constants.MaxUint256)
+      expect(await vault.maxMint(user0.address)).to.be.equal(ethers.constants.MaxUint256)
+    })
   })
 
   it('has the max fee ratio capped to MAX_WITHDRAW_FEE', async () => {
