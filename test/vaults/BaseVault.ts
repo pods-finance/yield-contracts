@@ -600,6 +600,20 @@ describe('BaseVault', () => {
     ).to.be.revertedWith('IVault__ZeroShares()')
   })
 
+  it('cannot redeem shares that result in zero assets', async () => {
+    const assets = ethers.utils.parseEther('10')
+
+    await asset.connect(user0).mint(assets)
+    await vault.connect(user0).deposit(assets, user0.address)
+    await vault.connect(vaultController).endRound()
+    await vault.connect(vaultController).processQueuedDeposits(0, await vault.depositQueueSize())
+    await vault.connect(vaultController).startRound()
+
+    await expect(
+      vault.connect(user0).redeem(0, user0.address, user0.address)
+    ).to.be.revertedWith('IVault__ZeroAssets()')
+  })
+
   it('withdraws proportionally', async () => {
     const assets = ethers.utils.parseEther('10')
 
