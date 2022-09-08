@@ -2,6 +2,7 @@
 
 pragma solidity 0.8.9;
 
+import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import "../vaults/BaseVault.sol";
 import "../mocks/YieldSourceMock.sol";
 
@@ -10,7 +11,7 @@ import "../mocks/YieldSourceMock.sol";
  * @author Pods Finance
  */
 contract PrincipalProtectedMock is BaseVault {
-    using TransferUtils for IERC20Metadata;
+    using SafeERC20 for IERC20Metadata;
     using FixedPointMath for uint256;
     using FixedPointMath for FixedPointMath.Fractional;
 

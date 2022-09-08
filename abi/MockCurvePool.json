@@ -11,11 +11,6 @@
     "type": "constructor"
   },
   {
-    "inputs": [],
-    "name": "TransferUtils__TransferDidNotSucceed",
-    "type": "error"
-  },
-  {
     "anonymous": false,
     "inputs": [
       {

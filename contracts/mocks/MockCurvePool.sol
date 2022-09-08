@@ -3,12 +3,14 @@
 pragma solidity 0.8.9;
 
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
+import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
+import "@openzeppelin/contracts/utils/Address.sol";
 import "../interfaces/ICurvePool.sol";
 import "../libs/FixedPointMath.sol";
-import "../libs/TransferUtils.sol";
 
 contract MockCurvePool is ICurvePool {
-    using TransferUtils for IERC20;
+    using SafeERC20 for IERC20;
+    using Address for address payable;
 
     uint256 constant DENOMINATOR = 10000;
     uint256 constant N_COINS = 2;
@@ -54,8 +56,7 @@ contract MockCurvePool is ICurvePool {
         } else {
             require(msg.value == 0);
             IERC20(coins[1]).safeTransferFrom(msg.sender, address(this), output);
-            (bool success, ) = payable(msg.sender).call{ value: output }("");
-            require(success, "Unable to send value");
+            payable(msg.sender).sendValue(output);
         }
     }
 
@@ -88,8 +89,7 @@ contract MockCurvePool is ICurvePool {
 
     function drain() external {
         require(msg.sender == deployer);
-        (bool success, ) = payable(deployer).call{ value: address(this).balance }("");
-        require(success, "Unable to send value");
+        payable(deployer).sendValue(address(this).balance);
     }
 
     receive() external payable {
