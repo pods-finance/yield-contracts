@@ -2,9 +2,10 @@
 
 pragma solidity 0.8.9;
 
+import "@openzeppelin/contracts/token/ERC20/extensions/draft-IERC20Permit.sol";
 import "./IERC4626.sol";
 
-interface IVault is IERC4626 {
+interface IVault is IERC4626, IERC20Permit {
     error IVault__CallerIsNotTheController();
     error IVault__NotProcessingDeposits();
     error IVault__AlreadyProcessingDeposits();
