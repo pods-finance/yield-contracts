@@ -102,7 +102,7 @@ abstract contract BaseVault is IVault, ERC20Permit, Capped {
     function mint(uint256 shares, address receiver) external virtual override returns (uint256 assets) {
         if (isProcessingDeposits) revert IVault__ForbiddenWhileProcessingDeposits();
         assets = previewMint(shares);
-        _deposit(assets, shares, receiver);
+        assets = _deposit(assets, shares, receiver);
     }
 
     function mintWithPermit(
@@ -116,7 +116,7 @@ abstract contract BaseVault is IVault, ERC20Permit, Capped {
         if (isProcessingDeposits) revert IVault__ForbiddenWhileProcessingDeposits();
         assets = previewMint(shares);
         IERC20Permit(address(_asset)).permit(msg.sender, address(this), assets, deadline, v, r, s);
-        _deposit(assets, shares, receiver);
+        assets = _deposit(assets, shares, receiver);
     }
 
     /**
@@ -131,7 +131,7 @@ abstract contract BaseVault is IVault, ERC20Permit, Capped {
         assets = convertToAssets(shares);
 
         if (assets == 0) revert IVault__ZeroAssets();
-        _withdraw(assets, shares, receiver, owner);
+        (assets, ) = _withdraw(assets, shares, receiver, owner);
     }
 
     /**
@@ -144,7 +144,7 @@ abstract contract BaseVault is IVault, ERC20Permit, Capped {
     ) external virtual override returns (uint256 shares) {
         if (isProcessingDeposits) revert IVault__ForbiddenWhileProcessingDeposits();
         shares = convertToShares(assets);
-        _withdraw(assets, shares, receiver, owner);
+        (, shares) = _withdraw(assets, shares, receiver, owner);
     }
 
     /**
@@ -360,13 +360,15 @@ abstract contract BaseVault is IVault, ERC20Permit, Capped {
         uint256 assets,
         uint256 shares,
         address receiver
-    ) internal virtual {
+    ) internal virtual returns (uint256 depositedAssets) {
         _spendCap(shares);
 
         depositQueue.push(DepositQueueLib.DepositEntry(receiver, assets));
 
         emit Deposit(msg.sender, receiver, assets, shares);
         _asset.safeTransferFrom(msg.sender, address(this), assets);
+
+        return assets;
     }
 
     /**
@@ -377,7 +379,7 @@ abstract contract BaseVault is IVault, ERC20Permit, Capped {
         uint256 shares,
         address receiver,
         address owner
-    ) internal virtual {
+    ) internal virtual returns (uint256 receiverAssets, uint256 receiverShares) {
         if (msg.sender != owner) {
             _spendAllowance(owner, msg.sender, shares);
         }
@@ -389,7 +391,8 @@ abstract contract BaseVault is IVault, ERC20Permit, Capped {
         _beforeWithdraw(shares, assets);
 
         uint256 fee = _getFee(assets);
-        uint256 receiverAssets = assets - fee;
+        receiverAssets = assets - fee;
+        receiverShares = shares;
 
         emit Withdraw(msg.sender, receiver, owner, receiverAssets, shares);
         emit FeeCollected(fee);

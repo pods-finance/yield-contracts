@@ -114,17 +114,46 @@ contract STETHVault is BaseVault {
         uint256 assets,
         uint256 shares,
         address receiver
-    ) internal override {
+    ) internal override returns (uint256 depositedAssets) {
         _spendCap(shares);
 
-        assets = _tryTransferSTETH(msg.sender, assets);
+        assets = _stETHTransferFrom(msg.sender, address(this), assets);
         depositQueue.push(DepositQueueLib.DepositEntry(receiver, assets));
 
         emit Deposit(msg.sender, receiver, assets, shares);
+
+        return assets;
+    }
+
+    function _withdraw(
+        uint256 assets,
+        uint256 shares,
+        address receiver,
+        address owner
+    ) internal virtual override returns (uint256 receiverAssets, uint256 receiverShares) {
+        if (msg.sender != owner) {
+            _spendAllowance(owner, msg.sender, shares);
+        }
+
+        _burn(owner, shares);
+        _restoreCap(shares);
+
+        // Apply custom withdraw logic
+        _beforeWithdraw(shares, assets);
+
+        uint256 fee = _getFee(assets);
+        receiverAssets = assets - fee;
+        receiverShares = shares;
+
+        emit Withdraw(msg.sender, receiver, owner, receiverAssets, shares);
+        emit FeeCollected(fee);
+
+        receiverAssets = _stETHTransferFrom(address(this), receiver, receiverAssets);
+        _asset.safeTransfer(controller(), fee);
     }
 
     /**
-     * @dev Moves `amount` of stETH from `from` to this contract using the
+     * @dev Moves `amount` of stETH from `from` to `to` using the
      * allowance mechanism.
      *
      * Note that due to division rounding, not always is not possible to move
@@ -133,9 +162,17 @@ contract STETHVault is BaseVault {
      *
      * For more information refer to: https://docs.lido.fi/guides/steth-integration-guide#1-wei-corner-case
      */
-    function _tryTransferSTETH(address from, uint256 amount) internal returns (uint256 effectiveAmount) {
-        uint256 balanceBefore = _asset.balanceOf(address(this));
-        _asset.safeTransferFrom(from, address(this), amount);
-        return _asset.balanceOf(address(this)) - balanceBefore;
+    function _stETHTransferFrom(
+        address from,
+        address to,
+        uint256 amount
+    ) internal returns (uint256 effectiveAmount) {
+        uint256 balanceBefore = _asset.balanceOf(to);
+        if (from == address(this)) {
+            _asset.safeTransfer(to, amount);
+        } else {
+            _asset.safeTransferFrom(from, to, amount);
+        }
+        return _asset.balanceOf(to) - balanceBefore;
     }
 }
