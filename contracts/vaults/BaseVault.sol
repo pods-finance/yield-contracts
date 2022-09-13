@@ -56,7 +56,7 @@ abstract contract BaseVault is IVault, ERC20, ERC20Permit, Capped {
     }
 
     modifier onlyRoundStarter() {
-        bool lastRoundEndedAWeekAgo = block.timestamp < _lastEndRound + 604800;
+        bool lastRoundEndedAWeekAgo = block.timestamp >= _lastEndRound + 604800;
 
         if (!lastRoundEndedAWeekAgo && msg.sender != controller()) {
             revert IVault__CallerIsNotTheController();

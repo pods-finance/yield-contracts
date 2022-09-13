@@ -322,7 +322,7 @@ describe('BaseVault', () => {
         .to.be.revertedWith('IVault__NotProcessingDeposits()')
     })
 
-    it.only('after a week anyone can start the round', async () => {
+    it('after a week, anyone can start the round', async () => {
       await vault.connect(vaultController).endRound()
       let startRoundTx = vault.connect(user0).startRound()
       await expect(startRoundTx).to.be.revertedWith('IVault__CallerIsNotTheController')
