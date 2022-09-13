@@ -5,6 +5,7 @@ pragma solidity 0.8.9;
 interface IConfigurationManager {
     event SetCap(address indexed target, uint256 value);
     event ParameterSet(address indexed target, bytes32 indexed name, uint256 value);
+    event VaultAllowanceSet(address indexed vault, bool allowed);
 
     error ConfigurationManager__InvalidCapTarget();
 
@@ -21,4 +22,8 @@ interface IConfigurationManager {
     function setCap(address target, uint256 value) external;
 
     function getCap(address target) external view returns (uint256);
+
+    function setAllowedVault(address vault, bool allowed) external;
+
+    function isVaultAllowed(address vault) external view returns (bool);
 }

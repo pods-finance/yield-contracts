@@ -126,7 +126,7 @@ abstract contract BaseVault is IVault, ERC20Permit, Capped {
         uint256 shares,
         address receiver,
         address owner
-    ) external virtual override returns (uint256 assets) {
+    ) public virtual override returns (uint256 assets) {
         if (isProcessingDeposits) revert IVault__ForbiddenWhileProcessingDeposits();
         assets = convertToAssets(shares);
 
@@ -315,6 +315,25 @@ abstract contract BaseVault is IVault, ERC20Permit, Capped {
 
         emit DepositRefunded(msg.sender, currentRoundId, assets);
         _asset.safeTransfer(msg.sender, assets);
+    }
+
+    /**
+     * @inheritdoc IVault
+     */
+    function migrate(IVault newVault) external override {
+        if (address(_asset) != newVault.asset() || !configuration.isVaultAllowed(address(newVault))) {
+            revert IVault__MigrationNotAllowed();
+        }
+
+        // Redeem owner assets from this Vault
+        uint256 shares = balanceOf(msg.sender);
+        uint256 assets = redeem(shares, address(this), msg.sender);
+
+        // Deposit assets to `newVault`
+        _asset.safeApprove(address(newVault), assets);
+        newVault.deposit(assets, msg.sender);
+
+        emit Migrated(msg.sender, address(this), address(newVault), assets, shares);
     }
 
     /**
