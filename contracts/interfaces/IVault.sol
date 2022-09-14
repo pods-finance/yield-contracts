@@ -2,21 +2,24 @@
 
 pragma solidity 0.8.9;
 
+import "@openzeppelin/contracts/token/ERC20/extensions/draft-IERC20Permit.sol";
 import "./IERC4626.sol";
 
-interface IVault is IERC4626 {
+interface IVault is IERC4626, IERC20Permit {
     error IVault__CallerIsNotTheController();
     error IVault__NotProcessingDeposits();
     error IVault__AlreadyProcessingDeposits();
     error IVault__ForbiddenWhileProcessingDeposits();
     error IVault__ZeroAssets();
     error IVault__ZeroShares();
+    error IVault__MigrationNotAllowed();
 
     event FeeCollected(uint256 fee);
     event StartRound(uint256 indexed roundId, uint256 amountAddedToStrategy);
     event EndRound(uint256 indexed roundId);
     event DepositProcessed(address indexed owner, uint256 indexed roundId, uint256 assets, uint256 shares);
     event DepositRefunded(address indexed owner, uint256 indexed roundId, uint256 assets);
+    event Migrated(address indexed caller, address indexed from, address indexed to, uint256 assets, uint256 shares);
 
     /**
      * @notice Returns the fee charged on withdraws.
@@ -65,6 +68,11 @@ interface IVault is IERC4626 {
      * @notice Withdraw all user assets in unprocessed deposits.
      */
     function refund() external;
+
+    /**
+     * @notice Migrate assets from this vault to `newVault`.
+     */
+    function migrate(IVault newVault) external;
 
     /**
      * @notice Mint shares for deposits accumulated, effectively including their owners in the next round.

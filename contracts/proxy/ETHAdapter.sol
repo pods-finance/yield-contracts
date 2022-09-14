@@ -6,7 +6,7 @@ import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import "@openzeppelin/contracts/utils/Address.sol";
 import "../interfaces/IConfigurationManager.sol";
 import "../interfaces/ICurvePool.sol";
-import "../interfaces/IVaultMetadata.sol";
+import "../interfaces/IVault.sol";
 
 contract ETHAdapter {
     using SafeERC20 for IERC20;
@@ -27,7 +27,7 @@ contract ETHAdapter {
     }
 
     function deposit(
-        IVaultMetadata vault,
+        IVault vault,
         address receiver,
         uint256 minOutput
     ) external payable returns (uint256 shares) {
@@ -37,7 +37,7 @@ contract ETHAdapter {
     }
 
     function redeem(
-        IVaultMetadata vault,
+        IVault vault,
         uint256 shares,
         address receiver,
         uint256 minOutput
@@ -47,7 +47,7 @@ contract ETHAdapter {
     }
 
     function redeemWithPermit(
-        IVaultMetadata vault,
+        IVault vault,
         uint256 shares,
         address receiver,
         uint256 minOutput,
@@ -62,7 +62,7 @@ contract ETHAdapter {
     }
 
     function withdraw(
-        IVaultMetadata vault,
+        IVault vault,
         uint256 assets,
         address receiver,
         uint256 minOutput
@@ -72,7 +72,7 @@ contract ETHAdapter {
     }
 
     function withdrawWithPermit(
-        IVaultMetadata vault,
+        IVault vault,
         uint256 assets,
         address receiver,
         uint256 minOutput,
@@ -90,7 +90,7 @@ contract ETHAdapter {
     receive() external payable {}
 
     function _returnETH(
-        IVaultMetadata vault,
+        IVault vault,
         address receiver,
         uint256 minOutput
     ) internal {

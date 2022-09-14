@@ -51,7 +51,7 @@
   {
     "inputs": [
       {
-        "internalType": "contract IVaultMetadata",
+        "internalType": "contract IVault",
         "name": "vault",
         "type": "address"
       },
@@ -93,7 +93,7 @@
   {
     "inputs": [
       {
-        "internalType": "contract IVaultMetadata",
+        "internalType": "contract IVault",
         "name": "vault",
         "type": "address"
       },
@@ -127,7 +127,7 @@
   {
     "inputs": [
       {
-        "internalType": "contract IVaultMetadata",
+        "internalType": "contract IVault",
         "name": "vault",
         "type": "address"
       },
@@ -181,7 +181,7 @@
   {
     "inputs": [
       {
-        "internalType": "contract IVaultMetadata",
+        "internalType": "contract IVault",
         "name": "vault",
         "type": "address"
       },
@@ -215,7 +215,7 @@
   {
     "inputs": [
       {
-        "internalType": "contract IVaultMetadata",
+        "internalType": "contract IVault",
         "name": "vault",
         "type": "address"
       },
