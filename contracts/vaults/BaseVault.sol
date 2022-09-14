@@ -31,7 +31,9 @@ abstract contract BaseVault is IVault, ERC20Permit, Capped {
 
     uint256 public constant DENOMINATOR = 10000;
     uint256 public constant MAX_WITHDRAW_FEE = 1000;
+    uint256 public constant EMERGENCY_INTERVAL = 604800;
     uint256 public processedDeposits = 0;
+    uint256 private _lastEndRound;
 
     DepositQueueLib.DepositQueue internal depositQueue;
 
@@ -48,10 +50,20 @@ abstract contract BaseVault is IVault, ERC20Permit, Capped {
 
         // Vault starts in `start` state
         emit StartRound(currentRoundId, 0);
+        _lastEndRound = block.timestamp;
     }
 
     modifier onlyController() {
         if (msg.sender != controller()) revert IVault__CallerIsNotTheController();
+        _;
+    }
+
+    modifier onlyRoundStarter() {
+        bool lastRoundEndedAWeekAgo = block.timestamp >= _lastEndRound + EMERGENCY_INTERVAL;
+
+        if (!lastRoundEndedAWeekAgo && msg.sender != controller()) {
+            revert IVault__CallerIsNotTheController();
+        }
         _;
     }
 
@@ -276,7 +288,7 @@ abstract contract BaseVault is IVault, ERC20Permit, Capped {
     /**
      * @inheritdoc IVault
      */
-    function startRound() external virtual onlyController {
+    function startRound() external virtual onlyRoundStarter {
         if (!isProcessingDeposits) revert IVault__NotProcessingDeposits();
 
         isProcessingDeposits = false;
@@ -294,6 +306,7 @@ abstract contract BaseVault is IVault, ERC20Permit, Capped {
 
         isProcessingDeposits = true;
         _afterRoundEnd();
+        _lastEndRound = block.timestamp;
 
         emit EndRound(currentRoundId++);
     }

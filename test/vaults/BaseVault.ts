@@ -321,6 +321,19 @@ describe('BaseVault', () => {
       await expect(vault.connect(vaultController).startRound())
         .to.be.revertedWith('IVault__NotProcessingDeposits()')
     })
+
+    it('after a week, anyone can start the round', async () => {
+      await vault.connect(vaultController).endRound()
+      let startRoundTx = vault.connect(user0).startRound()
+      await expect(startRoundTx).to.be.revertedWith('IVault__CallerIsNotTheController')
+
+      // fast-forward a week
+      const block = await ethers.provider.getBlock('latest')
+      await ethers.provider.send('evm_mine', [block.timestamp + 604800])
+
+      startRoundTx = vault.connect(user0).startRound()
+      await expect(startRoundTx).to.emit(vault, 'StartRound')
+    })
   })
 
   describe('Proxy', () => {
