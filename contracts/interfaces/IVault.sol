@@ -65,7 +65,7 @@ interface IVault is IERC4626, IERC20Permit {
     /**
      * @notice Withdraw all user assets in unprocessed deposits.
      */
-    function refund() external;
+    function refund() external returns (uint256 assets);
 
     /**
      * @notice Mint shares for deposits accumulated, effectively including their owners in the next round.
