@@ -16,7 +16,13 @@
     "type": "constructor"
   },
   {
-    "inputs": [],
+    "inputs": [
+      {
+        "internalType": "uint256",
+        "name": "shares",
+        "type": "uint256"
+      }
+    ],
     "name": "migrate",
     "outputs": [],
     "stateMutability": "nonpayable",
@@ -24,6 +30,11 @@
   },
   {
     "inputs": [
+      {
+        "internalType": "uint256",
+        "name": "shares",
+        "type": "uint256"
+      },
       {
         "internalType": "uint256",
         "name": "deadline",
