@@ -152,7 +152,6 @@ describe('BaseVault', () => {
       const withdrawnBalance = balanceUser0After.sub(balanceUser0Before)
 
       expect(withdrawnBalance).to.be.equal(assets)
-
     })
     it('should match previewRedeem and real withdraw with assets', async () => {
       const assets = ethers.utils.parseEther('100')
@@ -177,7 +176,6 @@ describe('BaseVault', () => {
       const balanceUser0After = await asset.balanceOf(user0.address)
       const withdrawnBalance = balanceUser0After.sub(balanceUser0Before)
       expect(withdrawnBalance).to.be.equal(user0previewRedeem)
-
     })
   })
 
@@ -581,7 +579,7 @@ describe('BaseVault', () => {
       expect(idleAssetsUser0).to.be.equal(assets)
       expect(idleAssetsUser1).to.be.equal(previewMintedAssets)
 
-      const totalIdleAssets = await vault.totalIdleAssets();
+      const totalIdleAssets = await vault.totalIdleAssets()
 
       expect(totalIdleAssets).to.be.equal(previewMintedAssets.add(assets).add(assets))
 
@@ -589,7 +587,7 @@ describe('BaseVault', () => {
       await vault.connect(vaultController).endRound()
       await vault.connect(vaultController).processQueuedDeposits(0, await vault.depositQueueSize())
       await vault.connect(vaultController).startRound()
-      
+
       const idleAssetsUser1After = await vault.idleAssetsOf(user1.address)
       const idleAssetsUser0After = await vault.idleAssetsOf(user0.address)
 
@@ -769,7 +767,7 @@ describe('BaseVault', () => {
     const sharesToBeBurnedUser1 = await vault.previewWithdraw(assetsToBeWithdrawnUser1)
 
     expect(sharesToBeBurnedUser1).to.be.equal(user1Shares)
- 
+
     await vault.connect(user1).redeem(user1Shares, user1.address, user1.address)
     expect(await asset.balanceOf(user1.address)).to.be.equal(feeExcluded(assets))
     expect(await vault.balanceOf(user1.address)).to.be.equal(0)
