@@ -1200,7 +1200,13 @@
   {
     "inputs": [],
     "name": "refund",
-    "outputs": [],
+    "outputs": [
+      {
+        "internalType": "uint256",
+        "name": "assets",
+        "type": "uint256"
+      }
+    ],
     "stateMutability": "nonpayable",
     "type": "function"
   },
