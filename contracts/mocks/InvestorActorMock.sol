@@ -2,11 +2,11 @@
 
 pragma solidity 0.8.9;
 
-import "../libs/FixedPointMath.sol";
+import "../libs/AuxMath.sol";
 import "./Asset.sol";
 
 contract InvestorActorMock {
-    using FixedPointMath for uint256;
+    using AuxMath for uint256;
     Asset public immutable asset;
 
     constructor(address _asset) {

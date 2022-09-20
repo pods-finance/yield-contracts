@@ -2,11 +2,11 @@
 
 pragma solidity 0.8.9;
 
-import "../libs/FixedPointMath.sol";
+import "../libs/AuxMath.sol";
 
-contract FixedPointMathMock {
-    using FixedPointMath for uint256;
-    using FixedPointMath for FixedPointMath.Fractional;
+contract AuxMathMock {
+    using AuxMath for uint256;
+    using AuxMath for AuxMath.Fractional;
 
     function mulDivUp(
         uint256 x,
@@ -24,31 +24,31 @@ contract FixedPointMathMock {
         return x.mulDivDown(y, denominator);
     }
 
-    function mulDivUpFractional0(FixedPointMath.Fractional memory x, uint256 y) external pure returns (uint256) {
+    function mulDivUpFractional0(AuxMath.Fractional memory x, uint256 y) external pure returns (uint256) {
         return x.mulDivUp(y);
     }
 
-    function mulDivDownFractional0(FixedPointMath.Fractional memory x, uint256 y) external pure returns (uint256) {
+    function mulDivDownFractional0(AuxMath.Fractional memory x, uint256 y) external pure returns (uint256) {
         return x.mulDivDown(y);
     }
 
-    function mulDivUpFractional1(uint256 x, FixedPointMath.Fractional memory y) external pure returns (uint256) {
+    function mulDivUpFractional1(uint256 x, AuxMath.Fractional memory y) external pure returns (uint256) {
         return x.mulDivUp(y);
     }
 
-    function mulDivDownFractional1(uint256 x, FixedPointMath.Fractional memory y) external pure returns (uint256) {
+    function mulDivDownFractional1(uint256 x, AuxMath.Fractional memory y) external pure returns (uint256) {
         return x.mulDivDown(y);
     }
 
-    function fractionRoundUp(FixedPointMath.Fractional memory x) external pure returns (uint256) {
+    function fractionRoundUp(AuxMath.Fractional memory x) external pure returns (uint256) {
         return x.fractionRoundUp();
     }
 
-    function fractionRoundDown(FixedPointMath.Fractional memory x) external pure returns (uint256) {
+    function fractionRoundDown(AuxMath.Fractional memory x) external pure returns (uint256) {
         return x.fractionRoundDown();
     }
 
     function min(uint256 x, uint256 y) external pure returns (uint256) {
-        return FixedPointMath.min(x, y);
+        return AuxMath.min(x, y);
     }
 }

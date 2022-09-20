@@ -8,7 +8,7 @@ import "@openzeppelin/contracts/token/ERC20/extensions/draft-IERC20Permit.sol";
 import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import "../interfaces/IConfigurationManager.sol";
 import "../interfaces/IVault.sol";
-import "../libs/FixedPointMath.sol";
+import "../libs/AuxMath.sol";
 import "../libs/DepositQueueLib.sol";
 import "../libs/CastUint.sol";
 import "../mixins/Capped.sol";
@@ -19,7 +19,7 @@ import "../mixins/Capped.sol";
  */
 abstract contract BaseVault is IVault, ERC20Permit, Capped {
     using SafeERC20 for IERC20Metadata;
-    using FixedPointMath for uint256;
+    using AuxMath for uint256;
     using CastUint for uint256;
     using DepositQueueLib for DepositQueueLib.DepositQueue;
 
@@ -245,7 +245,7 @@ abstract contract BaseVault is IVault, ERC20Permit, Capped {
     function withdrawFeeRatio() public view override returns (uint256) {
         uint256 _withdrawFeeRatio = configuration.getParameter(address(this), "WITHDRAW_FEE_RATIO");
         // Fee is limited to MAX_WITHDRAW_FEE
-        return FixedPointMath.min(_withdrawFeeRatio, MAX_WITHDRAW_FEE);
+        return AuxMath.min(_withdrawFeeRatio, MAX_WITHDRAW_FEE);
     }
 
     /**

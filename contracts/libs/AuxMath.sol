@@ -2,10 +2,10 @@
 
 pragma solidity 0.8.9;
 
-library FixedPointMath {
-    using FixedPointMath for uint256;
+library AuxMath {
+    using AuxMath for uint256;
 
-    error FixedPointMath__DivByZero();
+    error AuxMath__DivByZero();
 
     struct Fractional {
         uint256 numerator;
@@ -17,7 +17,7 @@ library FixedPointMath {
         uint256 y,
         uint256 denominator
     ) internal pure returns (uint256) {
-        if (denominator == 0) revert FixedPointMath__DivByZero();
+        if (denominator == 0) revert AuxMath__DivByZero();
         return (x * y) / denominator;
     }
 
@@ -26,7 +26,7 @@ library FixedPointMath {
         uint256 y,
         uint256 denominator
     ) internal pure returns (uint256) {
-        if (denominator == 0) revert FixedPointMath__DivByZero();
+        if (denominator == 0) revert AuxMath__DivByZero();
         uint256 numerator = x * y;
         return numerator / denominator + (numerator % denominator > 0 ? 1 : 0);
     }

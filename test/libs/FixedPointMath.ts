@@ -2,17 +2,17 @@ import { Contract } from '@ethersproject/contracts'
 import { expect } from 'chai'
 import { ethers } from 'hardhat'
 
-describe('FixedPointMath', () => {
+describe('AuxMath', () => {
   let math: Contract
 
   before(async () => {
-    const FixedPointMathMock = await ethers.getContractFactory('FixedPointMathMock')
-    math = await FixedPointMathMock.deploy()
+    const AuxMathMock = await ethers.getContractFactory('AuxMathMock')
+    math = await AuxMathMock.deploy()
   })
 
   describe('mulDivDown', () => {
     it('should not divide by 0', async () => {
-      await expect(math.mulDivDown(10, 10, 0)).to.be.revertedWith('FixedPointMath__DivByZero()')
+      await expect(math.mulDivDown(10, 10, 0)).to.be.revertedWith('AuxMath__DivByZero()')
     })
 
     it('should round down', async () => {
@@ -27,7 +27,7 @@ describe('FixedPointMath', () => {
 
   describe('mulDivUp', () => {
     it('should not divide by 0', async () => {
-      await expect(math.mulDivUp(10, 10, 0)).to.be.revertedWith('FixedPointMath__DivByZero()')
+      await expect(math.mulDivUp(10, 10, 0)).to.be.revertedWith('AuxMath__DivByZero()')
     })
 
     it('should round up', async () => {
