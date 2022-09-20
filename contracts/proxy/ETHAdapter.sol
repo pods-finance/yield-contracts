@@ -14,7 +14,11 @@ contract ETHAdapter {
 
     ICurvePool public immutable pool;
 
+    address constant ETH_ADDRESS = 0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE;
+    address constant STETH_ADDRESS = 0xae7ab96520DE3A18E5e111B5EaAb095312D7fE84;
+
     constructor(ICurvePool _pool) {
+        require(_pool.coins(0) == ETH_ADDRESS && _pool.coins(1) == STETH_ADDRESS);
         pool = _pool;
     }
 

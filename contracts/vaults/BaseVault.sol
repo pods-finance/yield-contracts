@@ -350,7 +350,7 @@ abstract contract BaseVault is IVault, ERC20Permit, Capped {
      * @notice Calculate the fee amount on withdraw.
      */
     function _getFee(uint256 assets) internal view returns (uint256) {
-        return (assets * withdrawFeeRatio()) / DENOMINATOR;
+        return assets.mulDivDown(withdrawFeeRatio(), DENOMINATOR);
     }
 
     /**
