@@ -110,6 +110,48 @@ describe('STETHVault', () => {
     })
   })
 
+  describe('Sanity checks', () => {
+    it('should behave equally if someone tries to mint 0 shares', async () => {
+      const assets = ethers.utils.parseEther('10')
+
+      // Users deposits to vault
+      await vault.connect(user0).deposit(assets, user0.address)
+      await vault.connect(user1).mint('0', user2.address)
+      await vault.connect(user1).mint('0', user1.address)
+      await vault.connect(user1).mint(assets, user2.address)
+
+      const previewMintedAssets = await vault.previewMint(assets)
+      await vault.connect(user1).mint(assets, user1.address)
+      await vault.connect(user1).mint('0', user1.address)
+      await vault.connect(user1).mint('0', user1.address)
+
+      const idleAssetsUser1 = await vault.idleAssetsOf(user1.address)
+      const idleAssetsUser0 = await vault.idleAssetsOf(user0.address)
+      expect(idleAssetsUser0).to.be.closeTo(assets, '1')
+      expect(idleAssetsUser1).to.be.closeTo(previewMintedAssets, '1')
+
+      const totalIdleAssets = await vault.totalIdleAssets();
+
+      expect(totalIdleAssets).to.be.closeTo(previewMintedAssets.add(assets).add(assets), '1')
+
+      expect(await vault.depositQueueSize()).to.be.equal(3)
+      await vault.connect(vaultController).endRound()
+      await vault.connect(vaultController).processQueuedDeposits(0, await vault.depositQueueSize())
+      await vault.connect(vaultController).startRound()
+      
+      const idleAssetsUser1After = await vault.idleAssetsOf(user1.address)
+      const idleAssetsUser0After = await vault.idleAssetsOf(user0.address)
+
+      expect(idleAssetsUser1After).to.be.equal(0)
+      expect(idleAssetsUser0After).to.be.equal(0)
+
+      const maxWithdraw0 = await vault.maxWithdraw(user0.address)
+      const maxWithdraw1 = await vault.maxWithdraw(user1.address)
+      expect(maxWithdraw1).to.be.equal(feeExcluded(previewMintedAssets))
+      expect(maxWithdraw0).to.be.equal(feeExcluded(assets))
+    })
+  })
+
   describe('Reading functions', () => {
     it('should match maxWithdraw and real withdraw balances', async () => {
       const assets = ethers.utils.parseEther('100')
