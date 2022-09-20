@@ -21,6 +21,11 @@
     "type": "constructor"
   },
   {
+    "inputs": [],
+    "name": "AuxMath__DivByZero",
+    "type": "error"
+  },
+  {
     "inputs": [
       {
         "internalType": "uint256",
@@ -34,11 +39,6 @@
       }
     ],
     "name": "Capped__AmountExceedsCap",
-    "type": "error"
-  },
-  {
-    "inputs": [],
-    "name": "FixedPointMath__DivByZero",
     "type": "error"
   },
   {
@@ -1250,7 +1250,13 @@
   {
     "inputs": [],
     "name": "refund",
-    "outputs": [],
+    "outputs": [
+      {
+        "internalType": "uint256",
+        "name": "assets",
+        "type": "uint256"
+      }
+    ],
     "stateMutability": "nonpayable",
     "type": "function"
   },
@@ -1283,7 +1289,13 @@
   {
     "inputs": [],
     "name": "startRound",
-    "outputs": [],
+    "outputs": [
+      {
+        "internalType": "uint256",
+        "name": "roundId",
+        "type": "uint256"
+      }
+    ],
     "stateMutability": "nonpayable",
     "type": "function"
   },

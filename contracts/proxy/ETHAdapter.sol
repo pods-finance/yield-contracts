@@ -14,7 +14,13 @@ contract ETHAdapter {
 
     ICurvePool public immutable pool;
 
+    address constant ETH_ADDRESS = 0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE;
+    address constant STETH_ADDRESS = 0xae7ab96520DE3A18E5e111B5EaAb095312D7fE84;
+
+    error ETHAdapter__IncompatibleVault();
+
     constructor(ICurvePool _pool) {
+        require(_pool.coins(0) == ETH_ADDRESS && _pool.coins(1) == STETH_ADDRESS);
         pool = _pool;
     }
 
@@ -31,6 +37,7 @@ contract ETHAdapter {
         address receiver,
         uint256 minOutput
     ) external payable returns (uint256 shares) {
+        if (vault.asset() != STETH_ADDRESS) revert ETHAdapter__IncompatibleVault();
         uint256 assets = pool.exchange{ value: msg.value }(0, 1, msg.value, minOutput);
         IERC20(vault.asset()).safeApprove(address(vault), assets);
         return vault.deposit(assets, receiver);
@@ -87,6 +94,9 @@ contract ETHAdapter {
         _returnETH(vault, receiver, minOutput);
     }
 
+    /* We need this default function because this contract will
+        receive ETH from the Curve pool
+    */
     receive() external payable {}
 
     function _returnETH(
@@ -94,6 +104,7 @@ contract ETHAdapter {
         address receiver,
         uint256 minOutput
     ) internal {
+        if (vault.asset() != STETH_ADDRESS) revert ETHAdapter__IncompatibleVault();
         IERC20 asset = IERC20(vault.asset());
 
         uint256 balance = asset.balanceOf(address(this));

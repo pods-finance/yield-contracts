@@ -70,6 +70,12 @@ describe('ETHAdapter', () => {
     await stopMainnetFork()
   })
 
+  it("cannot deploy with a pool that doesn't support ETH<>stETH", async () => {
+    const pool = await ethers.getContractAt('ICurvePool', '0xD51a44d3FaE010294C616388b506AcdA1bfAAE46')
+    const ETHAdapter = await ethers.getContractFactory('ETHAdapter')
+    await expect(ETHAdapter.deploy(pool.address)).to.be.reverted
+  })
+
   describe('zap in', () => {
     it('deposit', async () => {
       const assets = ethers.utils.parseEther('10')

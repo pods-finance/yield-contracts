@@ -8,7 +8,7 @@ import "@openzeppelin/contracts/token/ERC20/extensions/draft-IERC20Permit.sol";
 import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import "../interfaces/IConfigurationManager.sol";
 import "../interfaces/IVault.sol";
-import "../libs/FixedPointMath.sol";
+import "../libs/AuxMath.sol";
 import "../libs/DepositQueueLib.sol";
 import "../libs/CastUint.sol";
 import "../mixins/Capped.sol";
@@ -19,7 +19,7 @@ import "../mixins/Capped.sol";
  */
 abstract contract BaseVault is IVault, ERC20Permit, Capped {
     using SafeERC20 for IERC20Metadata;
-    using FixedPointMath for uint256;
+    using AuxMath for uint256;
     using CastUint for uint256;
     using DepositQueueLib for DepositQueueLib.DepositQueue;
 
@@ -29,7 +29,18 @@ abstract contract BaseVault is IVault, ERC20Permit, Capped {
     uint256 public currentRoundId;
     bool public isProcessingDeposits = false;
 
+    /*
+    DENOMINATOR represents the precision for the following system variables:
+    - MAX_WITHDRAW_FEE
+    - InvestorRatio
+    */
+
     uint256 public constant DENOMINATOR = 10000;
+    /*
+    MAX_WITDRAW_FEE is a safe check in case the ConfiguratorManager sets
+    a fee high enough that can be used as a way to drain funds. 
+    The precision of this number is set by constant DENOMINATOR.
+    */
     uint256 public constant MAX_WITHDRAW_FEE = 1000;
     uint256 public constant EMERGENCY_INTERVAL = 604800;
     uint256 public processedDeposits = 0;
@@ -183,7 +194,9 @@ abstract contract BaseVault is IVault, ERC20Permit, Capped {
      * @inheritdoc IERC4626
      */
     function previewWithdraw(uint256 assets) public view override returns (uint256 shares) {
-        return convertToShares(assets - _getFee(assets));
+        shares = convertToShares(assets);
+        uint256 invertedFee = DENOMINATOR - withdrawFeeRatio();
+        return shares.mulDivUp(DENOMINATOR, invertedFee);
     }
 
     /**
@@ -244,7 +257,7 @@ abstract contract BaseVault is IVault, ERC20Permit, Capped {
     function withdrawFeeRatio() public view override returns (uint256) {
         uint256 _withdrawFeeRatio = configuration.getParameter(address(this), "WITHDRAW_FEE_RATIO");
         // Fee is limited to MAX_WITHDRAW_FEE
-        return FixedPointMath.min(_withdrawFeeRatio, MAX_WITHDRAW_FEE);
+        return AuxMath.min(_withdrawFeeRatio, MAX_WITHDRAW_FEE);
     }
 
     /**
@@ -288,7 +301,8 @@ abstract contract BaseVault is IVault, ERC20Permit, Capped {
     /**
      * @inheritdoc IVault
      */
-    function startRound() external virtual onlyRoundStarter {
+    function startRound() external virtual onlyRoundStarter returns (uint256 roundId) {
+
         if (!isProcessingDeposits) revert IVault__NotProcessingDeposits();
 
         isProcessingDeposits = false;
@@ -296,6 +310,8 @@ abstract contract BaseVault is IVault, ERC20Permit, Capped {
         _afterRoundStart(processedDeposits);
         emit StartRound(currentRoundId, processedDeposits);
         processedDeposits = 0;
+
+        return currentRoundId;
     }
 
     /**
@@ -314,8 +330,8 @@ abstract contract BaseVault is IVault, ERC20Permit, Capped {
     /**
      * @inheritdoc IVault
      */
-    function refund() external {
-        uint256 assets = depositQueue.balanceOf(msg.sender);
+    function refund() external returns (uint256 assets) {
+        assets = depositQueue.balanceOf(msg.sender);
         if (assets == 0) revert IVault__ZeroAssets();
 
         for (uint256 i = 0; i < depositQueue.size(); i++) {
@@ -382,7 +398,7 @@ abstract contract BaseVault is IVault, ERC20Permit, Capped {
      * @notice Calculate the fee amount on withdraw.
      */
     function _getFee(uint256 assets) internal view returns (uint256) {
-        return (assets * withdrawFeeRatio()) / DENOMINATOR;
+        return assets.mulDivDown(withdrawFeeRatio(), DENOMINATOR);
     }
 
     /**
@@ -427,20 +443,31 @@ abstract contract BaseVault is IVault, ERC20Permit, Capped {
         receiverShares = shares;
 
         emit Withdraw(msg.sender, receiver, owner, receiverAssets, shares);
-        emit FeeCollected(fee);
-
         _asset.safeTransfer(receiver, receiverAssets);
-        _asset.safeTransfer(controller(), fee);
+
+        if (fee > 0) {
+            emit FeeCollected(fee);
+            _asset.safeTransfer(controller(), fee);
+        }
     }
 
     /** Hooks **/
 
     // solhint-disable-next-line no-empty-blocks
+    /* This hook should be implemented in the contract implementation.
+        It will trigger after the shares were burned
+    */
     function _beforeWithdraw(uint256 shares, uint256 assets) internal virtual {}
 
     // solhint-disable-next-line no-empty-blocks
+    /* This hook should be implemented in the contract implementation.
+        It will trigger after setting isProcessingDeposits to false
+    */
     function _afterRoundStart(uint256 assets) internal virtual {}
 
     // solhint-disable-next-line no-empty-blocks
+    /* This hook should be implemented in the contract implementation.
+        It will trigger after setting isProcessingDeposits to true
+    */
     function _afterRoundEnd() internal virtual {}
 }

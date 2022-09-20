@@ -18,29 +18,28 @@ contract Migration {
         to = _to;
     }
 
-    function migrate() external {
-        uint256 shares = from.balanceOf(msg.sender);
+    function migrate(uint256 shares) external returns (uint256 newShares) {
         from.redeem(shares, address(this), msg.sender);
 
         IERC20 asset = IERC20(from.asset());
         uint256 balance = asset.balanceOf(address(this));
         asset.safeApprove(address(to), balance);
-        to.deposit(balance, msg.sender);
+        return to.deposit(balance, msg.sender);
     }
 
     function migrateWithPermit(
+        uint256 shares,
         uint256 deadline,
         uint8 v,
         bytes32 r,
         bytes32 s
-    ) external {
-        uint256 shares = from.balanceOf(msg.sender);
+    ) external returns (uint256 newShares) {
         IERC20Permit(address(from)).permit(msg.sender, address(this), shares, deadline, v, r, s);
         from.redeem(shares, address(this), msg.sender);
 
         IERC20 asset = IERC20(from.asset());
         uint256 balance = asset.balanceOf(address(this));
         asset.safeApprove(address(to), balance);
-        to.deposit(balance, msg.sender);
+        return to.deposit(balance, msg.sender);
     }
 }

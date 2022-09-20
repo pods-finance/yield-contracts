@@ -16,14 +16,31 @@
     "type": "constructor"
   },
   {
-    "inputs": [],
+    "inputs": [
+      {
+        "internalType": "uint256",
+        "name": "shares",
+        "type": "uint256"
+      }
+    ],
     "name": "migrate",
-    "outputs": [],
+    "outputs": [
+      {
+        "internalType": "uint256",
+        "name": "newShares",
+        "type": "uint256"
+      }
+    ],
     "stateMutability": "nonpayable",
     "type": "function"
   },
   {
     "inputs": [
+      {
+        "internalType": "uint256",
+        "name": "shares",
+        "type": "uint256"
+      },
       {
         "internalType": "uint256",
         "name": "deadline",
@@ -46,7 +63,13 @@
       }
     ],
     "name": "migrateWithPermit",
-    "outputs": [],
+    "outputs": [
+      {
+        "internalType": "uint256",
+        "name": "newShares",
+        "type": "uint256"
+      }
+    ],
     "stateMutability": "nonpayable",
     "type": "function"
   }
