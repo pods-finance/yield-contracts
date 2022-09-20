@@ -15,7 +15,7 @@ library DepositQueueLib {
     }
 
     function push(DepositQueue storage queue, DepositEntry memory deposit) internal {
-        if (queue.cache[deposit.owner] == 0) {
+        if (queue.cache[deposit.owner] == 0 && deposit.amount > 0) {
             queue.list.push(deposit.owner);
         }
 

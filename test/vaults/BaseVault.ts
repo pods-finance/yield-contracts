@@ -557,6 +557,50 @@ describe('BaseVault', () => {
       expect(await vault.totalIdleAssets()).to.be.equal(assets.mul(3))
       expect(await asset.balanceOf(user1.address)).to.be.equal(assets)
     })
+
+    it('should behave equally if someone tries to mint 0 shares', async () => {
+      const assets = ethers.utils.parseEther('10')
+
+      await asset.connect(user0).mint(assets.mul(2))
+      await asset.connect(user1).mint(assets.mul(2))
+      await asset.connect(user2).mint(assets)
+
+      // Users deposits to vault
+      await vault.connect(user0).deposit(assets, user0.address)
+      await vault.connect(user1).mint('0', user2.address)
+      await vault.connect(user1).mint('0', user1.address)
+      await vault.connect(user1).mint(assets, user2.address)
+
+      const previewMintedAssets = await vault.previewMint(assets)
+      await vault.connect(user1).mint(assets, user1.address)
+      await vault.connect(user1).mint('0', user1.address)
+      await vault.connect(user1).mint('0', user1.address)
+
+      const idleAssetsUser1 = await vault.idleAssetsOf(user1.address)
+      const idleAssetsUser0 = await vault.idleAssetsOf(user0.address)
+      expect(idleAssetsUser0).to.be.equal(assets)
+      expect(idleAssetsUser1).to.be.equal(previewMintedAssets)
+
+      const totalIdleAssets = await vault.totalIdleAssets();
+
+      expect(totalIdleAssets).to.be.equal(previewMintedAssets.add(assets).add(assets))
+
+      expect(await vault.depositQueueSize()).to.be.equal(3)
+      await vault.connect(vaultController).endRound()
+      await vault.connect(vaultController).processQueuedDeposits(0, await vault.depositQueueSize())
+      await vault.connect(vaultController).startRound()
+      
+      const idleAssetsUser1After = await vault.idleAssetsOf(user1.address)
+      const idleAssetsUser0After = await vault.idleAssetsOf(user0.address)
+
+      expect(idleAssetsUser1After).to.be.equal(0)
+      expect(idleAssetsUser0After).to.be.equal(0)
+
+      const maxWithdraw0 = await vault.maxWithdraw(user0.address)
+      const maxWithdraw1 = await vault.maxWithdraw(user1.address)
+      expect(maxWithdraw1).to.be.equal(feeExcluded(previewMintedAssets))
+      expect(maxWithdraw0).to.be.equal(feeExcluded(assets))
+    })
   })
 
   describe('Permit', () => {
