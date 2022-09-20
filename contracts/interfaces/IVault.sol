@@ -54,7 +54,7 @@ interface IVault is IERC4626, IERC20Permit {
      * @notice Starts the next round, sending the idle funds to the
      * strategy where it should start accruing yield.
      */
-    function startRound() external;
+    function startRound() external returns (uint256 roundId);
 
     /**
      * @notice Closes the round, allowing deposits to the next round be processed.
