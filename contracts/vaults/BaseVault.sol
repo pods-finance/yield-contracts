@@ -29,7 +29,18 @@ abstract contract BaseVault is IVault, ERC20Permit, Capped {
     uint256 public currentRoundId;
     bool public isProcessingDeposits = false;
 
+    /*
+    DENOMINATOR represents the precision for the following system variables:
+    - MAX_WITHDRAW_FEE
+    - InvestorRatio
+    */
+
     uint256 public constant DENOMINATOR = 10000;
+    /*
+    MAX_WITDRAW_FEE is a safe check in case the ConfiguratorManager sets
+    a fee high enough that can be used as a way to drain funds. 
+    The precision of this number is set by constant DENOMINATOR.
+    */
     uint256 public constant MAX_WITHDRAW_FEE = 1000;
     uint256 public processedDeposits = 0;
 
@@ -410,11 +421,20 @@ abstract contract BaseVault is IVault, ERC20Permit, Capped {
     /** Hooks **/
 
     // solhint-disable-next-line no-empty-blocks
+    /* This hook should be implemented in the contract implementation.
+        It will trigger after the shares were burned
+    */
     function _beforeWithdraw(uint256 shares, uint256 assets) internal virtual {}
 
     // solhint-disable-next-line no-empty-blocks
+    /* This hook should be implemented in the contract implementation.
+        It will trigger after setting isProcessingDeposits to false
+    */
     function _afterRoundStart(uint256 assets) internal virtual {}
 
     // solhint-disable-next-line no-empty-blocks
+    /* This hook should be implemented in the contract implementation.
+        It will trigger after setting isProcessingDeposits to true
+    */
     function _afterRoundEnd() internal virtual {}
 }
