@@ -1239,7 +1239,13 @@
   {
     "inputs": [],
     "name": "startRound",
-    "outputs": [],
+    "outputs": [
+      {
+        "internalType": "uint256",
+        "name": "roundId",
+        "type": "uint256"
+      }
+    ],
     "stateMutability": "nonpayable",
     "type": "function"
   },

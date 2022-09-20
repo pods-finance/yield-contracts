@@ -278,7 +278,7 @@ abstract contract BaseVault is IVault, ERC20Permit, Capped {
     /**
      * @inheritdoc IVault
      */
-    function startRound() external virtual onlyController {
+    function startRound() external virtual onlyController returns (uint256 roundId) {
         if (!isProcessingDeposits) revert IVault__NotProcessingDeposits();
 
         isProcessingDeposits = false;
@@ -286,6 +286,8 @@ abstract contract BaseVault is IVault, ERC20Permit, Capped {
         _afterRoundStart(processedDeposits);
         emit StartRound(currentRoundId, processedDeposits);
         processedDeposits = 0;
+
+        return currentRoundId;
     }
 
     /**
