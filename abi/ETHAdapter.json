@@ -11,6 +11,11 @@
     "type": "constructor"
   },
   {
+    "inputs": [],
+    "name": "ETHAdapter__IncompatibleVault",
+    "type": "error"
+  },
+  {
     "inputs": [
       {
         "internalType": "uint256",
