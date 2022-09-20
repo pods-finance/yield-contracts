@@ -18,6 +18,10 @@ contract STETHVault is BaseVault {
     uint256 public lastRoundAssets;
     FixedPointMath.Fractional public lastSharePrice;
 
+    /*
+     @dev investorRatio is the proportion that the weekly yield will be splitted
+     The precision of this number is set by the variable DENOMINATOR. 5000 is equivalent to 50%
+    */
     uint256 public constant investorRatio = 5000;
     address public immutable investor;
 
