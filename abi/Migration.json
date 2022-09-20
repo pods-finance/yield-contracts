@@ -2,12 +2,12 @@
   {
     "inputs": [
       {
-        "internalType": "contract IVaultMetadata",
+        "internalType": "contract IVault",
         "name": "_from",
         "type": "address"
       },
       {
-        "internalType": "contract IVaultMetadata",
+        "internalType": "contract IVault",
         "name": "_to",
         "type": "address"
       }

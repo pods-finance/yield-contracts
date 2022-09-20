@@ -16,6 +16,11 @@ interface IERC4626 is IERC20 {
     );
 
     /**
+     * @notice The address of the underlying token used for the Vault for accounting, depositing, and withdrawing.
+     */
+    function asset() external view returns (address);
+
+    /**
      * @notice Total amount of the underlying asset that is “managed” by Vault.
      */
     function totalAssets() external view returns (uint256);

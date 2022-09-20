@@ -6,7 +6,6 @@ import "@openzeppelin/contracts/token/ERC20/extensions/IERC20Metadata.sol";
 import "@openzeppelin/contracts/token/ERC20/extensions/draft-ERC20Permit.sol";
 import "@openzeppelin/contracts/token/ERC20/extensions/draft-IERC20Permit.sol";
 import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
-import "@openzeppelin/contracts/token/ERC20/ERC20.sol";
 import "../interfaces/IConfigurationManager.sol";
 import "../interfaces/IVault.sol";
 import "../libs/FixedPointMath.sol";
@@ -18,14 +17,14 @@ import "../mixins/Capped.sol";
  * @title A Vault that tokenize shares of strategy
  * @author Pods Finance
  */
-abstract contract BaseVault is IVault, ERC20, ERC20Permit, Capped {
+abstract contract BaseVault is IVault, ERC20Permit, Capped {
     using SafeERC20 for IERC20Metadata;
     using FixedPointMath for uint256;
     using CastUint for uint256;
     using DepositQueueLib for DepositQueueLib.DepositQueue;
 
     IConfigurationManager public immutable configuration;
-    IERC20Metadata public immutable asset;
+    IERC20Metadata internal immutable _asset;
 
     uint256 public currentRoundId;
     bool public isProcessingDeposits = false;
@@ -36,13 +35,16 @@ abstract contract BaseVault is IVault, ERC20, ERC20Permit, Capped {
 
     DepositQueueLib.DepositQueue internal depositQueue;
 
-    constructor(IConfigurationManager _configuration, IERC20Metadata _asset)
-        ERC20(string(abi.encodePacked("Pods Yield ", _asset.symbol())), string(abi.encodePacked("py", _asset.symbol())))
-        ERC20Permit(string(abi.encodePacked("Pods Yield ", _asset.symbol())))
+    constructor(IConfigurationManager _configuration, IERC20Metadata _asset_)
+        ERC20(
+            string(abi.encodePacked("Pods Yield ", _asset_.symbol())),
+            string(abi.encodePacked("py", _asset_.symbol()))
+        )
+        ERC20Permit(string(abi.encodePacked("Pods Yield ", _asset_.symbol())))
         Capped(_configuration)
     {
         configuration = _configuration;
-        asset = _asset;
+        _asset = _asset_;
 
         // Vault starts in `start` state
         emit StartRound(currentRoundId, 0);
@@ -57,7 +59,14 @@ abstract contract BaseVault is IVault, ERC20, ERC20Permit, Capped {
      * @inheritdoc ERC20
      */
     function decimals() public view override returns (uint8) {
-        return asset.decimals();
+        return _asset.decimals();
+    }
+
+    /**
+     * @inheritdoc IERC4626
+     */
+    function asset() public view returns (address) {
+        return address(_asset);
     }
 
     /**
@@ -83,7 +92,7 @@ abstract contract BaseVault is IVault, ERC20, ERC20Permit, Capped {
         shares = previewDeposit(assets);
 
         if (shares == 0) revert IVault__ZeroShares();
-        IERC20Permit(address(asset)).permit(msg.sender, address(this), assets, deadline, v, r, s);
+        IERC20Permit(address(_asset)).permit(msg.sender, address(this), assets, deadline, v, r, s);
         _deposit(assets, shares, receiver);
     }
 
@@ -106,7 +115,7 @@ abstract contract BaseVault is IVault, ERC20, ERC20Permit, Capped {
     ) public returns (uint256 assets) {
         if (isProcessingDeposits) revert IVault__ForbiddenWhileProcessingDeposits();
         assets = previewMint(shares);
-        IERC20Permit(address(asset)).permit(msg.sender, address(this), assets, deadline, v, r, s);
+        IERC20Permit(address(_asset)).permit(msg.sender, address(this), assets, deadline, v, r, s);
         _deposit(assets, shares, receiver);
     }
 
@@ -239,7 +248,7 @@ abstract contract BaseVault is IVault, ERC20, ERC20Permit, Capped {
     function assetsOf(address owner) public view virtual returns (uint256) {
         uint256 supply = totalSupply();
         uint256 shares = balanceOf(owner);
-        uint256 committedAssets = supply == 0 ? 0 : shares.mulDivDown(asset.balanceOf(address(this)), supply);
+        uint256 committedAssets = supply == 0 ? 0 : shares.mulDivDown(_asset.balanceOf(address(this)), supply);
         return convertToAssets(shares) + idleAssetsOf(owner) + committedAssets;
     }
 
@@ -305,7 +314,7 @@ abstract contract BaseVault is IVault, ERC20, ERC20Permit, Capped {
         }
 
         emit DepositRefunded(msg.sender, currentRoundId, assets);
-        asset.safeTransfer(msg.sender, assets);
+        _asset.safeTransfer(msg.sender, assets);
     }
 
     /**
@@ -357,7 +366,7 @@ abstract contract BaseVault is IVault, ERC20, ERC20Permit, Capped {
         depositQueue.push(DepositQueueLib.DepositEntry(receiver, assets));
 
         emit Deposit(msg.sender, receiver, assets, shares);
-        asset.safeTransferFrom(msg.sender, address(this), assets);
+        _asset.safeTransferFrom(msg.sender, address(this), assets);
     }
 
     /**
@@ -385,8 +394,8 @@ abstract contract BaseVault is IVault, ERC20, ERC20Permit, Capped {
         emit Withdraw(msg.sender, receiver, owner, receiverAssets, shares);
         emit FeeCollected(fee);
 
-        asset.safeTransfer(receiver, receiverAssets);
-        asset.safeTransfer(controller(), fee);
+        _asset.safeTransfer(receiver, receiverAssets);
+        _asset.safeTransfer(controller(), fee);
     }
 
     /** Hooks **/

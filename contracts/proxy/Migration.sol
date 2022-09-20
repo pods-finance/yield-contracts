@@ -4,15 +4,15 @@ pragma solidity 0.8.9;
 
 import "@openzeppelin/contracts/token/ERC20/extensions/draft-IERC20Permit.sol";
 import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
-import "../interfaces/IVaultMetadata.sol";
+import "../interfaces/IVault.sol";
 
 contract Migration {
     using SafeERC20 for IERC20;
 
-    IVaultMetadata immutable from;
-    IVaultMetadata immutable to;
+    IVault immutable from;
+    IVault immutable to;
 
-    constructor(IVaultMetadata _from, IVaultMetadata _to) {
+    constructor(IVault _from, IVault _to) {
         require(_from.asset() == _to.asset(), "Vault assets must be the same");
         from = _from;
         to = _to;

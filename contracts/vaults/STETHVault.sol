@@ -36,21 +36,21 @@ contract STETHVault is BaseVault {
         address _investor
     ) BaseVault(_configuration, _asset) {
         investor = _investor;
-        sharePriceDecimals = asset.decimals();
+        sharePriceDecimals = _asset.decimals();
     }
 
     /**
      * @inheritdoc ERC20
      */
     function name() public view override returns (string memory) {
-        return string(abi.encodePacked(asset.symbol(), " Volatility Vault"));
+        return string(abi.encodePacked(_asset.symbol(), " Volatility Vault"));
     }
 
     /**
      * @inheritdoc ERC20
      */
     function symbol() public view override returns (string memory) {
-        return string(abi.encodePacked(asset.symbol(), "vv"));
+        return string(abi.encodePacked(_asset.symbol(), "vv"));
     }
 
     function _afterRoundStart(uint256) internal override {
@@ -69,7 +69,7 @@ contract STETHVault is BaseVault {
     function _afterRoundEnd() internal override {
         uint256 roundAccruedInterest = 0;
         uint256 endSharePrice = 0;
-        uint256 investmentYield = asset.balanceOf(investor);
+        uint256 investmentYield = _asset.balanceOf(investor);
         uint256 supply = totalSupply();
 
         if (supply != 0) {
@@ -78,11 +78,11 @@ contract STETHVault is BaseVault {
 
             // Pulls the yields from investor
             if (investmentYield > 0) {
-                asset.safeTransferFrom(investor, address(this), investmentYield);
+                _asset.safeTransferFrom(investor, address(this), investmentYield);
             }
 
             if (investmentAmount > 0) {
-                asset.safeTransfer(investor, investmentAmount);
+                _asset.safeTransfer(investor, investmentAmount);
             }
 
             // End Share price needs to be calculated after the transfers between investor and vault
@@ -104,7 +104,7 @@ contract STETHVault is BaseVault {
      * @dev See {BaseVault-totalAssets}.
      */
     function totalAssets() public view override returns (uint256) {
-        return asset.balanceOf(address(this)) - totalIdleAssets();
+        return _asset.balanceOf(address(this)) - totalIdleAssets();
     }
 
     /**
@@ -134,8 +134,8 @@ contract STETHVault is BaseVault {
      * For more information refer to: https://docs.lido.fi/guides/steth-integration-guide#1-wei-corner-case
      */
     function _tryTransferSTETH(address from, uint256 amount) internal returns (uint256 effectiveAmount) {
-        uint256 balanceBefore = asset.balanceOf(address(this));
-        asset.safeTransferFrom(from, address(this), amount);
-        return asset.balanceOf(address(this)) - balanceBefore;
+        uint256 balanceBefore = _asset.balanceOf(address(this));
+        _asset.safeTransferFrom(from, address(this), amount);
+        return _asset.balanceOf(address(this)) - balanceBefore;
     }
 }

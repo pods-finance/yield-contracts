@@ -41,12 +41,12 @@ contract PrincipalProtectedMock is BaseVault {
     ) BaseVault(_configuration, _asset) {
         investor = _investor;
         yieldSource = YieldSourceMock(_yieldSource);
-        sharePriceDecimals = asset.decimals();
+        sharePriceDecimals = _asset.decimals();
     }
 
     function _afterRoundStart(uint256 assets) internal override {
         if (assets > 0) {
-            asset.approve(address(yieldSource), assets);
+            _asset.approve(address(yieldSource), assets);
             yieldSource.deposit(assets, address(this));
         }
         uint256 supply = totalSupply();
@@ -64,8 +64,8 @@ contract PrincipalProtectedMock is BaseVault {
     function _afterRoundEnd() internal override {
         uint256 roundAccruedInterest = 0;
         uint256 endSharePrice = 0;
-        uint256 investmentYield = asset.balanceOf(investor);
-        uint256 idleAssets = asset.balanceOf(address(this));
+        uint256 investmentYield = _asset.balanceOf(investor);
+        uint256 idleAssets = _asset.balanceOf(address(this));
         uint256 supply = totalSupply();
 
         if (supply != 0) {
@@ -74,13 +74,13 @@ contract PrincipalProtectedMock is BaseVault {
 
             // Pulls the yields from investor
             if (investmentYield > 0) {
-                asset.safeTransferFrom(investor, address(this), investmentYield);
+                _asset.safeTransferFrom(investor, address(this), investmentYield);
             }
 
             // Redeposit to Yield source
-            uint256 redepositAmount = asset.balanceOf(address(this)) - idleAssets;
+            uint256 redepositAmount = _asset.balanceOf(address(this)) - idleAssets;
             if (redepositAmount > 0) {
-                asset.approve(address(yieldSource), redepositAmount);
+                _asset.approve(address(yieldSource), redepositAmount);
                 yieldSource.deposit(redepositAmount, address(this));
             }
 
@@ -88,7 +88,7 @@ contract PrincipalProtectedMock is BaseVault {
             uint256 investmentAmount = (roundAccruedInterest * investorRatio) / DENOMINATOR;
             if (investmentAmount > 0) {
                 yieldSource.withdraw(investmentAmount);
-                asset.safeTransfer(investor, investmentAmount);
+                _asset.safeTransfer(investor, investmentAmount);
             }
         }
 
