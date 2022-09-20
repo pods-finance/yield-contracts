@@ -31,6 +31,7 @@ library DepositQueueLib {
         if (endIndex > startIndex) {
             address[] memory newList = new address[](queue.list.length - (endIndex - startIndex));
             uint256 i = 0;
+            uint256 totalDeposited = queue.totalDeposited;
 
             // Copying the skipped interval to the new array
             while (i < startIndex) {
@@ -42,7 +43,7 @@ library DepositQueueLib {
             while (startIndex < endIndex) {
                 // No need to check, it can't go below 0
                 unchecked {
-                    queue.totalDeposited -= queue.cache[queue.list[startIndex]];
+                    totalDeposited -= queue.cache[queue.list[startIndex]];
                 }
                 queue.cache[queue.list[startIndex]] = 0;
                 startIndex++;
@@ -54,6 +55,7 @@ library DepositQueueLib {
             }
 
             queue.list = newList;
+            queue.totalDeposited = totalDeposited;
         }
     }
 
