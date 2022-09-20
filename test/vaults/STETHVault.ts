@@ -130,7 +130,7 @@ describe('STETHVault', () => {
       expect(idleAssetsUser0).to.be.closeTo(assets, '1')
       expect(idleAssetsUser1).to.be.closeTo(previewMintedAssets, '1')
 
-      const totalIdleAssets = await vault.totalIdleAssets();
+      const totalIdleAssets = await vault.totalIdleAssets()
 
       expect(totalIdleAssets).to.be.closeTo(previewMintedAssets.add(assets).add(assets), '1')
 
@@ -138,7 +138,7 @@ describe('STETHVault', () => {
       await vault.connect(vaultController).endRound()
       await vault.connect(vaultController).processQueuedDeposits(0, await vault.depositQueueSize())
       await vault.connect(vaultController).startRound()
-      
+
       const idleAssetsUser1After = await vault.idleAssetsOf(user1.address)
       const idleAssetsUser0After = await vault.idleAssetsOf(user0.address)
 
