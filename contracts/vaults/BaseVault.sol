@@ -398,10 +398,8 @@ abstract contract BaseVault is IVault, ERC20Permit, Capped {
         receiverAssets = assets - fee;
         receiverShares = shares;
 
-        if (receiverAssets > 0) {
-            emit Withdraw(msg.sender, receiver, owner, receiverAssets, shares);
-            _asset.safeTransfer(receiver, receiverAssets);
-        }
+        emit Withdraw(msg.sender, receiver, owner, receiverAssets, shares);
+        _asset.safeTransfer(receiver, receiverAssets);
 
         if (fee > 0) {
             emit FeeCollected(fee);
