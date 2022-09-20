@@ -10,13 +10,13 @@ import "./BaseVault.sol";
  */
 contract STETHVault is BaseVault {
     using SafeERC20 for IERC20Metadata;
-    using FixedPointMath for uint256;
-    using FixedPointMath for FixedPointMath.Fractional;
+    using AuxMath for uint256;
+    using AuxMath for AuxMath.Fractional;
     using DepositQueueLib for DepositQueueLib.DepositQueue;
 
     uint8 public immutable sharePriceDecimals;
     uint256 public lastRoundAssets;
-    FixedPointMath.Fractional public lastSharePrice;
+    AuxMath.Fractional public lastSharePrice;
 
     uint256 public constant investorRatio = 5000;
     address public immutable investor;
@@ -57,10 +57,7 @@ contract STETHVault is BaseVault {
         uint256 supply = totalSupply();
 
         lastRoundAssets = totalAssets();
-        lastSharePrice = FixedPointMath.Fractional({
-            numerator: supply == 0 ? 0 : lastRoundAssets,
-            denominator: supply
-        });
+        lastSharePrice = AuxMath.Fractional({ numerator: supply == 0 ? 0 : lastRoundAssets, denominator: supply });
 
         uint256 sharePrice = lastSharePrice.denominator == 0 ? 0 : lastSharePrice.mulDivDown(10**sharePriceDecimals);
         emit StartRoundData(currentRoundId, lastRoundAssets, sharePrice);

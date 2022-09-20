@@ -21,6 +21,11 @@
     "type": "constructor"
   },
   {
+    "inputs": [],
+    "name": "AuxMath__DivByZero",
+    "type": "error"
+  },
+  {
     "inputs": [
       {
         "internalType": "uint256",
@@ -34,11 +39,6 @@
       }
     ],
     "name": "Capped__AmountExceedsCap",
-    "type": "error"
-  },
-  {
-    "inputs": [],
-    "name": "FixedPointMath__DivByZero",
     "type": "error"
   },
   {

@@ -6,7 +6,7 @@ import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import "@openzeppelin/contracts/utils/Address.sol";
 import "../interfaces/ICurvePool.sol";
-import "../libs/FixedPointMath.sol";
+import "../libs/AuxMath.sol";
 
 contract MockCurvePool is ICurvePool {
     using SafeERC20 for IERC20;
@@ -76,7 +76,7 @@ contract MockCurvePool is ICurvePool {
             output = input - diff;
         }
 
-        return FixedPointMath.min(output, balance);
+        return AuxMath.min(output, balance);
     }
 
     function balances(uint256 i) public view returns (uint256 balance) {
