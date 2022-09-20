@@ -147,6 +147,7 @@ contract STETHVault is BaseVault {
         receiverShares = shares;
 
         emit Withdraw(msg.sender, receiver, owner, receiverAssets, shares);
+
         _asset.safeTransfer(receiver, receiverAssets);
 
         if (fee > 0) {

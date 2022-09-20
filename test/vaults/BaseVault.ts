@@ -371,6 +371,19 @@ describe('BaseVault', () => {
       await expect(vault.connect(vaultController).startRound())
         .to.be.revertedWith('IVault__NotProcessingDeposits()')
     })
+
+    it('after a week, anyone can start the round', async () => {
+      await vault.connect(vaultController).endRound()
+      let startRoundTx = vault.connect(user0).startRound()
+      await expect(startRoundTx).to.be.revertedWith('IVault__CallerIsNotTheController')
+
+      // fast-forward a week
+      const block = await ethers.provider.getBlock('latest')
+      await ethers.provider.send('evm_mine', [block.timestamp + 604800])
+
+      startRoundTx = vault.connect(user0).startRound()
+      await expect(startRoundTx).to.emit(vault, 'StartRound')
+    })
   })
 
   describe('Proxy', () => {
@@ -666,6 +679,85 @@ describe('BaseVault', () => {
       expect(await vault.depositQueueSize()).to.be.equal(0)
       expect(await vault.balanceOf(user0.address)).to.be.equal(shares)
       expect(await vault.idleAssetsOf(user0.address)).to.be.equal(0)
+    })
+  })
+
+  describe('Migration', () => {
+    it('migrates assets from one vault to the other', async () => {
+      const assets = ethers.utils.parseEther('100')
+
+      await asset.connect(user0).mint(assets)
+      await vault.connect(user0).deposit(assets, user0.address)
+      await vault.connect(vaultController).endRound()
+      await vault.connect(vaultController).processQueuedDeposits(0, await vault.depositQueueSize())
+      await vault.connect(vaultController).startRound()
+      const shares = await vault.balanceOf(user0.address)
+
+      const Vault = await ethers.getContractFactory('YieldVaultMock')
+      const newVault = await Vault.deploy(
+        configuration.address,
+        asset.address,
+        yieldSource.address
+      )
+
+      await configuration.setAllowedVault(newVault.address, true)
+
+      expect(await vault.assetsOf(user0.address)).to.be.equal(assets)
+      expect(await newVault.idleAssetsOf(user0.address)).to.be.equal(0)
+
+      const migrationTx = vault.connect(user0).migrate(newVault.address)
+      await expect(migrationTx)
+        .to.emit(vault, 'Migrated')
+        .withArgs(user0.address, vault.address, newVault.address, feeExcluded(assets), shares)
+
+      expect(await vault.assetsOf(user0.address)).to.be.equal(0)
+      expect(await newVault.idleAssetsOf(user0.address)).to.be.equal(feeExcluded(assets))
+    })
+
+    it('should not migrate to disallowed vaults', async () => {
+      const assets = ethers.utils.parseEther('100')
+
+      await asset.connect(user0).mint(assets)
+      await vault.connect(user0).deposit(assets, user0.address)
+      await vault.connect(vaultController).endRound()
+      await vault.connect(vaultController).processQueuedDeposits(0, await vault.depositQueueSize())
+      await vault.connect(vaultController).startRound()
+
+      const Vault = await ethers.getContractFactory('YieldVaultMock')
+      const newVault = await Vault.deploy(
+        configuration.address,
+        asset.address,
+        yieldSource.address
+      )
+
+      const migrationTx = vault.connect(user0).migrate(newVault.address)
+      await expect(migrationTx)
+        .to.be.revertedWith('IVault__MigrationNotAllowed')
+    })
+
+    it('should not migrate to vaults with different assets', async () => {
+      const assets = ethers.utils.parseEther('100')
+
+      await asset.connect(user0).mint(assets)
+      await vault.connect(user0).deposit(assets, user0.address)
+      await vault.connect(vaultController).endRound()
+      await vault.connect(vaultController).processQueuedDeposits(0, await vault.depositQueueSize())
+      await vault.connect(vaultController).startRound()
+
+      const Asset = await ethers.getContractFactory('Asset')
+      const Vault = await ethers.getContractFactory('YieldVaultMock')
+      const newAsset = await Asset.deploy('Asset', 'AST')
+      const newVault = await Vault.deploy(
+        configuration.address,
+        newAsset.address,
+        yieldSource.address
+      )
+
+      await configuration.setAllowedVault(newVault.address, true)
+
+      const migrationTx = vault.connect(user0).migrate(newVault.address)
+      await expect(migrationTx)
+        .to.be.revertedWith('IVault__MigrationNotAllowed')
     })
   })
 

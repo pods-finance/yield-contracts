@@ -12,6 +12,7 @@ import "../interfaces/IConfigurationManager.sol";
  */
 contract ConfigurationManager is IConfigurationManager, Ownable {
     mapping(address => mapping(bytes32 => uint256)) private _parameters;
+    mapping(address => bool) private _allowedVault;
     address private immutable _global = address(0);
     bytes32 constant CAP = "CAP";
 
@@ -64,5 +65,23 @@ contract ConfigurationManager is IConfigurationManager, Ownable {
      */
     function getCap(address target) external view override returns (uint256) {
         return this.getParameter(target, CAP);
+    }
+
+    /**
+     * @dev Sets the allowance to migrate to a `vault` address
+     * @param vault The contract address
+     * @param allowed Allowance status
+     */
+    function setAllowedVault(address vault, bool allowed) external override onlyOwner {
+        _allowedVault[vault] = allowed;
+        emit VaultAllowanceSet(vault, allowed);
+    }
+
+    /**
+     * @dev Returns if a vault is allowed
+     * @param vault The contract address
+     */
+    function isVaultAllowed(address vault) external view override returns (bool) {
+        return _allowedVault[vault];
     }
 }
