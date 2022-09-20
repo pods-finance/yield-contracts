@@ -94,6 +94,9 @@ contract ETHAdapter {
         _returnETH(vault, receiver, minOutput);
     }
 
+    /* We need this default function because this contract will
+        receive ETH from the Curve pool
+    */
     receive() external payable {}
 
     function _returnETH(
