@@ -18,8 +18,7 @@ contract Migration {
         to = _to;
     }
 
-    function migrate() external {
-        uint256 shares = from.balanceOf(msg.sender);
+    function migrate(uint256 shares) external {
         from.redeem(shares, address(this), msg.sender);
 
         IERC20 asset = IERC20(from.asset());
@@ -29,12 +28,12 @@ contract Migration {
     }
 
     function migrateWithPermit(
+        uint256 shares,
         uint256 deadline,
         uint8 v,
         bytes32 r,
         bytes32 s
     ) external {
-        uint256 shares = from.balanceOf(msg.sender);
         IERC20Permit(address(from)).permit(msg.sender, address(this), shares, deadline, v, r, s);
         from.redeem(shares, address(this), msg.sender);
 
