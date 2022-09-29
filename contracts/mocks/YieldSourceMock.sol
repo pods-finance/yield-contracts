@@ -5,11 +5,11 @@ pragma solidity 0.8.9;
 import "@openzeppelin/contracts/token/ERC20/extensions/IERC20Metadata.sol";
 import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import "@openzeppelin/contracts/token/ERC20/ERC20.sol";
-import "../libs/AuxMath.sol";
+import "@openzeppelin/contracts/utils/math/Math.sol";
 import "./Asset.sol";
 
 contract YieldSourceMock is ERC20("Interest Pool", "INTP") {
-    using AuxMath for uint256;
+    using Math for uint256;
     using SafeERC20 for Asset;
 
     Asset public immutable asset;
@@ -63,7 +63,7 @@ contract YieldSourceMock is ERC20("Interest Pool", "INTP") {
 
     function previewWithdraw(uint256 amount) public view returns (uint256) {
         uint256 supply = totalSupply();
-        return supply == 0 ? amount : amount.mulDivUp(supply, totalAssets());
+        return supply == 0 ? amount : amount.mulDiv(supply, totalAssets(), Math.Rounding.Up);
     }
 
     function previewRedeem(uint256 shares) public view returns (uint256) {
@@ -76,11 +76,11 @@ contract YieldSourceMock is ERC20("Interest Pool", "INTP") {
 
     function convertToShares(uint256 amount) public view returns (uint256) {
         uint256 supply = totalSupply();
-        return supply == 0 ? amount : amount.mulDivDown(supply, totalAssets());
+        return supply == 0 ? amount : amount.mulDiv(supply, totalAssets(), Math.Rounding.Down);
     }
 
     function convertToAssets(uint256 shares) public view returns (uint256) {
         uint256 supply = totalSupply();
-        return supply == 0 ? shares : shares.mulDivDown(totalAssets(), supply);
+        return supply == 0 ? shares : shares.mulDiv(totalAssets(), supply, Math.Rounding.Down);
     }
 }

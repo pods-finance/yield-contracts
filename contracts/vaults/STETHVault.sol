@@ -4,19 +4,23 @@ pragma solidity 0.8.9;
 
 import "./BaseVault.sol";
 
+struct Fractional {
+    uint256 numerator;
+    uint256 denominator;
+}
+
 /**
  * @title A Vault that use variable weekly yields to buy calls
  * @author Pods Finance
  */
 contract STETHVault is BaseVault {
     using SafeERC20 for IERC20Metadata;
-    using AuxMath for uint256;
-    using AuxMath for AuxMath.Fractional;
+    using Math for uint256;
     using DepositQueueLib for DepositQueueLib.DepositQueue;
 
     uint8 public immutable sharePriceDecimals;
     uint256 public lastRoundAssets;
-    AuxMath.Fractional public lastSharePrice;
+    Fractional public lastSharePrice;
 
     /*
      @dev investorRatio is the proportion that the weekly yield will be splitted
@@ -61,9 +65,11 @@ contract STETHVault is BaseVault {
         uint256 supply = totalSupply();
 
         lastRoundAssets = totalAssets();
-        lastSharePrice = AuxMath.Fractional({ numerator: supply == 0 ? 0 : lastRoundAssets, denominator: supply });
+        lastSharePrice = Fractional({ numerator: supply == 0 ? 0 : lastRoundAssets, denominator: supply });
 
-        uint256 sharePrice = lastSharePrice.denominator == 0 ? 0 : lastSharePrice.mulDivDown(10**sharePriceDecimals);
+        uint256 sharePrice = lastSharePrice.denominator == 0
+            ? 0
+            : lastSharePrice.numerator.mulDiv(10**sharePriceDecimals, lastSharePrice.denominator, Math.Rounding.Down);
         emit StartRoundData(currentRoundId, lastRoundAssets, sharePrice);
     }
 
@@ -87,18 +93,19 @@ contract STETHVault is BaseVault {
             }
 
             // End Share price needs to be calculated after the transfers between investor and vault
-            endSharePrice = (totalAssets()).mulDivDown(10**sharePriceDecimals, supply);
+            endSharePrice = (totalAssets()).mulDiv(10**sharePriceDecimals, supply, Math.Rounding.Down);
         }
+
         uint256 startSharePrice = lastSharePrice.denominator == 0
             ? 0
-            : lastSharePrice.mulDivDown(10**sharePriceDecimals);
+            : lastSharePrice.numerator.mulDiv(10**sharePriceDecimals, lastSharePrice.denominator, Math.Rounding.Down);
 
         emit EndRoundData(currentRoundId, roundAccruedInterest, investmentYield, totalIdleAssets());
         emit SharePrice(currentRoundId, startSharePrice, endSharePrice);
     }
 
     function _beforeWithdraw(uint256 shares, uint256) internal override {
-        lastRoundAssets -= shares.mulDivDown(lastSharePrice);
+        lastRoundAssets -= shares.mulDiv(lastSharePrice.numerator, lastSharePrice.denominator, Math.Rounding.Down);
     }
 
     /**

@@ -6,9 +6,9 @@ import "@openzeppelin/contracts/token/ERC20/extensions/IERC20Metadata.sol";
 import "@openzeppelin/contracts/token/ERC20/extensions/draft-ERC20Permit.sol";
 import "@openzeppelin/contracts/token/ERC20/extensions/draft-IERC20Permit.sol";
 import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
+import "@openzeppelin/contracts/utils/math/Math.sol";
 import "../interfaces/IConfigurationManager.sol";
 import "../interfaces/IVault.sol";
-import "../libs/AuxMath.sol";
 import "../libs/DepositQueueLib.sol";
 import "../libs/CastUint.sol";
 import "../mixins/Capped.sol";
@@ -19,7 +19,7 @@ import "../mixins/Capped.sol";
  */
 abstract contract BaseVault is IVault, ERC20Permit, Capped {
     using SafeERC20 for IERC20Metadata;
-    using AuxMath for uint256;
+    using Math for uint256;
     using CastUint for uint256;
     using DepositQueueLib for DepositQueueLib.DepositQueue;
 
@@ -38,7 +38,7 @@ abstract contract BaseVault is IVault, ERC20Permit, Capped {
     uint256 public constant DENOMINATOR = 10000;
     /*
     MAX_WITDRAW_FEE is a safe check in case the ConfiguratorManager sets
-    a fee high enough that can be used as a way to drain funds. 
+    a fee high enough that can be used as a way to drain funds.
     The precision of this number is set by constant DENOMINATOR.
     */
     uint256 public constant MAX_WITHDRAW_FEE = 1000;
@@ -187,7 +187,7 @@ abstract contract BaseVault is IVault, ERC20Permit, Capped {
      */
     function previewMint(uint256 shares) public view override returns (uint256 assets) {
         uint256 supply = totalSupply();
-        return supply == 0 ? shares : shares.mulDivUp(totalAssets(), supply);
+        return supply == 0 ? shares : shares.mulDiv(totalAssets(), supply, Math.Rounding.Up);
     }
 
     /**
@@ -196,7 +196,7 @@ abstract contract BaseVault is IVault, ERC20Permit, Capped {
     function previewWithdraw(uint256 assets) public view override returns (uint256 shares) {
         shares = convertToShares(assets);
         uint256 invertedFee = DENOMINATOR - withdrawFeeRatio();
-        return shares.mulDivUp(DENOMINATOR, invertedFee);
+        return shares.mulDiv(DENOMINATOR, invertedFee, Math.Rounding.Up);
     }
 
     /**
@@ -212,7 +212,7 @@ abstract contract BaseVault is IVault, ERC20Permit, Capped {
      */
     function convertToShares(uint256 assets) public view override returns (uint256 shares) {
         uint256 supply = totalSupply();
-        return supply == 0 ? assets : assets.mulDivDown(supply, totalAssets());
+        return supply == 0 ? assets : assets.mulDiv(supply, totalAssets(), Math.Rounding.Down);
     }
 
     /**
@@ -220,7 +220,7 @@ abstract contract BaseVault is IVault, ERC20Permit, Capped {
      */
     function convertToAssets(uint256 shares) public view override returns (uint256 assets) {
         uint256 supply = totalSupply();
-        return supply == 0 ? shares : shares.mulDivDown(totalAssets(), supply);
+        return supply == 0 ? shares : shares.mulDiv(totalAssets(), supply, Math.Rounding.Down);
     }
 
     /**
@@ -257,7 +257,7 @@ abstract contract BaseVault is IVault, ERC20Permit, Capped {
     function withdrawFeeRatio() public view override returns (uint256) {
         uint256 _withdrawFeeRatio = configuration.getParameter(address(this), "WITHDRAW_FEE_RATIO");
         // Fee is limited to MAX_WITHDRAW_FEE
-        return AuxMath.min(_withdrawFeeRatio, MAX_WITHDRAW_FEE);
+        return Math.min(_withdrawFeeRatio, MAX_WITHDRAW_FEE);
     }
 
     /**
@@ -273,7 +273,9 @@ abstract contract BaseVault is IVault, ERC20Permit, Capped {
     function assetsOf(address owner) public view virtual returns (uint256) {
         uint256 supply = totalSupply();
         uint256 shares = balanceOf(owner);
-        uint256 committedAssets = supply == 0 ? 0 : shares.mulDivDown(_asset.balanceOf(address(this)), supply);
+        uint256 committedAssets = supply == 0
+            ? 0
+            : shares.mulDiv(_asset.balanceOf(address(this)), supply, Math.Rounding.Down);
         return convertToAssets(shares) + idleAssetsOf(owner) + committedAssets;
     }
 
@@ -302,7 +304,6 @@ abstract contract BaseVault is IVault, ERC20Permit, Capped {
      * @inheritdoc IVault
      */
     function startRound() external virtual onlyRoundStarter returns (uint256 roundId) {
-
         if (!isProcessingDeposits) revert IVault__NotProcessingDeposits();
 
         isProcessingDeposits = false;
@@ -389,7 +390,9 @@ abstract contract BaseVault is IVault, ERC20Permit, Capped {
     function _processDeposit(DepositQueueLib.DepositEntry memory depositEntry, uint256 currentAssets) internal virtual {
         uint256 supply = totalSupply();
         uint256 assets = depositEntry.amount;
-        uint256 shares = currentAssets == 0 || supply == 0 ? assets : assets.mulDivUp(supply, currentAssets);
+        uint256 shares = currentAssets == 0 || supply == 0
+            ? assets
+            : assets.mulDiv(supply, currentAssets, Math.Rounding.Up);
         _mint(depositEntry.owner, shares);
         emit DepositProcessed(depositEntry.owner, currentRoundId, assets, shares);
     }
@@ -398,7 +401,7 @@ abstract contract BaseVault is IVault, ERC20Permit, Capped {
      * @notice Calculate the fee amount on withdraw.
      */
     function _getFee(uint256 assets) internal view returns (uint256) {
-        return assets.mulDivDown(withdrawFeeRatio(), DENOMINATOR);
+        return assets.mulDiv(withdrawFeeRatio(), DENOMINATOR, Math.Rounding.Down);
     }
 
     /**

@@ -6,18 +6,22 @@ import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import "../vaults/BaseVault.sol";
 import "../mocks/YieldSourceMock.sol";
 
+struct Fractional {
+    uint256 numerator;
+    uint256 denominator;
+}
+
 /**
  * @title A Vault that use variable weekly yields to buy calls
  * @author Pods Finance
  */
 contract PrincipalProtectedMock is BaseVault {
     using SafeERC20 for IERC20Metadata;
-    using AuxMath for uint256;
-    using AuxMath for AuxMath.Fractional;
+    using Math for uint256;
 
     uint8 public immutable sharePriceDecimals;
     uint256 public lastRoundAssets;
-    AuxMath.Fractional public lastSharePrice;
+    Fractional public lastSharePrice;
 
     uint256 public investorRatio = 5000;
     address public investor;
@@ -52,9 +56,11 @@ contract PrincipalProtectedMock is BaseVault {
         uint256 supply = totalSupply();
 
         lastRoundAssets = totalAssets();
-        lastSharePrice = AuxMath.Fractional({ numerator: supply == 0 ? 0 : lastRoundAssets, denominator: supply });
+        lastSharePrice = Fractional({ numerator: supply == 0 ? 0 : lastRoundAssets, denominator: supply });
 
-        uint256 sharePrice = lastSharePrice.denominator == 0 ? 0 : lastSharePrice.mulDivDown(10**sharePriceDecimals);
+        uint256 sharePrice = lastSharePrice.denominator == 0
+            ? 0
+            : lastSharePrice.numerator.mulDiv(10**sharePriceDecimals, lastSharePrice.denominator, Math.Rounding.Down);
         emit StartRoundData(currentRoundId, lastRoundAssets, sharePrice);
     }
 
@@ -66,7 +72,11 @@ contract PrincipalProtectedMock is BaseVault {
         uint256 supply = totalSupply();
 
         if (supply != 0) {
-            endSharePrice = (totalAssets() + investmentYield).mulDivDown(10**sharePriceDecimals, supply);
+            endSharePrice = (totalAssets() + investmentYield).mulDiv(
+                10**sharePriceDecimals,
+                supply,
+                Math.Rounding.Down
+            );
             roundAccruedInterest = totalAssets() - lastRoundAssets;
 
             // Pulls the yields from investor
@@ -91,7 +101,7 @@ contract PrincipalProtectedMock is BaseVault {
 
         uint256 startSharePrice = lastSharePrice.denominator == 0
             ? 0
-            : lastSharePrice.mulDivDown(10**sharePriceDecimals);
+            : lastSharePrice.numerator.mulDiv(10**sharePriceDecimals, lastSharePrice.denominator, Math.Rounding.Down);
 
         emit EndRoundData(currentRoundId, roundAccruedInterest, investmentYield, idleAssets);
         emit SharePrice(currentRoundId, startSharePrice, endSharePrice);
@@ -105,7 +115,7 @@ contract PrincipalProtectedMock is BaseVault {
     }
 
     function _beforeWithdraw(uint256 shares, uint256 assets) internal override {
-        lastRoundAssets -= shares.mulDivDown(lastSharePrice);
+        lastRoundAssets -= shares.mulDiv(lastSharePrice.numerator, lastSharePrice.denominator, Math.Rounding.Down);
         yieldSource.withdraw(assets);
     }
 }
