@@ -81,7 +81,7 @@ abstract contract BaseVault is IVault, ERC20Permit, Capped {
     /**
      * @inheritdoc ERC20
      */
-    function decimals() public view override returns (uint8) {
+    function decimals() public view override(ERC20, IERC20Metadata) returns (uint8) {
         return _asset.decimals();
     }
 

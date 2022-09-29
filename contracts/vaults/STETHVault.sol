@@ -42,16 +42,10 @@ contract STETHVault is BaseVault {
         sharePriceDecimals = _asset.decimals();
     }
 
-    /**
-     * @inheritdoc ERC20
-     */
     function name() public view override returns (string memory) {
         return string(abi.encodePacked(_asset.symbol(), " Volatility Vault"));
     }
 
-    /**
-     * @inheritdoc ERC20
-     */
     function symbol() public view override returns (string memory) {
         return string(abi.encodePacked(_asset.symbol(), "vv"));
     }
