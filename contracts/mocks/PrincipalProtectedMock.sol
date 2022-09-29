@@ -7,7 +7,7 @@ import "../vaults/BaseVault.sol";
 import "../mocks/YieldSourceMock.sol";
 
 /**
- * @title A Vault that use variable weekly yields to buy calls
+ * @title A Vault that use variable weekly yields to buy strangles
  * @author Pods Finance
  */
 contract PrincipalProtectedMock is BaseVault {

@@ -37,7 +37,7 @@ abstract contract BaseVault is IVault, ERC20Permit, Capped {
 
     uint256 public constant DENOMINATOR = 10000;
     /*
-    MAX_WITDRAW_FEE is a safe check in case the ConfiguratorManager sets
+    MAX_WITHDRAW_FEE is a safe check in case the ConfiguratorManager sets
     a fee high enough that can be used as a way to drain funds.
     The precision of this number is set by constant DENOMINATOR.
     */

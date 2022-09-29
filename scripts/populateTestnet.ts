@@ -43,7 +43,7 @@ async function main (): Promise<void> {
   await (await asset.connect(user0).mint(ethers.utils.parseEther('1'))).wait(WAIT_CONFIRMATIONS)
   console.log('User0 Minted')
   await (await asset.connect(user0).transfer(vault.address, ethers.utils.parseEther('0.9'))).wait(WAIT_CONFIRMATIONS)
-  console.log('User0 Transfered')
+  console.log('User0 Transferred')
 
   await (await vault.endRound()).wait(WAIT_CONFIRMATIONS)
   console.log('Round 1 Ended')

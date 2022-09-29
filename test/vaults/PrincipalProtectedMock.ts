@@ -451,7 +451,7 @@ describe('PrincipalProtectedMock', () => {
     expect(await asset.balanceOf(user4.address)).to.be.lte(initialDeposit5)
   })
 
-  it('Should remmove the same balances even if no processed queue happened during a round interval', async () => {
+  it('Should remove the same balances even if no processed queue happened during a round interval', async () => {
     // This test will only work if InvestRatio = 50%
     const user0Balance = ethers.utils.parseEther('100')
     const user1Balance = ethers.utils.parseEther('200')
@@ -489,7 +489,7 @@ describe('PrincipalProtectedMock', () => {
     const user1Moment2maxWithdraw = await vault.maxWithdraw(user1.address)
     const user2Moment2maxWithdraw = await vault.maxWithdraw(user2.address)
 
-    // console.log('MOMENT 2 - Should have amounts greather than MOMENT 1')
+    // console.log('MOMENT 2 - Should have amounts greater than MOMENT 1')
     expect(user0Moment2maxWithdraw).to.be.gte(user0Moment1maxWithdraw)
     expect(user1Moment2maxWithdraw).to.be.gte(user1Moment1maxWithdraw)
     expect(user2Moment2maxWithdraw).to.be.gte(user2Moment1maxWithdraw)
@@ -520,7 +520,7 @@ describe('PrincipalProtectedMock', () => {
     const user1Moment4maxWithdraw = await vault.maxWithdraw(user1.address)
     const user2Moment4maxWithdraw = await vault.maxWithdraw(user2.address)
 
-    // console.log('MOMENT 4 - Should have less amount than 3 -> transfered some funds to investor')
+    // console.log('MOMENT 4 - Should have less amount than 3 -> transferred some funds to investor')
     expect(user0Moment4maxWithdraw).to.be.lte(user0Moment3maxWithdraw)
     expect(user1Moment4maxWithdraw).to.be.lte(user1Moment3maxWithdraw)
     expect(user2Moment4maxWithdraw).to.be.lte(user2Moment3maxWithdraw)

@@ -5,7 +5,7 @@ pragma solidity 0.8.9;
 import "./BaseVault.sol";
 
 /**
- * @title A Vault that use variable weekly yields to buy calls
+ * @title A Vault that use variable weekly yields to buy strangles
  * @author Pods Finance
  */
 contract STETHVault is BaseVault {
@@ -18,7 +18,7 @@ contract STETHVault is BaseVault {
     Fractional public lastSharePrice;
 
     /*
-     @dev investorRatio is the proportion that the weekly yield will be splitted
+     @dev investorRatio is the proportion that the weekly yield will be split
      The precision of this number is set by the variable DENOMINATOR. 5000 is equivalent to 50%
     */
     uint256 public constant investorRatio = 5000;
