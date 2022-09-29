@@ -4,11 +4,6 @@ pragma solidity 0.8.9;
 
 import "./BaseVault.sol";
 
-struct Fractional {
-    uint256 numerator;
-    uint256 denominator;
-}
-
 /**
  * @title A Vault that use variable weekly yields to buy calls
  * @author Pods Finance

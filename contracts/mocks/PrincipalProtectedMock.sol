@@ -6,11 +6,6 @@ import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import "../vaults/BaseVault.sol";
 import "../mocks/YieldSourceMock.sol";
 
-struct Fractional {
-    uint256 numerator;
-    uint256 denominator;
-}
-
 /**
  * @title A Vault that use variable weekly yields to buy calls
  * @author Pods Finance
