@@ -21,12 +21,12 @@ contract YieldVaultMock is BaseVault {
     }
 
     function _beforeWithdraw(uint256, uint256 assets) internal override {
-        yieldSource.withdraw(assets);
+        yieldSource.withdraw(assets, address(this), address(this));
     }
 
     function _afterRoundStart(uint256 assets) internal override {
         if (yieldSource.previewDeposit(assets) > 0) {
-            yieldSource.asset().approve(address(yieldSource), assets);
+            IERC20Metadata(yieldSource.asset()).approve(address(yieldSource), assets);
             yieldSource.deposit(assets, address(this));
         }
     }

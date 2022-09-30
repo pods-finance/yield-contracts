@@ -43,11 +43,11 @@ contract STETHVault is BaseVault {
     }
 
     function name() public view override returns (string memory) {
-        return string(abi.encodePacked(_asset.symbol(), " Volatility Vault"));
+        return string(abi.encodePacked(IERC20Metadata(asset()).symbol(), " Volatility Vault"));
     }
 
     function symbol() public view override returns (string memory) {
-        return string(abi.encodePacked(_asset.symbol(), "vv"));
+        return string(abi.encodePacked(IERC20Metadata(asset()).symbol(), "vv"));
     }
 
     function _afterRoundStart(uint256) internal override {
@@ -65,7 +65,7 @@ contract STETHVault is BaseVault {
     function _afterRoundEnd() internal override {
         uint256 roundAccruedInterest = 0;
         uint256 endSharePrice = 0;
-        uint256 investmentYield = _asset.balanceOf(investor);
+        uint256 investmentYield = IERC20Metadata(asset()).balanceOf(investor);
         uint256 supply = totalSupply();
 
         if (supply != 0) {
@@ -74,11 +74,11 @@ contract STETHVault is BaseVault {
 
             // Pulls the yields from investor
             if (investmentYield > 0) {
-                _asset.safeTransferFrom(investor, address(this), investmentYield);
+                IERC20Metadata(asset()).safeTransferFrom(investor, address(this), investmentYield);
             }
 
             if (investmentAmount > 0) {
-                _asset.safeTransfer(investor, investmentAmount);
+                IERC20Metadata(asset()).safeTransfer(investor, investmentAmount);
             }
 
             // End Share price needs to be calculated after the transfers between investor and vault
@@ -93,62 +93,54 @@ contract STETHVault is BaseVault {
         emit SharePrice(currentRoundId, startSharePrice, endSharePrice);
     }
 
-    function _beforeWithdraw(uint256 shares, uint256) internal override {
-        lastRoundAssets -= shares.mulDiv(lastSharePrice.numerator, lastSharePrice.denominator, Math.Rounding.Down);
-    }
-
     /**
      * @dev See {BaseVault-totalAssets}.
      */
     function totalAssets() public view override returns (uint256) {
-        return _asset.balanceOf(address(this)) - totalIdleAssets();
+        return IERC20Metadata(asset()).balanceOf(address(this)) - totalIdleAssets();
     }
 
-    /**
-     * @dev Pull assets from the caller and create shares to the receiver
-     */
     function _deposit(
+        address caller,
+        address receiver,
         uint256 assets,
-        uint256 shares,
-        address receiver
-    ) internal override returns (uint256 depositedAssets) {
+        uint256 shares
+    ) internal virtual override {
+        assets = _stETHTransferFrom(caller, address(this), assets);
+        shares = previewDeposit(assets);
+
         _spendCap(shares);
 
-        assets = _stETHTransferFrom(msg.sender, address(this), assets);
         depositQueue.push(DepositQueueLib.DepositEntry(receiver, assets));
-
-        emit Deposit(msg.sender, receiver, assets, shares);
-
-        return assets;
+        emit Deposit(caller, receiver, assets, shares);
     }
 
-    function _withdraw(
-        uint256 assets,
-        uint256 shares,
+    function _withdrawWithFees(
+        address caller,
         address receiver,
-        address owner
+        address owner,
+        uint256 assets,
+        uint256 shares
     ) internal virtual override returns (uint256 receiverAssets, uint256 receiverShares) {
-        if (msg.sender != owner) {
-            _spendAllowance(owner, msg.sender, shares);
+        if (caller != owner) {
+            _spendAllowance(owner, caller, shares);
         }
 
         _burn(owner, shares);
         _restoreCap(shares);
 
-        // Apply custom withdraw logic
-        _beforeWithdraw(shares, assets);
+        lastRoundAssets -= shares.mulDiv(lastSharePrice.numerator, lastSharePrice.denominator, Math.Rounding.Down);
 
         uint256 fee = _getFee(assets);
         receiverAssets = assets - fee;
         receiverShares = shares;
 
-        emit Withdraw(msg.sender, receiver, owner, receiverAssets, shares);
-
-        _asset.safeTransfer(receiver, receiverAssets);
+        emit Withdraw(caller, receiver, owner, receiverAssets, shares);
+        receiverAssets = _stETHTransferFrom(address(this), receiver, receiverAssets);
 
         if (fee > 0) {
             emit FeeCollected(fee);
-            _asset.safeTransfer(controller(), fee);
+            _stETHTransferFrom(address(this), controller(), fee);
         }
     }
 
@@ -167,12 +159,12 @@ contract STETHVault is BaseVault {
         address to,
         uint256 amount
     ) internal returns (uint256 effectiveAmount) {
-        uint256 balanceBefore = _asset.balanceOf(to);
+        uint256 balanceBefore = IERC20Metadata(asset()).balanceOf(to);
         if (from == address(this)) {
-            _asset.safeTransfer(to, amount);
+            IERC20Metadata(asset()).safeTransfer(to, amount);
         } else {
-            _asset.safeTransferFrom(from, to, amount);
+            IERC20Metadata(asset()).safeTransferFrom(from, to, amount);
         }
-        return _asset.balanceOf(to) - balanceBefore;
+        return IERC20Metadata(asset()).balanceOf(to) - balanceBefore;
     }
 }

@@ -4,7 +4,7 @@ pragma solidity 0.8.9;
 
 import "@openzeppelin/contracts/token/ERC20/extensions/IERC20Metadata.sol";
 import "@openzeppelin/contracts/token/ERC20/extensions/draft-ERC20Permit.sol";
-import "@openzeppelin/contracts/token/ERC20/extensions/draft-IERC20Permit.sol";
+import "@openzeppelin/contracts/token/ERC20/extensions/ERC4626.sol";
 import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import "@openzeppelin/contracts/utils/math/Math.sol";
 import "../interfaces/IConfigurationManager.sol";
@@ -17,14 +17,13 @@ import "../mixins/Capped.sol";
  * @title A Vault that tokenize shares of strategy
  * @author Pods Finance
  */
-abstract contract BaseVault is IVault, ERC20Permit, Capped {
+abstract contract BaseVault is IVault, ERC20Permit, ERC4626, Capped {
     using SafeERC20 for IERC20Metadata;
     using Math for uint256;
     using CastUint for uint256;
     using DepositQueueLib for DepositQueueLib.DepositQueue;
 
     IConfigurationManager public immutable configuration;
-    IERC20Metadata internal immutable _asset;
 
     uint256 public currentRoundId;
     bool public isProcessingDeposits = false;
@@ -48,16 +47,13 @@ abstract contract BaseVault is IVault, ERC20Permit, Capped {
 
     DepositQueueLib.DepositQueue internal depositQueue;
 
-    constructor(IConfigurationManager _configuration, IERC20Metadata _asset_)
-        ERC20(
-            string(abi.encodePacked("Pods Yield ", _asset_.symbol())),
-            string(abi.encodePacked("py", _asset_.symbol()))
-        )
-        ERC20Permit(string(abi.encodePacked("Pods Yield ", _asset_.symbol())))
-        Capped(_configuration)
+    constructor(IConfigurationManager $configuration, IERC20Metadata $asset)
+        ERC20(string(abi.encodePacked("Pods Yield ", $asset.symbol())), string(abi.encodePacked("py", $asset.symbol())))
+        ERC20Permit(string(abi.encodePacked("Pods Yield ", $asset.symbol())))
+        ERC4626($asset)
+        Capped($configuration)
     {
-        configuration = _configuration;
-        _asset = _asset_;
+        configuration = $configuration;
 
         // Vault starts in `start` state
         emit StartRound(currentRoundId, 0);
@@ -78,29 +74,22 @@ abstract contract BaseVault is IVault, ERC20Permit, Capped {
         _;
     }
 
-    /**
-     * @inheritdoc ERC20
-     */
-    function decimals() public view override(ERC20, IERC20Metadata) returns (uint8) {
-        return _asset.decimals();
-    }
-
-    /**
-     * @inheritdoc IERC4626
-     */
-    function asset() public view returns (address) {
-        return address(_asset);
-    }
-
-    /**
-     * @inheritdoc IERC4626
-     */
-    function deposit(uint256 assets, address receiver) external virtual override returns (uint256 shares) {
+    modifier whenNotProcessingDeposits() {
         if (isProcessingDeposits) revert IVault__ForbiddenWhileProcessingDeposits();
-        shares = previewDeposit(assets);
+        _;
+    }
 
-        if (shares == 0) revert IVault__ZeroShares();
-        _deposit(assets, shares, receiver);
+    /**
+     * @inheritdoc IERC4626
+     */
+    function deposit(uint256 assets, address receiver)
+        public
+        virtual
+        override(ERC4626, IERC4626)
+        whenNotProcessingDeposits
+        returns (uint256 shares)
+    {
+        return super.deposit(assets, receiver);
     }
 
     function depositWithPermit(
@@ -110,22 +99,22 @@ abstract contract BaseVault is IVault, ERC20Permit, Capped {
         uint8 v,
         bytes32 r,
         bytes32 s
-    ) external returns (uint256 shares) {
-        if (isProcessingDeposits) revert IVault__ForbiddenWhileProcessingDeposits();
-        shares = previewDeposit(assets);
-
-        if (shares == 0) revert IVault__ZeroShares();
-        IERC20Permit(address(_asset)).permit(msg.sender, address(this), assets, deadline, v, r, s);
-        _deposit(assets, shares, receiver);
+    ) public whenNotProcessingDeposits returns (uint256 shares) {
+        IERC20Permit(asset()).permit(msg.sender, address(this), assets, deadline, v, r, s);
+        return super.deposit(assets, receiver);
     }
 
     /**
      * @inheritdoc IERC4626
      */
-    function mint(uint256 shares, address receiver) external virtual override returns (uint256 assets) {
-        if (isProcessingDeposits) revert IVault__ForbiddenWhileProcessingDeposits();
-        assets = previewMint(shares);
-        assets = _deposit(assets, shares, receiver);
+    function mint(uint256 shares, address receiver)
+        public
+        virtual
+        override(ERC4626, IERC4626)
+        whenNotProcessingDeposits
+        returns (uint256 assets)
+    {
+        return super.mint(shares, receiver);
     }
 
     function mintWithPermit(
@@ -135,11 +124,10 @@ abstract contract BaseVault is IVault, ERC20Permit, Capped {
         uint8 v,
         bytes32 r,
         bytes32 s
-    ) public returns (uint256 assets) {
-        if (isProcessingDeposits) revert IVault__ForbiddenWhileProcessingDeposits();
+    ) public whenNotProcessingDeposits returns (uint256 assets) {
         assets = previewMint(shares);
-        IERC20Permit(address(_asset)).permit(msg.sender, address(this), assets, deadline, v, r, s);
-        assets = _deposit(assets, shares, receiver);
+        IERC20Permit(asset()).permit(msg.sender, address(this), assets, deadline, v, r, s);
+        return super.mint(shares, receiver);
     }
 
     /**
@@ -149,12 +137,11 @@ abstract contract BaseVault is IVault, ERC20Permit, Capped {
         uint256 shares,
         address receiver,
         address owner
-    ) public virtual override returns (uint256 assets) {
-        if (isProcessingDeposits) revert IVault__ForbiddenWhileProcessingDeposits();
+    ) public virtual override(ERC4626, IERC4626) whenNotProcessingDeposits returns (uint256 assets) {
         assets = convertToAssets(shares);
 
         if (assets == 0) revert IVault__ZeroAssets();
-        (assets, ) = _withdraw(assets, shares, receiver, owner);
+        (assets, ) = _withdrawWithFees(msg.sender, receiver, owner, assets, shares);
     }
 
     /**
@@ -164,37 +151,16 @@ abstract contract BaseVault is IVault, ERC20Permit, Capped {
         uint256 assets,
         address receiver,
         address owner
-    ) external virtual override returns (uint256 shares) {
-        if (isProcessingDeposits) revert IVault__ForbiddenWhileProcessingDeposits();
+    ) public virtual override(ERC4626, IERC4626) whenNotProcessingDeposits returns (uint256 shares) {
         shares = convertToShares(assets);
-        (, shares) = _withdraw(assets, shares, receiver, owner);
+        (, shares) = _withdrawWithFees(msg.sender, receiver, owner, assets, shares);
     }
 
     /**
      * @inheritdoc IERC4626
      */
-    function totalAssets() public view virtual returns (uint256);
-
-    /**
-     * @inheritdoc IERC4626
-     */
-    function previewDeposit(uint256 assets) public view override returns (uint256 shares) {
-        return convertToShares(assets);
-    }
-
-    /**
-     * @inheritdoc IERC4626
-     */
-    function previewMint(uint256 shares) public view override returns (uint256 assets) {
-        uint256 supply = totalSupply();
-        return supply == 0 ? shares : shares.mulDiv(totalAssets(), supply, Math.Rounding.Up);
-    }
-
-    /**
-     * @inheritdoc IERC4626
-     */
-    function previewWithdraw(uint256 assets) public view override returns (uint256 shares) {
-        shares = convertToShares(assets);
+    function previewWithdraw(uint256 assets) public view override(ERC4626, IERC4626) returns (uint256 shares) {
+        shares = _convertToShares(assets, Math.Rounding.Up);
         uint256 invertedFee = DENOMINATOR - withdrawFeeRatio();
         return shares.mulDiv(DENOMINATOR, invertedFee, Math.Rounding.Up);
     }
@@ -202,53 +168,16 @@ abstract contract BaseVault is IVault, ERC20Permit, Capped {
     /**
      * @inheritdoc IERC4626
      */
-    function previewRedeem(uint256 shares) public view override returns (uint256 assets) {
-        assets = convertToAssets(shares);
+    function previewRedeem(uint256 shares) public view override(ERC4626, IERC4626) returns (uint256 assets) {
+        assets = _convertToAssets(shares, Math.Rounding.Down);
         return assets - _getFee(assets);
     }
 
     /**
      * @inheritdoc IERC4626
      */
-    function convertToShares(uint256 assets) public view override returns (uint256 shares) {
-        uint256 supply = totalSupply();
-        return supply == 0 ? assets : assets.mulDiv(supply, totalAssets(), Math.Rounding.Down);
-    }
-
-    /**
-     * @inheritdoc IERC4626
-     */
-    function convertToAssets(uint256 shares) public view override returns (uint256 assets) {
-        uint256 supply = totalSupply();
-        return supply == 0 ? shares : shares.mulDiv(totalAssets(), supply, Math.Rounding.Down);
-    }
-
-    /**
-     * @inheritdoc IERC4626
-     */
-    function maxDeposit(address) public pure override returns (uint256 assets) {
-        return type(uint256).max;
-    }
-
-    /**
-     * @inheritdoc IERC4626
-     */
-    function maxMint(address) public pure override returns (uint256 shares) {
-        return type(uint256).max;
-    }
-
-    /**
-     * @inheritdoc IERC4626
-     */
-    function maxWithdraw(address owner) public view override returns (uint256 assets) {
+    function maxWithdraw(address owner) public view override(ERC4626, IERC4626) returns (uint256 assets) {
         return previewRedeem(balanceOf(owner));
-    }
-
-    /**
-     * @inheritdoc IERC4626
-     */
-    function maxRedeem(address owner) public view override returns (uint256 shares) {
-        return balanceOf(owner);
     }
 
     /**
@@ -275,7 +204,7 @@ abstract contract BaseVault is IVault, ERC20Permit, Capped {
         uint256 shares = balanceOf(owner);
         uint256 committedAssets = supply == 0
             ? 0
-            : shares.mulDiv(_asset.balanceOf(address(this)), supply, Math.Rounding.Down);
+            : shares.mulDiv(IERC20Metadata(asset()).balanceOf(address(this)), supply, Math.Rounding.Down);
         return convertToAssets(shares) + idleAssetsOf(owner) + committedAssets;
     }
 
@@ -344,14 +273,14 @@ abstract contract BaseVault is IVault, ERC20Permit, Capped {
         }
 
         emit DepositRefunded(msg.sender, currentRoundId, assets);
-        _asset.safeTransfer(msg.sender, assets);
+        IERC20Metadata(asset()).safeTransfer(msg.sender, assets);
     }
 
     /**
      * @inheritdoc IVault
      */
     function migrate(IVault newVault) external override {
-        if (address(_asset) != newVault.asset() || !configuration.isVaultAllowed(address(newVault))) {
+        if (asset() != newVault.asset() || !configuration.isVaultAllowed(address(newVault))) {
             revert IVault__MigrationNotAllowed();
         }
 
@@ -360,7 +289,7 @@ abstract contract BaseVault is IVault, ERC20Permit, Capped {
         uint256 assets = redeem(shares, address(this), msg.sender);
 
         // Deposit assets to `newVault`
-        _asset.safeApprove(address(newVault), assets);
+        IERC20Metadata(asset()).safeApprove(address(newVault), assets);
         newVault.deposit(assets, msg.sender);
 
         emit Migrated(msg.sender, address(this), address(newVault), assets, shares);
@@ -408,31 +337,30 @@ abstract contract BaseVault is IVault, ERC20Permit, Capped {
      * @dev Pull assets from the caller and create shares to the receiver
      */
     function _deposit(
+        address caller,
+        address receiver,
         uint256 assets,
-        uint256 shares,
-        address receiver
-    ) internal virtual returns (uint256 depositedAssets) {
+        uint256 shares
+    ) internal virtual override {
+        IERC20Metadata(asset()).safeTransferFrom(caller, address(this), assets);
         _spendCap(shares);
 
         depositQueue.push(DepositQueueLib.DepositEntry(receiver, assets));
-
-        emit Deposit(msg.sender, receiver, assets, shares);
-        _asset.safeTransferFrom(msg.sender, address(this), assets);
-
-        return assets;
+        emit Deposit(caller, receiver, assets, shares);
     }
 
     /**
      * @dev Burn shares from the caller and release assets to the receiver
      */
-    function _withdraw(
-        uint256 assets,
-        uint256 shares,
+    function _withdrawWithFees(
+        address caller,
         address receiver,
-        address owner
+        address owner,
+        uint256 assets,
+        uint256 shares
     ) internal virtual returns (uint256 receiverAssets, uint256 receiverShares) {
-        if (msg.sender != owner) {
-            _spendAllowance(owner, msg.sender, shares);
+        if (caller != owner) {
+            _spendAllowance(owner, caller, shares);
         }
 
         _burn(owner, shares);
@@ -445,12 +373,12 @@ abstract contract BaseVault is IVault, ERC20Permit, Capped {
         receiverAssets = assets - fee;
         receiverShares = shares;
 
-        emit Withdraw(msg.sender, receiver, owner, receiverAssets, shares);
-        _asset.safeTransfer(receiver, receiverAssets);
+        emit Withdraw(caller, receiver, owner, receiverAssets, shares);
+        IERC20Metadata(asset()).safeTransfer(receiver, receiverAssets);
 
         if (fee > 0) {
             emit FeeCollected(fee);
-            _asset.safeTransfer(controller(), fee);
+            IERC20Metadata(asset()).safeTransfer(controller(), fee);
         }
     }
 
