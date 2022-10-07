@@ -11,7 +11,6 @@ import "./BaseVault.sol";
 contract STETHVault is BaseVault {
     using SafeERC20 for IERC20Metadata;
     using Math for uint256;
-    using DepositQueueLib for DepositQueueLib.DepositQueue;
 
     uint8 public immutable sharePriceDecimals;
     uint256 public lastRoundAssets;
@@ -110,8 +109,7 @@ contract STETHVault is BaseVault {
         shares = previewDeposit(assets);
 
         _spendCap(shares);
-
-        depositQueue.push(DepositQueueLib.DepositEntry(receiver, assets));
+        _addToDepositQueue(receiver, assets);
         emit Deposit(caller, receiver, assets, shares);
     }
 

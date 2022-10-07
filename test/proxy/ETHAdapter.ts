@@ -103,7 +103,7 @@ describe('ETHAdapter', () => {
       expect(await ethers.provider.getBalance(adapter.address)).to.be.equal(0)
 
       await vault.connect(vaultController).endRound()
-      await vault.connect(vaultController).processQueuedDeposits(0, 1)
+      await vault.connect(vaultController).processQueuedDeposits([user0.address])
       await vault.connect(vaultController).startRound()
 
       expect(await vault.balanceOf(user0.address)).to.be.closeTo(actualShares, 1)
@@ -123,7 +123,7 @@ describe('ETHAdapter', () => {
       })
 
       await vault.connect(vaultController).endRound()
-      await vault.connect(vaultController).processQueuedDeposits(0, 1)
+      await vault.connect(vaultController).processQueuedDeposits([user0.address])
       await vault.connect(vaultController).startRound()
 
       expect(await vault.balanceOf(user0.address)).to.be.closeTo(actualShares, 1)
@@ -164,7 +164,7 @@ describe('ETHAdapter', () => {
       })
 
       await vault.connect(vaultController).endRound()
-      await vault.connect(vaultController).processQueuedDeposits(0, 1)
+      await vault.connect(vaultController).processQueuedDeposits([userPermit.address])
       await vault.connect(vaultController).startRound()
 
       expect(await vault.balanceOf(userPermit.address)).to.be.equal(actualShares)
@@ -221,7 +221,7 @@ describe('ETHAdapter', () => {
       })
 
       await vault.connect(vaultController).endRound()
-      await vault.connect(vaultController).processQueuedDeposits(0, 1)
+      await vault.connect(vaultController).processQueuedDeposits([user0.address])
       await vault.connect(vaultController).startRound()
 
       expect(await vault.balanceOf(user0.address)).to.be.closeTo(actualShares, 1)
@@ -262,7 +262,7 @@ describe('ETHAdapter', () => {
       })
 
       await vault.connect(vaultController).endRound()
-      await vault.connect(vaultController).processQueuedDeposits(0, 1)
+      await vault.connect(vaultController).processQueuedDeposits([userPermit.address])
       await vault.connect(vaultController).startRound()
 
       expect(await vault.balanceOf(userPermit.address)).to.be.closeTo(actualShares, 1)

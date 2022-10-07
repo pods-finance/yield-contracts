@@ -1198,14 +1198,9 @@
   {
     "inputs": [
       {
-        "internalType": "uint256",
-        "name": "startIndex",
-        "type": "uint256"
-      },
-      {
-        "internalType": "uint256",
-        "name": "endIndex",
-        "type": "uint256"
+        "internalType": "address[]",
+        "name": "depositors",
+        "type": "address[]"
       }
     ],
     "name": "processQueuedDeposits",

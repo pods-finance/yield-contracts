@@ -81,11 +81,8 @@ interface IVault is IERC4626, IERC20Permit {
 
     /**
      * @notice Mint shares for deposits accumulated, effectively including their owners in the next round.
-     * `processQueuedDeposits` extracts up to but not including endIndex. For example, processQueuedDeposits(1,4)
-     * extracts the second element through the fourth element (elements indexed 1, 2, and 3).
      *
-     * @param startIndex Zero-based index at which to start processing deposits
-     * @param endIndex The index of the first element to exclude from queue
+     * @param depositors Array of owner addresses to process
      */
-    function processQueuedDeposits(uint256 startIndex, uint256 endIndex) external;
+    function processQueuedDeposits(address[] calldata depositors) external;
 }

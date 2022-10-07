@@ -7,11 +7,12 @@ import "@openzeppelin/contracts/token/ERC20/extensions/draft-ERC20Permit.sol";
 import "@openzeppelin/contracts/token/ERC20/extensions/ERC4626.sol";
 import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import "@openzeppelin/contracts/utils/math/Math.sol";
+import "@openzeppelin/contracts/utils/structs/EnumerableMap.sol";
 import "../interfaces/IConfigurationManager.sol";
 import "../interfaces/IVault.sol";
-import "../libs/DepositQueueLib.sol";
 import "../libs/CastUint.sol";
 import "../mixins/Capped.sol";
+import "hardhat/console.sol";
 
 /**
  * @title A Vault that tokenize shares of strategy
@@ -21,7 +22,7 @@ abstract contract BaseVault is IVault, ERC20Permit, ERC4626, Capped {
     using SafeERC20 for IERC20Metadata;
     using Math for uint256;
     using CastUint for uint256;
-    using DepositQueueLib for DepositQueueLib.DepositQueue;
+    using EnumerableMap for EnumerableMap.AddressToUintMap;
 
     IConfigurationManager public immutable configuration;
 
@@ -43,9 +44,10 @@ abstract contract BaseVault is IVault, ERC20Permit, ERC4626, Capped {
     uint256 public constant MAX_WITHDRAW_FEE = 1000;
     uint256 public constant EMERGENCY_INTERVAL = 604800;
     uint256 public processedDeposits = 0;
+    uint256 internal _totalIdleAssets = 0;
     uint256 private _lastEndRound;
 
-    DepositQueueLib.DepositQueue internal depositQueue;
+    EnumerableMap.AddressToUintMap internal depositQueue;
 
     constructor(IConfigurationManager $configuration, IERC20Metadata $asset)
         ERC20(string(abi.encodePacked("Pods Yield ", $asset.symbol())), string(abi.encodePacked("py", $asset.symbol())))
@@ -193,7 +195,8 @@ abstract contract BaseVault is IVault, ERC20Permit, ERC4626, Capped {
      * @inheritdoc IVault
      */
     function idleAssetsOf(address owner) public view virtual returns (uint256) {
-        return depositQueue.balanceOf(owner);
+        (, uint256 assets) = depositQueue.tryGet(owner);
+        return assets;
     }
 
     /**
@@ -212,14 +215,14 @@ abstract contract BaseVault is IVault, ERC20Permit, ERC4626, Capped {
      * @inheritdoc IVault
      */
     function totalIdleAssets() public view virtual returns (uint256) {
-        return depositQueue.totalDeposited;
+        return _totalIdleAssets;
     }
 
     /**
      * @inheritdoc IVault
      */
     function depositQueueSize() public view returns (uint256) {
-        return depositQueue.size();
+        return depositQueue.length();
     }
 
     /**
@@ -261,15 +264,11 @@ abstract contract BaseVault is IVault, ERC20Permit, ERC4626, Capped {
      * @inheritdoc IVault
      */
     function refund() external returns (uint256 assets) {
-        assets = depositQueue.balanceOf(msg.sender);
+        (, assets) = depositQueue.tryGet(msg.sender);
         if (assets == 0) revert IVault__ZeroAssets();
 
-        for (uint256 i = 0; i < depositQueue.size(); i++) {
-            DepositQueueLib.DepositEntry memory depositEntry = depositQueue.get(i);
-            if (depositEntry.owner == msg.sender) {
-                depositQueue.remove(i, i + 1);
-                break;
-            }
+        if (depositQueue.remove(msg.sender)) {
+            _totalIdleAssets -= assets;
         }
 
         emit DepositRefunded(msg.sender, currentRoundId, assets);
@@ -298,17 +297,16 @@ abstract contract BaseVault is IVault, ERC20Permit, ERC4626, Capped {
     /**
      * @inheritdoc IVault
      */
-    function processQueuedDeposits(uint256 startIndex, uint256 endIndex) external {
+    function processQueuedDeposits(address[] calldata depositors) external {
         if (!isProcessingDeposits) revert IVault__NotProcessingDeposits();
 
         uint256 _totalAssets = totalAssets();
-        for (uint256 i = startIndex; i < endIndex; i++) {
-            uint256 currentAssets = _totalAssets + processedDeposits;
-            DepositQueueLib.DepositEntry memory depositEntry = depositQueue.get(i);
-            _processDeposit(depositEntry, currentAssets);
-            processedDeposits += depositEntry.amount;
+        for (uint256 i = 0; i < depositors.length; i++) {
+            if (depositQueue.contains(depositors[i])) {
+                uint256 currentAssets = _totalAssets + processedDeposits;
+                processedDeposits += _processDeposit(depositors[i], currentAssets);
+            }
         }
-        depositQueue.remove(startIndex, endIndex);
     }
 
     /** Internals **/
@@ -316,14 +314,27 @@ abstract contract BaseVault is IVault, ERC20Permit, ERC4626, Capped {
     /**
      * @notice Mint new shares, effectively representing user participation in the Vault.
      */
-    function _processDeposit(DepositQueueLib.DepositEntry memory depositEntry, uint256 currentAssets) internal virtual {
+    function _processDeposit(address depositor, uint256 currentAssets) internal virtual returns (uint256) {
         uint256 supply = totalSupply();
-        uint256 assets = depositEntry.amount;
+        uint256 assets = depositQueue.get(depositor);
         uint256 shares = currentAssets == 0 || supply == 0
             ? assets
             : assets.mulDiv(supply, currentAssets, Math.Rounding.Up);
-        _mint(depositEntry.owner, shares);
-        emit DepositProcessed(depositEntry.owner, currentRoundId, assets, shares);
+        depositQueue.remove(depositor);
+        _totalIdleAssets -= assets;
+        _mint(depositor, shares);
+        emit DepositProcessed(depositor, currentRoundId, assets, shares);
+
+        return assets;
+    }
+
+    /**
+     * @notice Add a new entry to the deposit to queue
+     */
+    function _addToDepositQueue(address receiver, uint256 assets) internal {
+        (, uint256 previous) = depositQueue.tryGet(receiver);
+        _totalIdleAssets += assets;
+        depositQueue.set(receiver, previous + assets);
     }
 
     /**
@@ -343,9 +354,9 @@ abstract contract BaseVault is IVault, ERC20Permit, ERC4626, Capped {
         uint256 shares
     ) internal virtual override {
         IERC20Metadata(asset()).safeTransferFrom(caller, address(this), assets);
-        _spendCap(shares);
 
-        depositQueue.push(DepositQueueLib.DepositEntry(receiver, assets));
+        _spendCap(shares);
+        _addToDepositQueue(receiver, assets);
         emit Deposit(caller, receiver, assets, shares);
     }
 

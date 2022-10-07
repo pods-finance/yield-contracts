@@ -109,13 +109,13 @@ describe('Migration', () => {
     await vaultFrom.connect(user0).deposit(user0Deposit, user0.address)
     await vaultFrom.connect(user1).deposit(user1Deposit, user1.address)
     await vaultFrom.connect(vaultController).endRound()
-    await vaultFrom.connect(vaultController).processQueuedDeposits(0, await vaultFrom.depositQueueSize())
+    await vaultFrom.connect(vaultController).processQueuedDeposits([user0.address, user1.address])
     await vaultFrom.connect(vaultController).startRound()
 
     // Setup vault `to`
     await vaultTo.connect(user2).deposit(user2Deposit, user2.address)
     await vaultTo.connect(vaultController).endRound()
-    await vaultTo.connect(vaultController).processQueuedDeposits(0, await vaultTo.depositQueueSize())
+    await vaultTo.connect(vaultController).processQueuedDeposits([user2.address])
     await vaultTo.connect(vaultController).startRound()
 
     const vaultFromTotalAssets = await vaultFrom.totalAssets()
@@ -139,7 +139,7 @@ describe('Migration', () => {
 
     await vaultFrom.connect(userPermit).deposit(userDeposit, userPermit.address)
     await vaultFrom.connect(vaultController).endRound()
-    await vaultFrom.connect(vaultController).processQueuedDeposits(0, await vaultFrom.depositQueueSize())
+    await vaultFrom.connect(vaultController).processQueuedDeposits([userPermit.address])
     await vaultFrom.connect(vaultController).startRound()
 
     // Execute migration
