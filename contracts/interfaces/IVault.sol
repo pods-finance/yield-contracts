@@ -11,7 +11,6 @@ interface IVault is IERC4626, IERC20Permit {
     error IVault__AlreadyProcessingDeposits();
     error IVault__ForbiddenWhileProcessingDeposits();
     error IVault__ZeroAssets();
-    error IVault__ZeroShares();
     error IVault__MigrationNotAllowed();
 
     event FeeCollected(uint256 fee);

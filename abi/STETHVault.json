@@ -67,11 +67,6 @@
     "type": "error"
   },
   {
-    "inputs": [],
-    "name": "IVault__ZeroShares",
-    "type": "error"
-  },
-  {
     "anonymous": false,
     "inputs": [
       {
