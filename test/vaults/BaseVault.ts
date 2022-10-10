@@ -519,6 +519,22 @@ describe('BaseVault', () => {
         user1.address,
         user2.address
       ])
+
+      // Remove users from queue
+      await vault.connect(user0).refund()
+      await vault.connect(user2).refund()
+
+      expect(await vault.queuedDeposits()).to.be.deep.equal([
+        user1.address
+      ])
+
+      // A new deposit should not change the queue
+      await vault.connect(user2).deposit(assets, user2.address)
+
+      expect(await vault.queuedDeposits()).to.be.deep.equal([
+        user1.address,
+        user2.address
+      ])
     })
 
     it('can refund from the queue', async () => {
