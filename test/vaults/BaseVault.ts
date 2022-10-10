@@ -504,6 +504,23 @@ describe('BaseVault', () => {
   })
 
   describe('DepositQueue', () => {
+    it('shows the queued deposit addresses', async () => {
+      const assets = ethers.utils.parseEther('10')
+
+      await asset.connect(user0).mint(assets)
+      await vault.connect(user0).deposit(assets, user0.address)
+      await asset.connect(user1).mint(assets)
+      await vault.connect(user1).deposit(assets, user1.address)
+      await asset.connect(user2).mint(assets)
+      await vault.connect(user2).deposit(assets, user2.address)
+
+      expect(await vault.queuedDeposits()).to.be.deep.equal([
+        user0.address,
+        user1.address,
+        user2.address
+      ])
+    })
+
     it('can refund from the queue', async () => {
       const assets = ethers.utils.parseEther('10')
 

@@ -57,6 +57,11 @@ interface IVault is IERC4626, IERC20Permit {
     function depositQueueSize() external view returns (uint256);
 
     /**
+     * @notice Outputs addresses in the deposit queue
+     */
+    function queuedDeposits() external view returns (address[] memory);
+
+    /**
      * @notice Starts the next round, sending the idle funds to the
      * strategy where it should start accruing yield.
      */

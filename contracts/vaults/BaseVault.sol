@@ -228,6 +228,18 @@ abstract contract BaseVault is IVault, ERC20Permit, ERC4626, Capped {
     /**
      * @inheritdoc IVault
      */
+    function queuedDeposits() public view returns (address[] memory) {
+        address[] memory addresses = new address[](depositQueue.length());
+        for (uint256 i = 0; i < addresses.length; i++) {
+            (address owner, ) = depositQueue.at(i);
+            addresses[i] = owner;
+        }
+        return addresses;
+    }
+
+    /**
+     * @inheritdoc IVault
+     */
     function controller() public view returns (address) {
         return configuration.getParameter(address(this), "VAULT_CONTROLLER").toAddress();
     }
