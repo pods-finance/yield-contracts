@@ -12,7 +12,6 @@ import "../interfaces/IConfigurationManager.sol";
 import "../interfaces/IVault.sol";
 import "../libs/CastUint.sol";
 import "../mixins/Capped.sol";
-import "hardhat/console.sol";
 
 /**
  * @title A Vault that tokenize shares of strategy
