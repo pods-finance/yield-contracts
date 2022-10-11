@@ -7,17 +7,16 @@ import "../vaults/BaseVault.sol";
 import "../mocks/YieldSourceMock.sol";
 
 /**
- * @title A Vault that use variable weekly yields to buy calls
+ * @title A Vault that use variable weekly yields to buy strangles
  * @author Pods Finance
  */
 contract PrincipalProtectedMock is BaseVault {
     using SafeERC20 for IERC20Metadata;
-    using AuxMath for uint256;
-    using AuxMath for AuxMath.Fractional;
+    using Math for uint256;
 
     uint8 public immutable sharePriceDecimals;
     uint256 public lastRoundAssets;
-    AuxMath.Fractional public lastSharePrice;
+    Fractional public lastSharePrice;
 
     uint256 public investorRatio = 5000;
     address public investor;
@@ -46,52 +45,58 @@ contract PrincipalProtectedMock is BaseVault {
 
     function _afterRoundStart(uint256 assets) internal override {
         if (assets > 0) {
-            _asset.approve(address(yieldSource), assets);
+            IERC20Metadata(asset()).approve(address(yieldSource), assets);
             yieldSource.deposit(assets, address(this));
         }
         uint256 supply = totalSupply();
 
         lastRoundAssets = totalAssets();
-        lastSharePrice = AuxMath.Fractional({ numerator: supply == 0 ? 0 : lastRoundAssets, denominator: supply });
+        lastSharePrice = Fractional({ numerator: supply == 0 ? 0 : lastRoundAssets, denominator: supply });
 
-        uint256 sharePrice = lastSharePrice.denominator == 0 ? 0 : lastSharePrice.mulDivDown(10**sharePriceDecimals);
+        uint256 sharePrice = lastSharePrice.denominator == 0
+            ? 0
+            : lastSharePrice.numerator.mulDiv(10**sharePriceDecimals, lastSharePrice.denominator, Math.Rounding.Down);
         emit StartRoundData(currentRoundId, lastRoundAssets, sharePrice);
     }
 
     function _afterRoundEnd() internal override {
         uint256 roundAccruedInterest = 0;
         uint256 endSharePrice = 0;
-        uint256 investmentYield = _asset.balanceOf(investor);
-        uint256 idleAssets = _asset.balanceOf(address(this));
+        uint256 investmentYield = IERC20Metadata(asset()).balanceOf(investor);
+        uint256 idleAssets = IERC20Metadata(asset()).balanceOf(address(this));
         uint256 supply = totalSupply();
 
         if (supply != 0) {
-            endSharePrice = (totalAssets() + investmentYield).mulDivDown(10**sharePriceDecimals, supply);
+            endSharePrice = (totalAssets() + investmentYield).mulDiv(
+                10**sharePriceDecimals,
+                supply,
+                Math.Rounding.Down
+            );
             roundAccruedInterest = totalAssets() - lastRoundAssets;
 
             // Pulls the yields from investor
             if (investmentYield > 0) {
-                _asset.safeTransferFrom(investor, address(this), investmentYield);
+                IERC20Metadata(asset()).safeTransferFrom(investor, address(this), investmentYield);
             }
 
             // Redeposit to Yield source
-            uint256 redepositAmount = _asset.balanceOf(address(this)) - idleAssets;
+            uint256 redepositAmount = IERC20Metadata(asset()).balanceOf(address(this)) - idleAssets;
             if (redepositAmount > 0) {
-                _asset.approve(address(yieldSource), redepositAmount);
+                IERC20Metadata(asset()).approve(address(yieldSource), redepositAmount);
                 yieldSource.deposit(redepositAmount, address(this));
             }
 
             // Sends another batch to Investor
             uint256 investmentAmount = (roundAccruedInterest * investorRatio) / DENOMINATOR;
             if (investmentAmount > 0) {
-                yieldSource.withdraw(investmentAmount);
-                _asset.safeTransfer(investor, investmentAmount);
+                yieldSource.withdraw(investmentAmount, address(this), address(this));
+                IERC20Metadata(asset()).safeTransfer(investor, investmentAmount);
             }
         }
 
         uint256 startSharePrice = lastSharePrice.denominator == 0
             ? 0
-            : lastSharePrice.mulDivDown(10**sharePriceDecimals);
+            : lastSharePrice.numerator.mulDiv(10**sharePriceDecimals, lastSharePrice.denominator, Math.Rounding.Down);
 
         emit EndRoundData(currentRoundId, roundAccruedInterest, investmentYield, idleAssets);
         emit SharePrice(currentRoundId, startSharePrice, endSharePrice);
@@ -105,7 +110,7 @@ contract PrincipalProtectedMock is BaseVault {
     }
 
     function _beforeWithdraw(uint256 shares, uint256 assets) internal override {
-        lastRoundAssets -= shares.mulDivDown(lastSharePrice);
-        yieldSource.withdraw(assets);
+        lastRoundAssets -= shares.mulDiv(lastSharePrice.numerator, lastSharePrice.denominator, Math.Rounding.Down);
+        yieldSource.withdraw(assets, address(this), address(this));
     }
 }

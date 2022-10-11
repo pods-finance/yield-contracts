@@ -136,7 +136,7 @@ describe('STETHVault', () => {
 
       expect(await vault.depositQueueSize()).to.be.equal(3)
       await vault.connect(vaultController).endRound()
-      await vault.connect(vaultController).processQueuedDeposits(0, await vault.depositQueueSize())
+      await vault.connect(vaultController).processQueuedDeposits([user0.address, user1.address])
       await vault.connect(vaultController).startRound()
 
       const idleAssetsUser1After = await vault.idleAssetsOf(user1.address)
@@ -161,7 +161,7 @@ describe('STETHVault', () => {
       await vault.connect(user0).deposit(user0Deposit, user0.address)
       await vault.connect(user1).deposit(user1Deposit, user1.address)
       await vault.connect(vaultController).endRound()
-      await vault.connect(vaultController).processQueuedDeposits(0, await vault.depositQueueSize())
+      await vault.connect(vaultController).processQueuedDeposits([user0.address, user1.address])
       // Round 1
       await vault.connect(vaultController).startRound()
       await asset.connect(yieldGenerator).transfer(vault.address, ethers.utils.parseEther('103'))
@@ -200,7 +200,7 @@ describe('STETHVault', () => {
       await vault.connect(user0).deposit(user0Deposit, user0.address)
       await vault.connect(user1).deposit(user1Deposit, user1.address)
       await vault.connect(vaultController).endRound()
-      await vault.connect(vaultController).processQueuedDeposits(0, await vault.depositQueueSize())
+      await vault.connect(vaultController).processQueuedDeposits([user0.address, user1.address])
       // Round 1
       await vault.connect(vaultController).startRound()
       await asset.connect(yieldGenerator).transfer(vault.address, ethers.utils.parseEther('103'))
@@ -222,7 +222,7 @@ describe('STETHVault', () => {
 
       await vault.connect(user0).deposit(assetAmount, user0.address)
       await vault.connect(vaultController).endRound()
-      await vault.connect(vaultController).processQueuedDeposits(0, await vault.depositQueueSize())
+      await vault.connect(vaultController).processQueuedDeposits([user0.address])
 
       await expect(
         vault.connect(user0).redeem(await vault.balanceOf(user0.address), user0.address, user0.address)
@@ -244,7 +244,9 @@ describe('STETHVault', () => {
       await vault.connect(user0).deposit(assetAmount, user0.address)
       await vault.connect(vaultController).endRound()
       await vault.connect(vaultController).startRound()
-      await expect(vault.connect(vaultController).processQueuedDeposits(0, await vault.depositQueueSize())).to.be.revertedWith('IVault__NotProcessingDeposits()')
+      await expect(
+        vault.connect(vaultController).processQueuedDeposits([user0.address])
+      ).to.be.revertedWith('IVault__NotProcessingDeposits()')
     })
 
     it('cannot start or end rounds twice', async () => {
@@ -266,7 +268,7 @@ describe('STETHVault', () => {
       // Round 0
       await vault.connect(user0).deposit(assetAmount, user0.address)
       await vault.connect(vaultController).endRound()
-      await vault.connect(vaultController).processQueuedDeposits(0, await vault.depositQueueSize())
+      await vault.connect(vaultController).processQueuedDeposits([user0.address])
 
       // Round 1 - Earned 10% during the week
       await vault.connect(vaultController).startRound()
@@ -274,7 +276,7 @@ describe('STETHVault', () => {
       await vault.connect(user1).deposit(assetAmount, user1.address)
       const endRoundTx = await vault.connect(vaultController).endRound()
       await expect(endRoundTx).to.emit(vault, 'SharePrice').withArgs('1', ethers.utils.parseEther('1'), ethers.utils.parseEther('1.05'))
-      await vault.connect(vaultController).processQueuedDeposits(0, await vault.depositQueueSize())
+      await vault.connect(vaultController).processQueuedDeposits([user0.address, user1.address])
       await vault.connect(vaultController).startRound()
 
       // IMPORTANT => Empty investor wallet to simulate that we bought options during this round
@@ -307,7 +309,7 @@ describe('STETHVault', () => {
 
     // Process deposits
     await vault.connect(vaultController).endRound()
-    await vault.connect(vaultController).processQueuedDeposits(0, await vault.depositQueueSize())
+    await vault.connect(vaultController).processQueuedDeposits([user0.address])
     expect(await vault.depositQueueSize()).to.be.equal(0)
     expect(await vault.balanceOf(user0.address)).to.be.closeTo(assetAmount, 1)
     expect(await vault.idleAssetsOf(user0.address)).to.be.equal(0)
@@ -347,7 +349,7 @@ describe('STETHVault', () => {
 
     // Process deposits
     await vault.connect(vaultController).endRound()
-    await vault.connect(vaultController).processQueuedDeposits(0, await vault.depositQueueSize())
+    await vault.connect(vaultController).processQueuedDeposits([user0.address, user1.address])
     expect(await vault.depositQueueSize()).to.be.equal(0)
 
     // Starts round 1
@@ -371,7 +373,7 @@ describe('STETHVault', () => {
     // Round 0
     await vault.connect(user0).deposit(assetAmount, user0.address)
     await vault.connect(vaultController).endRound()
-    await vault.connect(vaultController).processQueuedDeposits(0, await vault.depositQueueSize())
+    await vault.connect(vaultController).processQueuedDeposits([user0.address])
 
     // Round 1
     await vault.connect(vaultController).startRound()
@@ -384,7 +386,7 @@ describe('STETHVault', () => {
     await asset.connect(yieldGenerator).transfer(vault.address, ethers.utils.parseEther('20'))
     await asset.connect(yieldGenerator).transfer(investor.address, ethers.utils.parseEther('1300'))
     await vault.connect(vaultController).endRound()
-    await vault.connect(vaultController).processQueuedDeposits(0, await vault.depositQueueSize())
+    await vault.connect(vaultController).processQueuedDeposits([user0.address, user1.address])
 
     // Round 3
     await vault.connect(vaultController).startRound()
@@ -430,7 +432,7 @@ describe('STETHVault', () => {
     await vault.connect(user2).deposit(user2Deposit, user2.address)
     await vault.connect(vaultController).endRound()
 
-    await vault.connect(vaultController).processQueuedDeposits(0, await vault.depositQueueSize())
+    await vault.connect(vaultController).processQueuedDeposits([user0.address, user1.address, user2.address])
 
     await vault.connect(vaultController).startRound()
 
@@ -448,7 +450,7 @@ describe('STETHVault', () => {
     const user1Moment2maxWithdraw = await vault.maxWithdraw(user1.address)
     const user2Moment2maxWithdraw = await vault.maxWithdraw(user2.address)
 
-    // console.log(‘MOMENT 2 - Should have amounts greather than MOMENT 1’)
+    // console.log(‘MOMENT 2 - Should have amounts greater than MOMENT 1’)
     expect(user0Moment2maxWithdraw).to.be.gte(user0Moment1maxWithdraw)
     expect(user1Moment2maxWithdraw).to.be.gte(user1Moment1maxWithdraw)
     expect(user2Moment2maxWithdraw).to.be.gte(user2Moment1maxWithdraw)
@@ -470,7 +472,7 @@ describe('STETHVault', () => {
     const user1Moment4maxWithdraw = await vault.maxWithdraw(user1.address)
     const user2Moment4maxWithdraw = await vault.maxWithdraw(user2.address)
 
-    // console.log(‘MOMENT 4 - Should have less amount than 3 -> transfered some funds to investor’)
+    // console.log(‘MOMENT 4 - Should have less amount than 3 -> transferred some funds to investor’)
     expect(user0Moment4maxWithdraw).to.be.lte(user0Moment3maxWithdraw)
     expect(user1Moment4maxWithdraw).to.be.lte(user1Moment3maxWithdraw)
     expect(user2Moment4maxWithdraw).to.be.lte(user2Moment3maxWithdraw)

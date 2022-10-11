@@ -3,7 +3,7 @@
 pragma solidity 0.8.9;
 
 import "@openzeppelin/contracts/token/ERC20/extensions/draft-IERC20Permit.sol";
-import "./IERC4626.sol";
+import "@openzeppelin/contracts/interfaces/IERC4626.sol";
 
 interface IVault is IERC4626, IERC20Permit {
     error IVault__CallerIsNotTheController();
@@ -11,7 +11,6 @@ interface IVault is IERC4626, IERC20Permit {
     error IVault__AlreadyProcessingDeposits();
     error IVault__ForbiddenWhileProcessingDeposits();
     error IVault__ZeroAssets();
-    error IVault__ZeroShares();
     error IVault__MigrationNotAllowed();
 
     event FeeCollected(uint256 fee);
@@ -20,6 +19,11 @@ interface IVault is IERC4626, IERC20Permit {
     event DepositProcessed(address indexed owner, uint256 indexed roundId, uint256 assets, uint256 shares);
     event DepositRefunded(address indexed owner, uint256 indexed roundId, uint256 assets);
     event Migrated(address indexed caller, address indexed from, address indexed to, uint256 assets, uint256 shares);
+
+    struct Fractional {
+        uint256 numerator;
+        uint256 denominator;
+    }
 
     /**
      * @notice Returns the fee charged on withdraws.
@@ -53,6 +57,11 @@ interface IVault is IERC4626, IERC20Permit {
     function depositQueueSize() external view returns (uint256);
 
     /**
+     * @notice Outputs addresses in the deposit queue
+     */
+    function queuedDeposits() external view returns (address[] memory);
+
+    /**
      * @notice Starts the next round, sending the idle funds to the
      * strategy where it should start accruing yield.
      */
@@ -76,11 +85,8 @@ interface IVault is IERC4626, IERC20Permit {
 
     /**
      * @notice Mint shares for deposits accumulated, effectively including their owners in the next round.
-     * `processQueuedDeposits` extracts up to but not including endIndex. For example, processQueuedDeposits(1,4)
-     * extracts the second element through the fourth element (elements indexed 1, 2, and 3).
      *
-     * @param startIndex Zero-based index at which to start processing deposits
-     * @param endIndex The index of the first element to exclude from queue
+     * @param depositors Array of owner addresses to process
      */
-    function processQueuedDeposits(uint256 startIndex, uint256 endIndex) external;
+    function processQueuedDeposits(address[] calldata depositors) external;
 }
