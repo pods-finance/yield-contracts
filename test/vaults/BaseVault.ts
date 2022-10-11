@@ -460,7 +460,29 @@ describe('BaseVault', () => {
       await configuration.setCap(vault.address, cap)
       await asset.connect(user0).mint(assets)
       await expect(vault.connect(user0).deposit(assets, user0.address))
-        .to.be.revertedWith('Capped__AmountExceedsCap')
+        .to.be.revertedWith('ERC4626: deposit more than max')
+    })
+
+    it('maxMint and maxDeposit should account for the cap', async () => {
+      const cap = ethers.utils.parseEther('5000000000')
+
+      expect(await vault.maxMint(user0.address)).to.be.equal(ethers.constants.MaxUint256)
+      expect(await vault.maxDeposit(user0.address)).to.be.equal(ethers.constants.MaxUint256)
+
+      await configuration.setCap(vault.address, cap)
+      expect(await vault.maxMint(user0.address)).to.be.equal(cap)
+      expect(await vault.maxDeposit(user0.address)).to.be.equal(cap)
+
+      const assets = ethers.utils.parseEther('3')
+      await asset.connect(user0).mint(assets)
+      await vault.connect(user0).deposit(assets, user0.address)
+      expect(await vault.maxMint(user0.address)).to.be.equal(cap.sub(assets))
+      expect(await vault.maxDeposit(user0.address)).to.be.equal(cap.sub(assets))
+
+      await asset.connect(user1).mint(cap.sub(assets))
+      await vault.connect(user1).deposit(cap.sub(assets), user1.address)
+      expect(await vault.maxMint(user0.address)).to.be.equal(0)
+      expect(await vault.maxDeposit(user0.address)).to.be.equal(0)
     })
 
     it('restores cap after withdrawing', async () => {

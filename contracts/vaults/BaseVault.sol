@@ -177,6 +177,24 @@ abstract contract BaseVault is IVault, ERC20Permit, ERC4626, Capped {
     /**
      * @inheritdoc IERC4626
      */
+    function maxDeposit(address) public view override(ERC4626, IERC4626) returns (uint256) {
+        uint256 _availableCap = availableCap();
+        if (_availableCap != type(uint256).max) {
+            return previewMint(_availableCap);
+        }
+        return _availableCap;
+    }
+
+    /**
+     * @inheritdoc IERC4626
+     */
+    function maxMint(address) public view override(ERC4626, IERC4626) returns (uint256) {
+        return availableCap();
+    }
+
+    /**
+     * @inheritdoc IERC4626
+     */
     function maxWithdraw(address owner) public view override(ERC4626, IERC4626) returns (uint256 assets) {
         return previewRedeem(balanceOf(owner));
     }
