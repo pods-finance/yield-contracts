@@ -37,7 +37,7 @@ contract PrincipalProtectedMock is BaseVault {
         IERC20Metadata _asset,
         address _investor,
         address _yieldSource
-    ) BaseVault(_configuration, _asset) {
+    ) BaseVault(_configuration, _asset, "PrincipalProtectedMock", "PPM") {
         investor = _investor;
         yieldSource = YieldSourceMock(_yieldSource);
         sharePriceDecimals = _asset.decimals();

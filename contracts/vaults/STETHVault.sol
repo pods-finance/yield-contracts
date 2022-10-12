@@ -36,17 +36,16 @@ contract STETHVault is BaseVault {
         IConfigurationManager _configuration,
         IERC20Metadata _asset,
         address _investor
-    ) BaseVault(_configuration, _asset) {
+    )
+        BaseVault(
+            _configuration,
+            _asset,
+            string(abi.encodePacked(_asset.symbol(), " Volatility Vault")),
+            string(abi.encodePacked(_asset.symbol(), "vv"))
+        )
+    {
         investor = _investor;
         sharePriceDecimals = _asset.decimals();
-    }
-
-    function name() public view override returns (string memory) {
-        return string(abi.encodePacked(IERC20Metadata(asset()).symbol(), " Volatility Vault"));
-    }
-
-    function symbol() public view override returns (string memory) {
-        return string(abi.encodePacked(IERC20Metadata(asset()).symbol(), "vv"));
     }
 
     function _afterRoundStart(uint256) internal override {

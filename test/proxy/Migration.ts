@@ -146,12 +146,7 @@ describe('Migration', () => {
     const shares = await vaultFrom.balanceOf(userPermit.address)
     const permit = await signERC2612Permit(
       userPermit,
-      {
-        name: 'Pods Yield stETH',
-        version: '1',
-        chainId: hre.network.config.chainId as number,
-        verifyingContract: vaultFrom.address
-      },
+      vaultFrom.address,
       userPermit.address,
       migration.address,
       shares.toString()
