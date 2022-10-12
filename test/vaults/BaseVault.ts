@@ -539,20 +539,27 @@ describe('BaseVault', () => {
 
     it('can refund from the queue', async () => {
       const assets = ethers.utils.parseEther('10')
+      let cap = ethers.utils.parseEther('30')
 
-      await asset.connect(user0).mint(assets.mul(2))
+      await asset.connect(user0).mint(assets)
       await asset.connect(user1).mint(assets)
       await asset.connect(user2).mint(assets)
 
       // Users deposits to vault
+      await configuration.setCap(vault.address, cap)
       await vault.connect(user0).deposit(assets, user0.address)
-      await vault.connect(user0).deposit(assets, user0.address)
+      expect(await vault.availableCap()).to.be.equal(cap.sub(assets))
+      cap = cap.sub(assets)
       await vault.connect(user1).deposit(assets, user1.address)
+      expect(await vault.availableCap()).to.be.equal(cap.sub(assets))
+      cap = cap.sub(assets)
       await vault.connect(user2).deposit(assets, user2.address)
+      expect(await vault.availableCap()).to.be.equal(cap.sub(assets))
+      cap = cap.sub(assets)
       expect(await vault.depositQueueSize()).to.be.equal(3)
-      expect(await vault.totalIdleAssets()).to.be.equal(assets.mul(4))
+      expect(await vault.totalIdleAssets()).to.be.equal(assets.mul(3))
 
-      expect(await asset.balanceOf(vault.address)).to.be.equal(assets.mul(4))
+      expect(await asset.balanceOf(vault.address)).to.be.equal(assets.mul(3))
       expect(await asset.balanceOf(user0.address)).to.be.equal(0)
       expect(await asset.balanceOf(user1.address)).to.be.equal(0)
       expect(await asset.balanceOf(user2.address)).to.be.equal(0)
@@ -561,7 +568,7 @@ describe('BaseVault', () => {
       expect(await vault.balanceOf(user1.address)).to.be.equal(0)
       expect(await vault.balanceOf(user2.address)).to.be.equal(0)
 
-      expect(await vault.idleAssetsOf(user0.address)).to.be.equal(assets.mul(2))
+      expect(await vault.idleAssetsOf(user0.address)).to.be.equal(assets)
       expect(await vault.idleAssetsOf(user1.address)).to.be.equal(assets)
       expect(await vault.idleAssetsOf(user2.address)).to.be.equal(assets)
 
@@ -569,16 +576,18 @@ describe('BaseVault', () => {
       await expect(refundTx).to.emit(vault, 'DepositRefunded')
         .withArgs(user1.address, await vault.currentRoundId(), assets)
 
+      cap = cap.add(assets)
+      expect(await vault.availableCap()).to.be.equal(cap)
       expect(await vault.idleAssetsOf(user1.address)).to.be.equal(0)
       expect(await asset.balanceOf(user1.address)).to.be.equal(assets)
       expect(await vault.depositQueueSize()).to.be.equal(2)
-      expect(await asset.balanceOf(vault.address)).to.be.equal(assets.mul(3))
-      expect(await vault.totalIdleAssets()).to.be.equal(assets.mul(3))
+      expect(await asset.balanceOf(vault.address)).to.be.equal(assets.mul(2))
+      expect(await vault.totalIdleAssets()).to.be.equal(assets.mul(2))
 
       await vault.connect(vaultController).endRound()
       await vault.connect(vaultController).processQueuedDeposits([user0.address, user1.address, user2.address])
 
-      expect(await vault.balanceOf(user0.address)).to.be.equal(assets.mul(2))
+      expect(await vault.balanceOf(user0.address)).to.be.equal(assets)
       expect(await vault.balanceOf(user1.address)).to.be.equal(0)
       expect(await vault.balanceOf(user2.address)).to.be.equal(assets)
     })
