@@ -49,10 +49,10 @@ contract STETHVault is BaseVault {
         return string(abi.encodePacked(IERC20Metadata(asset()).symbol(), "vv"));
     }
 
-    function _afterRoundStart(uint256) internal override {
+    function _afterRoundStart(uint256 _processedDeposits) internal override {
         uint256 supply = totalSupply();
 
-        lastRoundAssets = totalAssets();
+        lastRoundAssets = totalAssets() + _processedDeposits;
         lastSharePrice = Fractional({ numerator: supply == 0 ? 0 : lastRoundAssets, denominator: supply });
 
         uint256 sharePrice = lastSharePrice.denominator == 0
@@ -81,7 +81,11 @@ contract STETHVault is BaseVault {
             }
 
             // End Share price needs to be calculated after the transfers between investor and vault
-            endSharePrice = (totalAssets()).mulDiv(10**sharePriceDecimals, supply, Math.Rounding.Down);
+            endSharePrice = (totalAssets() + processedDeposits).mulDiv(
+                10**sharePriceDecimals,
+                supply,
+                Math.Rounding.Down
+            );
         }
 
         uint256 startSharePrice = lastSharePrice.denominator == 0
@@ -96,7 +100,7 @@ contract STETHVault is BaseVault {
      * @dev See {BaseVault-totalAssets}.
      */
     function totalAssets() public view override returns (uint256) {
-        return IERC20Metadata(asset()).balanceOf(address(this)) - totalIdleAssets();
+        return IERC20Metadata(asset()).balanceOf(address(this)) - totalIdleAssets() - processedDeposits;
     }
 
     function _deposit(
