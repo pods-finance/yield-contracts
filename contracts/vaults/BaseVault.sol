@@ -153,7 +153,7 @@ abstract contract BaseVault is IVault, ERC20Permit, ERC4626, Capped {
         address receiver,
         address owner
     ) public virtual override(ERC4626, IERC4626) whenNotProcessingDeposits returns (uint256 shares) {
-        shares = convertToShares(assets);
+        shares = _convertToShares(assets, Math.Rounding.Up);
         (, shares) = _withdrawWithFees(msg.sender, receiver, owner, assets, shares);
     }
 
@@ -330,7 +330,7 @@ abstract contract BaseVault is IVault, ERC20Permit, ERC4626, Capped {
         uint256 assets = depositQueue.get(depositor);
         uint256 shares = currentAssets == 0 || supply == 0
             ? assets
-            : assets.mulDiv(supply, currentAssets, Math.Rounding.Up);
+            : assets.mulDiv(supply, currentAssets, Math.Rounding.Down);
         depositQueue.remove(depositor);
         _totalIdleAssets -= assets;
         _mint(depositor, shares);
