@@ -12,7 +12,7 @@ describe('STETHVault', () => {
   let asset: ERC20, vault: STETHVault, investor: InvestorActorMock,
     configuration: ConfigurationManager
 
-  let user0: SignerWithAddress, user1: SignerWithAddress, user2: SignerWithAddress, user3: SignerWithAddress,
+  let user0: SignerWithAddress, user1: SignerWithAddress, user2: SignerWithAddress, user3: SignerWithAddress, user4: SignerWithAddress,
     yieldGenerator: SignerWithAddress, vaultController: SignerWithAddress
 
   let snapshotId: BigNumber
@@ -55,6 +55,13 @@ describe('STETHVault', () => {
 
     user3 = await ethers.getSigner('0x1c11ba15939e1c16ec7ca1678df6160ea2063bc5')
 
+    await hre.network.provider.request({
+      method: 'hardhat_impersonateAccount',
+      params: ['0xed0eebb4d520a6b0eccc4df8e5214e7a6697c111']
+    })
+
+    user4 = await ethers.getSigner('0xed0eebb4d520a6b0eccc4df8e5214e7a6697c111')
+
     ;[, , , , vaultController] = await ethers.getSigners()
     configuration = await createConfigurationManager()
 
@@ -81,6 +88,7 @@ describe('STETHVault', () => {
     await asset.connect(user1).approve(vault.address, ethers.constants.MaxUint256)
     await asset.connect(user2).approve(vault.address, ethers.constants.MaxUint256)
     await asset.connect(user3).approve(vault.address, ethers.constants.MaxUint256)
+    await asset.connect(user4).approve(vault.address, ethers.constants.MaxUint256)
     await asset.connect(vaultController).approve(vault.address, ethers.constants.MaxUint256)
   })
 
@@ -149,6 +157,43 @@ describe('STETHVault', () => {
       const maxWithdraw1 = await vault.maxWithdraw(user1.address)
       expect(maxWithdraw1).to.be.equal(feeExcluded(previewMintedAssets))
       expect(maxWithdraw0).to.be.equal(feeExcluded(assets))
+    })
+  })
+
+  describe('Rounding issues', () => {
+    it('should not withdraw non-null amounts and burn 0 shares in the process', async () => {
+      const user0Deposit = '5'
+      const user1Deposit = ethers.utils.parseEther('2')
+      const user2Deposit = ethers.utils.parseEther('4')
+      const user3Deposit = ethers.utils.parseEther('6')
+      const user4Deposit = ethers.utils.parseEther('9')
+
+      await vault.connect(user0).deposit(user0Deposit, user0.address)
+      await vault.connect(user1).deposit(user1Deposit, user1.address)
+      await vault.connect(user2).deposit(user2Deposit, user2.address)
+      await vault.connect(user3).deposit(user3Deposit, user3.address)
+      await vault.connect(user4).deposit(user4Deposit, user4.address)
+
+      const oldBalance = await asset.balanceOf(vault.address);
+      const newMint = oldBalance.mul(5).div(100);
+
+      // Increase totalAssets() value
+      await asset.connect(yieldGenerator).transfer(vault.address, newMint)
+
+      await vault.connect(vaultController).endRound()
+      await vault.connect(vaultController).processQueuedDeposits([user0.address, user1.address, user2.address, user3.address, user4.address])
+      await vault.connect(vaultController).startRound()
+
+      const supplyUser0Before = await vault.balanceOf(user0.address)
+      const assetBalanceUser0Before = await asset.balanceOf(user0.address)
+
+      await vault.connect(user0).withdraw('3', user0.address, user0.address)
+
+      const supplyUser0After = await vault.balanceOf(user0.address)
+      const assetBalanceUser0After = await asset.balanceOf(user0.address)
+
+      expect(supplyUser0After).to.be.eq(supplyUser0Before.sub(1))
+      expect(assetBalanceUser0After).to.be.eq(assetBalanceUser0Before.add(2))
     })
   })
 
