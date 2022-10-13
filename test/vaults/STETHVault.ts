@@ -333,7 +333,7 @@ describe('STETHVault', () => {
       await asset.connect(yieldGenerator).transfer(vault.address, ethers.utils.parseEther('20.5'))
       await asset.connect(yieldGenerator).transfer(investor.address, ethers.utils.parseEther('100'))
       const endRoundTx2 = await vault.connect(vaultController).endRound()
-      await expect(endRoundTx2).to.emit(vault, 'SharePrice').withArgs('2', '1049999999999999999', '1614695121951219512')
+      await expect(endRoundTx2).to.emit(vault, 'SharePrice').withArgs('2', '1050000000000000000', '1614695121951219512')
     })
   })
 
@@ -437,16 +437,16 @@ describe('STETHVault', () => {
     await vault.connect(vaultController).startRound()
     await asset.connect(yieldGenerator).transfer(vault.address, ethers.utils.parseEther('70'))
 
-    const expectedUser0Amount = BigNumber.from('1495424836601307189536')
-    const expectedUser1Amount = BigNumber.from('104575163398692810460')
-
+    const expectedUser0Amount = BigNumber.from('1495424836601307189549')
+    const expectedUser1Amount = BigNumber.from('104575163398692810446')
+    
     await expect(async () =>
       await vault.connect(user0).redeem(await vault.balanceOf(user0.address), user0.address, user0.address)
     )
       .to.changeTokenBalances(
         asset,
         [vault, user0],
-        [minus(expectedUser0Amount.sub(1)), feeExcluded(expectedUser0Amount)]
+        [minus(expectedUser0Amount), feeExcluded(expectedUser0Amount).add(1)]
       )
 
     await expect(async () =>

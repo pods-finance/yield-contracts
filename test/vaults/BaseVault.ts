@@ -913,7 +913,7 @@ describe('BaseVault', () => {
     expect(await vault.idleAssetsOf(user0.address)).to.be.equal(0)
 
     await vault.connect(user1).redeem(await vault.balanceOf(user1.address), user1.address, user1.address)
-    expect(await asset.balanceOf(user1.address)).to.be.equal(expectedUser1Amount)
+    expect(await asset.balanceOf(user1.address)).to.be.equal(expectedUser1Amount.add(1))
     expect(await vault.balanceOf(user1.address)).to.be.equal(0)
     expect(await vault.idleAssetsOf(user1.address)).to.be.equal(0)
 
