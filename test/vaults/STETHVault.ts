@@ -292,6 +292,52 @@ describe('STETHVault', () => {
     })
   })
 
+  it('it should remove the same amount independently of the process order', async () => {
+  await configuration.setParameter(vault.address, ethers.utils.formatBytes32String('WITHDRAW_FEE_RATIO'), BigNumber.from('0'))
+
+  const user0DepositAmount = ethers.utils.parseEther('1')
+  const user1DepositAmount = ethers.utils.parseEther('50')
+
+  await vault.connect(user0).deposit(user0DepositAmount, user0.address)
+  await vault.connect(user1).deposit(user1DepositAmount, user1.address)
+  await vault.connect(vaultController).endRound()
+
+   await vault.connect(vaultController).processQueuedDeposits([user0.address, user1.address])
+   await vault.connect(vaultController).startRound()
+
+   const user0SharesCreatedCombined = await vault.balanceOf(user0.address)
+   const user1SharesCreatedCombined = await vault.balanceOf(user1.address)
+
+   await vault.connect(user0).redeem(await vault.balanceOf(user0.address), user0.address, user0.address)
+   await vault.connect(user1).redeem(await vault.balanceOf(user1.address), user1.address, user1.address)
+
+   const user0FinalBalanceCombined = await asset.balanceOf(user0.address)
+   const user1FinalBalanceCombined = await asset.balanceOf(user1.address)
+
+  await vault.connect(user0).deposit(user0DepositAmount, user0.address)
+  await vault.connect(user1).deposit(user1DepositAmount, user1.address)
+  await vault.connect(vaultController).endRound()
+
+  await vault.connect(vaultController).processQueuedDeposits([user0.address])
+  await vault.connect(vaultController).processQueuedDeposits([user1.address])
+  await vault.connect(vaultController).startRound()
+
+  const user0SharesCreatedSeparate = await vault.balanceOf(user0.address)
+  const user1SharesCreatedSeparate = await vault.balanceOf(user1.address)
+
+   await vault.connect(user0).redeem(await vault.balanceOf(user0.address), user0.address, user0.address)
+   await vault.connect(user1).redeem(await vault.balanceOf(user1.address), user1.address, user1.address)
+
+   const user0FinalBalanceSeparate = await asset.balanceOf(user0.address)
+   const user1FinalBalanceSeparate = await asset.balanceOf(user1.address)
+   
+   //This difference of 50 is due precision rounding between operations
+   expect(user0SharesCreatedSeparate).to.be.closeTo(user0SharesCreatedCombined, '50')
+   expect(user1SharesCreatedSeparate).to.be.closeTo(user1SharesCreatedCombined, '50')
+   expect(user0FinalBalanceSeparate).to.be.closeTo(user0FinalBalanceCombined, '50')
+   expect(user1FinalBalanceSeparate).to.be.closeTo(user1FinalBalanceCombined, '50')
+  })
+
   it('should add collateral and receive shares', async () => {
     const assetAmount = ethers.utils.parseEther('10')
     const assetAmountEffective = assetAmount.sub(1)
