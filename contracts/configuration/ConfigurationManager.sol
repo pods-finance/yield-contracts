@@ -12,9 +12,9 @@ import "../interfaces/IConfigurationManager.sol";
  */
 contract ConfigurationManager is IConfigurationManager, Ownable {
     mapping(address => mapping(bytes32 => uint256)) private _parameters;
+    mapping(address => uint256) private _caps;
     mapping(address => bool) private _allowedVault;
     address private immutable _global = address(0);
-    bytes32 constant CAP = "CAP";
 
     /**
      * @dev Define a parameter
@@ -54,7 +54,7 @@ contract ConfigurationManager is IConfigurationManager, Ownable {
      */
     function setCap(address target, uint256 value) external override onlyOwner {
         if (target == address(0)) revert ConfigurationManager__InvalidCapTarget();
-        setParameter(target, CAP, value);
+        _caps[target] = value;
         emit SetCap(target, value);
     }
 
@@ -64,7 +64,7 @@ contract ConfigurationManager is IConfigurationManager, Ownable {
      * @param target The contract address
      */
     function getCap(address target) external view override returns (uint256) {
-        return this.getParameter(target, CAP);
+        return _caps[target];
     }
 
     /**
