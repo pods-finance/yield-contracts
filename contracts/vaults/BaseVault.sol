@@ -374,7 +374,7 @@ abstract contract BaseVault is IVault, ERC20Permit, ERC4626, Capped {
     }
 
     /**
-     * @dev Pull assets from the caller and create shares to the receiver
+     * @dev Pull assets from the caller and add it to the deposit queue
      */
     function _deposit(
         address caller,

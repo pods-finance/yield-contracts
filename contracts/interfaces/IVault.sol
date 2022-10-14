@@ -84,7 +84,7 @@ interface IVault is IERC4626, IERC20Permit {
     function migrate(IVault newVault) external;
 
     /**
-     * @notice Mint shares for deposits accumulated, effectively including their owners in the next round.
+     * @notice Distribute shares to depositors queued in the deposit queue, effectively including their assets in the next round.
      *
      * @param depositors Array of owner addresses to process
      */
