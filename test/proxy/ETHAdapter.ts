@@ -175,12 +175,7 @@ describe('ETHAdapter', () => {
 
       const permit = await signERC2612Permit(
         userPermit,
-        {
-          name: 'Pods Yield stETH',
-          version: '1',
-          chainId: hre.network.config.chainId as number,
-          verifyingContract: vault.address
-        },
+        vault.address,
         userPermit.address,
         adapter.address,
         actualShares.toString()
@@ -273,12 +268,7 @@ describe('ETHAdapter', () => {
 
       const permit = await signERC2612Permit(
         userPermit,
-        {
-          name: 'Pods Yield stETH',
-          version: '1',
-          chainId: hre.network.config.chainId as number,
-          verifyingContract: vault.address
-        },
+        vault.address,
         userPermit.address,
         adapter.address,
         actualShares.toString()

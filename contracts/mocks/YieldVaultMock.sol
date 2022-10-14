@@ -12,7 +12,7 @@ contract YieldVaultMock is BaseVault {
         IConfigurationManager _configuration,
         IERC20Metadata _asset,
         address _yieldSource
-    ) BaseVault(_configuration, _asset) {
+    ) BaseVault(_configuration, _asset, "YieldVaultMock", "YVM") {
         yieldSource = YieldSourceMock(_yieldSource);
     }
 

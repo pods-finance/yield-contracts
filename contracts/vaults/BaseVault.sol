@@ -48,13 +48,13 @@ abstract contract BaseVault is IVault, ERC20Permit, ERC4626, Capped {
 
     EnumerableMap.AddressToUintMap internal depositQueue;
 
-    constructor(IConfigurationManager $configuration, IERC20Metadata $asset)
-        ERC20(string(abi.encodePacked("Pods Yield ", $asset.symbol())), string(abi.encodePacked("py", $asset.symbol())))
-        ERC20Permit(string(abi.encodePacked("Pods Yield ", $asset.symbol())))
-        ERC4626($asset)
-        Capped($configuration)
-    {
-        configuration = $configuration;
+    constructor(
+        IConfigurationManager configuration_,
+        IERC20Metadata asset_,
+        string memory name_,
+        string memory symbol_
+    ) ERC20(name_, symbol_) ERC20Permit(name_) ERC4626(asset_) Capped(configuration_) {
+        configuration = configuration_;
 
         // Vault starts in `start` state
         emit StartRound(currentRoundId, 0);

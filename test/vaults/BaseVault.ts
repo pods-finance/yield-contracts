@@ -54,11 +54,11 @@ describe('BaseVault', () => {
 
   describe('ERC20 checks', () => {
     it('has a name', async () => {
-      expect(await vault.name()).to.be.equal(`Pods Yield ${await asset.symbol()}`)
+      expect(await vault.name()).to.be.equal('YieldVaultMock')
     })
 
     it('has a symbol', async () => {
-      expect(await vault.symbol()).to.be.equal(`py${await asset.symbol()}`)
+      expect(await vault.symbol()).to.be.equal('YVM')
     })
 
     it('has decimals', async () => {
