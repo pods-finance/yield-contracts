@@ -44,13 +44,13 @@ contract PrincipalProtectedMock is BaseVault {
     }
 
     function _afterRoundStart(uint256 assets) internal override {
+        lastRoundAssets = totalAssets();
         if (assets > 0) {
             IERC20Metadata(asset()).approve(address(yieldSource), assets);
             yieldSource.deposit(assets, address(this));
         }
         uint256 supply = totalSupply();
 
-        lastRoundAssets = totalAssets();
         lastSharePrice = Fractional({ numerator: supply == 0 ? 0 : lastRoundAssets, denominator: supply });
 
         uint256 sharePrice = lastSharePrice.denominator == 0
@@ -106,7 +106,7 @@ contract PrincipalProtectedMock is BaseVault {
      * @dev See {BaseVault-totalAssets}.
      */
     function totalAssets() public view override returns (uint256) {
-        return yieldSource.previewRedeem(yieldSource.balanceOf(address(this)));
+        return yieldSource.previewRedeem(yieldSource.balanceOf(address(this))) + processedDeposits;
     }
 
     function _beforeWithdraw(uint256 shares, uint256 assets) internal override {

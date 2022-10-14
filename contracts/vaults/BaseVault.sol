@@ -311,10 +311,9 @@ abstract contract BaseVault is IVault, ERC20Permit, ERC4626, Capped {
     function processQueuedDeposits(address[] calldata depositors) external {
         if (!isProcessingDeposits) revert IVault__NotProcessingDeposits();
 
-        uint256 _totalAssets = totalAssets();
         for (uint256 i = 0; i < depositors.length; i++) {
             if (depositQueue.contains(depositors[i])) {
-                uint256 currentAssets = _totalAssets + processedDeposits;
+                uint256 currentAssets = totalAssets();
                 processedDeposits += _processDeposit(depositors[i], currentAssets);
             }
         }
