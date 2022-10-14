@@ -330,11 +330,9 @@ abstract contract BaseVault is IVault, ERC20Permit, ERC4626, Capped {
     function processQueuedDeposits(address[] calldata depositors) external {
         if (!isProcessingDeposits) revert IVault__NotProcessingDeposits();
 
-        uint256 _totalAssets = totalAssets();
         for (uint256 i = 0; i < depositors.length; i++) {
             if (depositQueue.contains(depositors[i])) {
-                uint256 currentAssets = _totalAssets + processedDeposits;
-                processedDeposits += _processDeposit(depositors[i], currentAssets);
+                processedDeposits += _processDeposit(depositors[i]);
             }
         }
     }
@@ -344,7 +342,8 @@ abstract contract BaseVault is IVault, ERC20Permit, ERC4626, Capped {
     /**
      * @notice Mint new shares, effectively representing user participation in the Vault.
      */
-    function _processDeposit(address depositor, uint256 currentAssets) internal virtual returns (uint256) {
+    function _processDeposit(address depositor) internal virtual returns (uint256) {
+        uint256 currentAssets = totalAssets();
         uint256 supply = totalSupply();
         uint256 assets = depositQueue.get(depositor);
         uint256 shares = currentAssets == 0 || supply == 0

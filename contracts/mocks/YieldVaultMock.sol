@@ -16,8 +16,13 @@ contract YieldVaultMock is BaseVault {
         yieldSource = YieldSourceMock(_yieldSource);
     }
 
+    function assetsOf(address owner) public view override returns (uint256) {
+        uint256 shares = balanceOf(owner);
+        return convertToAssets(shares) + idleAssetsOf(owner);
+    }
+
     function totalAssets() public view override returns (uint256) {
-        return yieldSource.convertToAssets(yieldSource.balanceOf(address(this)));
+        return yieldSource.convertToAssets(yieldSource.balanceOf(address(this))) + processedDeposits;
     }
 
     function _beforeWithdraw(uint256, uint256 assets) internal override {
