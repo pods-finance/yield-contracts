@@ -268,8 +268,8 @@ describe('PrincipalProtectedMock', () => {
     expect(await vault.totalSupply()).to.be.equal(0)
     expect(await vault.totalAssets()).to.be.equal(0)
 
-    const expectedUser0Amount = feeExcluded('1495424836601307189542')
-    const expectedUser1Amount = feeExcluded('104575163398692810458')
+    const expectedUser0Amount = '1480470588235294117661'
+    const expectedUser1Amount = '103529411764705882340'
 
     expect(await asset.balanceOf(user0.address)).to.be.equal(expectedUser0Amount)
     expect(await vault.balanceOf(user0.address)).to.be.equal(0)
