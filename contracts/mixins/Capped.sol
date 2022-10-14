@@ -23,7 +23,7 @@ abstract contract Capped {
     }
 
     /**
-     * @dev Returns the amount that could be used.
+     * @dev Increase the amount of cap used.
      * @param amount The amount to be spent
      */
     function _spendCap(uint256 amount) internal {

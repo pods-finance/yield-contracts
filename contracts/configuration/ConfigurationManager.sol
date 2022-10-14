@@ -17,8 +17,9 @@ contract ConfigurationManager is IConfigurationManager, Ownable {
     bytes32 constant CAP = "CAP";
 
     /**
-     * @dev Define a parameter
-     * @param target The parameter name
+     * @notice Set specific parameters to a contract or globally across multiple contracts.
+     * @dev Use `address(0)` to set a global parameter.
+     * @param target The contract address
      * @param name The parameter name
      * @param value The parameter value
      */
@@ -32,7 +33,8 @@ contract ConfigurationManager is IConfigurationManager, Ownable {
     }
 
     /**
-     * @dev Get the value of a defined parameter
+     * @notice Retrieves the value of a parameter set to contract.
+     * @param target The contract address
      * @param name The parameter name
      */
     function getParameter(address target, bytes32 name) external view override returns (uint256) {
@@ -40,7 +42,7 @@ contract ConfigurationManager is IConfigurationManager, Ownable {
     }
 
     /**
-     * @dev Get the value of a defined parameter
+     * @notice Retrieves the value of a parameter shared between multiple contracts.
      * @param name The parameter name
      */
     function getGlobalParameter(bytes32 name) external view override returns (uint256) {
@@ -48,7 +50,7 @@ contract ConfigurationManager is IConfigurationManager, Ownable {
     }
 
     /**
-     * @dev Defines a cap value to a contract
+     * @notice Defines a cap value to a contract.
      * @param target The contract address
      * @param value Cap amount
      */
@@ -59,8 +61,8 @@ contract ConfigurationManager is IConfigurationManager, Ownable {
     }
 
     /**
-     * @dev Get the value of a defined cap
-     * Note that 0 cap means that the contract is not capped
+     * @notice Get the value of a defined cap.
+     * @dev Note that 0 cap means that the contract is not capped
      * @param target The contract address
      */
     function getCap(address target) external view override returns (uint256) {
@@ -68,7 +70,7 @@ contract ConfigurationManager is IConfigurationManager, Ownable {
     }
 
     /**
-     * @dev Sets the allowance to migrate to a `vault` address
+     * @notice Sets the allowance to migrate to a `vault` address.
      * @param vault The contract address
      * @param allowed Allowance status
      */
@@ -78,7 +80,7 @@ contract ConfigurationManager is IConfigurationManager, Ownable {
     }
 
     /**
-     * @dev Returns if a vault is allowed
+     * @notice Returns if a vault is allowed.
      * @param vault The contract address
      */
     function isVaultAllowed(address vault) external view override returns (bool) {
