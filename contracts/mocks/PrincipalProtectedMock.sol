@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 
-pragma solidity 0.8.9;
+pragma solidity 0.8.17;
 
 import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import "../vaults/BaseVault.sol";
@@ -105,7 +105,7 @@ contract PrincipalProtectedMock is BaseVault {
     /**
      * @dev See {BaseVault-totalAssets}.
      */
-    function totalAssets() public view override returns (uint256) {
+    function totalAssets() public view override(ERC4626, IERC4626) returns (uint256) {
         return yieldSource.previewRedeem(yieldSource.balanceOf(address(this))) + processedDeposits;
     }
 
