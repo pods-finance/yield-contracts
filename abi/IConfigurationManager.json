@@ -1,7 +1,7 @@
 [
   {
     "inputs": [],
-    "name": "ConfigurationManager__InvalidCapTarget",
+    "name": "ConfigurationManager__TargetCannotBeTheZeroAddress",
     "type": "error"
   },
   {

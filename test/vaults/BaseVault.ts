@@ -183,7 +183,7 @@ describe('BaseVault', () => {
     // Setting fees to 100%
     await configuration.setParameter(vault.address, ethers.utils.formatBytes32String('WITHDRAW_FEE_RATIO'), 10000)
 
-    expect(await vault.withdrawFeeRatio()).to.be.equal(await vault.MAX_WITHDRAW_FEE())
+    expect(await vault.getWithdrawFeeRatio()).to.be.equal(await vault.MAX_WITHDRAW_FEE())
   })
 
   it('deposit assets and receive shares', async () => {
