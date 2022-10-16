@@ -9,7 +9,7 @@ export default async function retry (callback: ExecutionCallback, times: number 
       result = await callback(attempt)
       break
     } catch (e: any) {
-      // If `onError` returns false then break the loop
+      // If `onError` returns false, then break the loop
       if (!onError(e)) {
         break
       }

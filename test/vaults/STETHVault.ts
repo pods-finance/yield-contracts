@@ -198,7 +198,7 @@ describe('STETHVault', () => {
   })
 
   describe('Reading functions', () => {
-    it('should match maxWithdraw and real withdraw balances', async () => {
+    it('maxWithdraw and withdraw should match', async () => {
       const assets = ethers.utils.parseEther('100')
       const user0Deposit = assets.mul(2)
       const user1Deposit = assets
@@ -237,7 +237,7 @@ describe('STETHVault', () => {
       expect(user1BalanceOf).to.be.equal('0')
     })
 
-    it('should match maxRedeem and real withdraw balances', async () => {
+    it('maxRedeem and withdraw should match', async () => {
       const assets = ethers.utils.parseEther('100')
       const user0Deposit = assets.mul(2)
       const user1Deposit = assets
@@ -552,7 +552,7 @@ describe('STETHVault', () => {
     const user1Moment3maxWithdraw = await vault.maxWithdraw(user1.address)
     const user2Moment3maxWithdraw = await vault.maxWithdraw(user2.address)
 
-    // console.log(‘MOMENT 3 - Should have same amounts of 2’)
+    // console.log(‘MOMENT 3 - Should have the same amounts of 2’)
     expect(user0Moment3maxWithdraw).to.be.closeTo(user0Moment2maxWithdraw, 1)
     expect(user1Moment3maxWithdraw).to.be.closeTo(user1Moment2maxWithdraw, 1)
     expect(user2Moment3maxWithdraw).to.be.closeTo(user2Moment2maxWithdraw, 1)
@@ -574,7 +574,7 @@ describe('STETHVault', () => {
     const user1Moment5maxWithdraw = await vault.maxWithdraw(user1.address)
     const user2Moment5maxWithdraw = await vault.maxWithdraw(user2.address)
 
-    // console.log(‘MOMENT 5 - Should have same amount as MOMENT 4’)
+    // console.log(‘MOMENT 5 - Should have the same amount as MOMENT 4’)
     expect(user0Moment5maxWithdraw).to.be.closeTo(user0Moment4maxWithdraw, 1)
     expect(user1Moment5maxWithdraw).to.be.closeTo(user1Moment4maxWithdraw, 1)
     expect(user2Moment5maxWithdraw).to.be.closeTo(user2Moment4maxWithdraw, 1)
@@ -585,7 +585,7 @@ describe('STETHVault', () => {
     const user1Moment6maxWithdraw = await vault.maxWithdraw(user1.address)
     const user2Moment6maxWithdraw = await vault.maxWithdraw(user2.address)
 
-    // console.log(‘MOMENT 6 - Should have same amount as MOMENT 5 and 4’)
+    // console.log(‘MOMENT 6 - Should have the same amount as MOMENT 5 and 4’)
     expect(user0Moment6maxWithdraw).to.be.closeTo(user0Moment5maxWithdraw, 1)
     expect(user1Moment6maxWithdraw).to.be.closeTo(user1Moment5maxWithdraw, 1)
     expect(user2Moment6maxWithdraw).to.be.closeTo(user2Moment5maxWithdraw, 1)
@@ -597,7 +597,7 @@ describe('STETHVault', () => {
     const user1Moment7maxWithdraw = await vault.maxWithdraw(user1.address)
     const user2Moment7maxWithdraw = await vault.maxWithdraw(user2.address)
 
-    // console.log(‘MOMENT 7 - Should have same amount as MOMENTS 6, 5, and 4’)
+    // console.log(‘MOMENT 7 - Should have the same amount as MOMENTS 6, 5, and 4’)
     expect(user0Moment7maxWithdraw).to.be.closeTo(user0Moment6maxWithdraw, 1)
     expect(user1Moment7maxWithdraw).to.be.closeTo(user1Moment6maxWithdraw, 1)
     expect(user2Moment7maxWithdraw).to.be.closeTo(user2Moment6maxWithdraw, 1)
