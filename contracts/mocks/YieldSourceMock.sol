@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 
-pragma solidity 0.8.9;
+pragma solidity 0.8.17;
 
 import "@openzeppelin/contracts/token/ERC20/ERC20.sol";
 import "@openzeppelin/contracts/token/ERC20/extensions/ERC4626.sol";
@@ -17,11 +17,11 @@ contract YieldSourceMock is ERC20, ERC4626 {
         _symbol = string(abi.encodePacked("INTP-", $asset.symbol()));
     }
 
-    function name() public view override returns (string memory) {
+    function name() public view override(ERC20, IERC20Metadata) returns (string memory) {
         return _name;
     }
 
-    function symbol() public view override returns (string memory) {
+    function symbol() public view override(ERC20, IERC20Metadata) returns (string memory) {
         return _symbol;
     }
 

@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 
-pragma solidity 0.8.9;
+pragma solidity 0.8.17;
 
 import "@openzeppelin/contracts/token/ERC20/extensions/draft-IERC20Permit.sol";
 import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
@@ -9,8 +9,8 @@ import "../interfaces/IVault.sol";
 contract Migration {
     using SafeERC20 for IERC20;
 
-    IVault immutable from;
-    IVault immutable to;
+    IVault public immutable from;
+    IVault public immutable to;
 
     constructor(IVault _from, IVault _to) {
         require(_from.asset() == _to.asset(), "Vault assets must be the same");

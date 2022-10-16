@@ -67,7 +67,7 @@ describe('BaseVault', () => {
   })
 
   describe('Reading functions', () => {
-    it('should match maxWithdraw and real withdraw balances', async () => {
+    it('maxWithdraw and withdraw should match', async () => {
       const assets = ethers.utils.parseEther('100')
       const user0Deposit = assets.mul(2)
       const user1Deposit = assets
@@ -97,7 +97,7 @@ describe('BaseVault', () => {
       expect(user1maxWithdraw).to.be.closeTo(user1AfterBalance, 1)
     })
 
-    it('should match maxRedeem and real withdraw balances', async () => {
+    it('maxRedeem and withdraw should match', async () => {
       const assets = ethers.utils.parseEther('100')
       const user0Deposit = assets.mul(2)
       const user1Deposit = assets
@@ -128,7 +128,7 @@ describe('BaseVault', () => {
       expect(await vault.maxMint(user0.address)).to.be.equal(ethers.constants.MaxUint256)
     })
 
-    it('should match previewWithdraw and real withdraw with shares', async () => {
+    it('previewWithdraw and withdraw should match', async () => {
       const assets = ethers.utils.parseEther('100')
       const user0Deposit = assets.mul(2)
       const user1Deposit = assets
@@ -153,7 +153,7 @@ describe('BaseVault', () => {
 
       expect(withdrawnBalance).to.be.equal(assets)
     })
-    it('should match previewRedeem and real withdraw with assets', async () => {
+    it('previewRedeem and withdraw should match', async () => {
       const assets = ethers.utils.parseEther('100')
       const user0Deposit = assets.mul(2)
       const user1Deposit = assets
@@ -183,7 +183,7 @@ describe('BaseVault', () => {
     // Setting fees to 100%
     await configuration.setParameter(vault.address, ethers.utils.formatBytes32String('WITHDRAW_FEE_RATIO'), 10000)
 
-    expect(await vault.withdrawFeeRatio()).to.be.equal(await vault.MAX_WITHDRAW_FEE())
+    expect(await vault.getWithdrawFeeRatio()).to.be.equal(await vault.MAX_WITHDRAW_FEE())
   })
 
   it('deposit assets and receive shares', async () => {

@@ -1,13 +1,13 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 
-pragma solidity 0.8.9;
+pragma solidity 0.8.17;
 
 interface IConfigurationManager {
     event SetCap(address indexed target, uint256 value);
     event ParameterSet(address indexed target, bytes32 indexed name, uint256 value);
     event VaultAllowanceSet(address indexed vault, bool allowed);
 
-    error ConfigurationManager__InvalidCapTarget();
+    error ConfigurationManager__TargetCannotBeTheZeroAddress();
 
     function setParameter(
         address target,

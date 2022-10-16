@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 
-pragma solidity 0.8.9;
+pragma solidity 0.8.17;
 
 import "@openzeppelin/contracts/access/Ownable.sol";
 import "../interfaces/IConfigurationManager.sol";
@@ -55,7 +55,7 @@ contract ConfigurationManager is IConfigurationManager, Ownable {
      * @param value Cap amount
      */
     function setCap(address target, uint256 value) external override onlyOwner {
-        if (target == address(0)) revert ConfigurationManager__InvalidCapTarget();
+        if (target == address(0)) revert ConfigurationManager__TargetCannotBeTheZeroAddress();
         _caps[target] = value;
         emit SetCap(target, value);
     }

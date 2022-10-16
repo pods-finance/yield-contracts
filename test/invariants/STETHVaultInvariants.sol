@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: UNLICENSED
 
-pragma solidity 0.8.9;
+pragma solidity 0.8.17;
 
 import "../../contracts/mocks/Asset.sol";
 import "../../contracts/vaults/STETHVault.sol";
