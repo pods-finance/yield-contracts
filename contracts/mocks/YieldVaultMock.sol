@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 
-pragma solidity 0.8.9;
+pragma solidity 0.8.17;
 
 import "../vaults/BaseVault.sol";
 import "./YieldSourceMock.sol";
@@ -21,7 +21,7 @@ contract YieldVaultMock is BaseVault {
         return convertToAssets(shares) + idleAssetsOf(owner);
     }
 
-    function totalAssets() public view override returns (uint256) {
+    function totalAssets() public view override(ERC4626, IERC4626) returns (uint256) {
         return yieldSource.convertToAssets(yieldSource.balanceOf(address(this))) + processedDeposits;
     }
 

@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 
-pragma solidity 0.8.9;
+pragma solidity 0.8.17;
 
 import "./BaseVault.sol";
 
@@ -94,7 +94,7 @@ contract STETHVault is BaseVault {
     /**
      * @dev See {BaseVault-totalAssets}.
      */
-    function totalAssets() public view override returns (uint256) {
+    function totalAssets() public view override(ERC4626, IERC4626) returns (uint256) {
         return IERC20Metadata(asset()).balanceOf(address(this)) - totalIdleAssets();
     }
 
