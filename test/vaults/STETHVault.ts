@@ -174,8 +174,8 @@ describe('STETHVault', () => {
       await vault.connect(user3).deposit(user3Deposit, user3.address)
       await vault.connect(user4).deposit(user4Deposit, user4.address)
 
-      const oldBalance = await asset.balanceOf(vault.address);
-      const newMint = oldBalance.mul(5).div(100);
+      const oldBalance = await asset.balanceOf(vault.address)
+      const newMint = oldBalance.mul(5).div(100)
 
       // Increase totalAssets() value
       await asset.connect(yieldGenerator).transfer(vault.address, newMint)
@@ -485,7 +485,7 @@ describe('STETHVault', () => {
 
     const expectedUser0Amount = BigNumber.from('1495424836601307189549')
     const expectedUser1Amount = BigNumber.from('104575163398692810446')
-    
+
     await expect(async () =>
       await vault.connect(user0).redeem(await vault.balanceOf(user0.address), user0.address, user0.address)
     )

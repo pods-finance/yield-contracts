@@ -9,8 +9,8 @@ import "../interfaces/IVault.sol";
 contract Migration {
     using SafeERC20 for IERC20;
 
-    IVault immutable from;
-    IVault immutable to;
+    IVault public immutable from;
+    IVault public immutable to;
 
     constructor(IVault _from, IVault _to) {
         require(_from.asset() == _to.asset(), "Vault assets must be the same");
