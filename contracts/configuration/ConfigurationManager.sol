@@ -55,7 +55,7 @@ contract ConfigurationManager is IConfigurationManager, Ownable {
      * @param value Cap amount
      */
     function setCap(address target, uint256 value) external override onlyOwner {
-        if (target == address(0)) revert ConfigurationManager__InvalidCapTarget();
+        if (target == address(0)) revert ConfigurationManager__TargetCannotBeTheZeroAddress();
         _caps[target] = value;
         emit SetCap(target, value);
     }

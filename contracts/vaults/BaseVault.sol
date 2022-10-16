@@ -162,7 +162,7 @@ abstract contract BaseVault is IVault, ERC20Permit, ERC4626, Capped {
      */
     function previewWithdraw(uint256 assets) public view override(ERC4626, IERC4626) returns (uint256 shares) {
         shares = _convertToShares(assets, Math.Rounding.Up);
-        uint256 invertedFee = DENOMINATOR - withdrawFeeRatio();
+        uint256 invertedFee = DENOMINATOR - getWithdrawFeeRatio();
         return shares.mulDiv(DENOMINATOR, invertedFee, Math.Rounding.Up);
     }
 
@@ -202,7 +202,7 @@ abstract contract BaseVault is IVault, ERC20Permit, ERC4626, Capped {
     /**
      * @inheritdoc IVault
      */
-    function withdrawFeeRatio() public view override returns (uint256) {
+    function getWithdrawFeeRatio() public view override returns (uint256) {
         uint256 _withdrawFeeRatio = configuration.getParameter(address(this), "WITHDRAW_FEE_RATIO");
         // Fee is limited to MAX_WITHDRAW_FEE
         return Math.min(_withdrawFeeRatio, MAX_WITHDRAW_FEE);
@@ -370,7 +370,7 @@ abstract contract BaseVault is IVault, ERC20Permit, ERC4626, Capped {
      * @notice Calculate the fee amount on withdraw.
      */
     function _getFee(uint256 assets) internal view returns (uint256) {
-        return assets.mulDiv(withdrawFeeRatio(), DENOMINATOR, Math.Rounding.Down);
+        return assets.mulDiv(getWithdrawFeeRatio(), DENOMINATOR, Math.Rounding.Down);
     }
 
     /**

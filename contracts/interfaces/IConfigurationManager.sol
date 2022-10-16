@@ -7,7 +7,7 @@ interface IConfigurationManager {
     event ParameterSet(address indexed target, bytes32 indexed name, uint256 value);
     event VaultAllowanceSet(address indexed vault, bool allowed);
 
-    error ConfigurationManager__InvalidCapTarget();
+    error ConfigurationManager__TargetCannotBeTheZeroAddress();
 
     function setParameter(
         address target,

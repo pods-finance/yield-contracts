@@ -28,7 +28,7 @@ interface IVault is IERC4626, IERC20Permit {
     /**
      * @notice Returns the fee charged on withdraws.
      */
-    function withdrawFeeRatio() external view returns (uint256);
+    function getWithdrawFeeRatio() external view returns (uint256);
 
     /**
      * @notice Returns the vault controller
