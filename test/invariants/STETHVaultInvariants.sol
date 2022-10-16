@@ -154,7 +154,7 @@ contract STETHVaultInvariants is STETHVault, FuzzyAddresses {
         }
     }
 
-    function transfer(address to, uint256 amount) public override returns (bool) {
+    function transfer(address to, uint256 amount) public override(ERC20, IERC20) returns (bool) {
         if (!_addressIsAllowed(to)) return false;
         return super.transfer(to, amount);
     }
@@ -163,7 +163,7 @@ contract STETHVaultInvariants is STETHVault, FuzzyAddresses {
         address from,
         address to,
         uint256 amount
-    ) public override returns (bool) {
+    ) public override(ERC20, IERC20) returns (bool) {
         if (!_addressIsAllowed(to)) return false;
         return super.transferFrom(from, to, amount);
     }
