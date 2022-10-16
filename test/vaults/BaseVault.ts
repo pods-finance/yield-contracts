@@ -146,12 +146,12 @@ describe('BaseVault', () => {
 
       const user0previewShares = await vault.previewWithdraw(assets)
 
-      const balanceUser0Before = await asset.balanceOf(user0.address)
-      await vault.connect(user0).redeem(user0previewShares, user0.address, user0.address)
-      const balanceUser0After = await asset.balanceOf(user0.address)
-      const withdrawnBalance = balanceUser0After.sub(balanceUser0Before)
+      const balanceUser0Before = await vault.balanceOf(user0.address)
+      await vault.connect(user0).withdraw(assets, user0.address, user0.address)
+      const balanceUser0After = await vault.balanceOf(user0.address)
+      const withdrawnBalance = balanceUser0Before.sub(balanceUser0After)
 
-      expect(withdrawnBalance).to.be.equal(assets)
+      expect(withdrawnBalance).to.be.equal(user0previewShares)
     })
     it('previewRedeem and withdraw should match', async () => {
       const assets = ethers.utils.parseEther('100')
@@ -931,11 +931,11 @@ describe('BaseVault', () => {
     const sharesToBeBurned = await vault.previewWithdraw(assets)
 
     // burn shares
-    const balanceBefore = await asset.balanceOf(user0.address)
-    await vault.connect(user0).redeem(sharesToBeBurned, user0.address, user0.address)
-    const balanceAfter = await asset.balanceOf(user0.address)
-    const balanceRemoved = balanceAfter.sub(balanceBefore)
-    expect(balanceRemoved).to.be.eq(assets.add(1))
+    const balanceBefore = await vault.balanceOf(user0.address)
+    await vault.connect(user0).withdraw(assets, user0.address, user0.address)
+    const balanceAfter = await vault.balanceOf(user0.address)
+    const balanceRemoved = balanceBefore.sub(balanceAfter)
+    expect(balanceRemoved).to.be.eq(sharesToBeBurned)
 
     // User0 withdraws
     await vault.connect(user0).redeem(await vault.balanceOf(user0.address), user0.address, user0.address)
@@ -944,7 +944,7 @@ describe('BaseVault', () => {
 
     const user1Shares = await vault.balanceOf(user1.address)
 
-    const assetsToBeWithdrawnUser1 = feeExcluded(assets)
+    const assetsToBeWithdrawnUser1 = assets
     const sharesToBeBurnedUser1 = await vault.previewWithdraw(assetsToBeWithdrawnUser1)
 
     expect(sharesToBeBurnedUser1).to.be.equal(user1Shares)
