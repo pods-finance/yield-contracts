@@ -89,16 +89,18 @@ contract STETHVaultInvariants is STETHVault, FuzzyAddresses {
         return sumBalances == totalSupply();
     }
 
+    function echidna_lastRoundAssets_always_greater_than_totalAssets() public returns (bool) {
+        return totalAssets() >= lastRoundAssets;
+    }
+
     /**
      * @dev This function helps the fuzzer to quickly processDeposits in the right way.
     The variable endIndex its just a random factor to enable process in chunks instead of processing
     only the entire queue size.
      */
     //
-    function helpProcessQueue(uint256 endIndex) public {
-        if (endIndex > depositQueueSize()) return;
-        uint256 startIndex = 0;
-        this.processQueuedDeposits(startIndex, endIndex);
+    function helpProcessQueue() public {
+        this.processQueuedDeposits(this.queuedDeposits());
     }
 
     function deposit(uint256 assets, address) public override returns (uint256 shares) {
