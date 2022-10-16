@@ -57,7 +57,7 @@ abstract contract BaseVault is IVault, ERC20Permit, ERC4626, Capped {
         configuration = configuration_;
 
         // Vault starts in `start` state
-        emit StartRound(currentRoundId, 0);
+        emit RoundStarted(currentRoundId, 0);
         _lastEndRound = block.timestamp;
     }
 
@@ -270,7 +270,7 @@ abstract contract BaseVault is IVault, ERC20Permit, ERC4626, Capped {
         isProcessingDeposits = false;
 
         _afterRoundStart(processedDeposits);
-        emit StartRound(currentRoundId, processedDeposits);
+        emit RoundStarted(currentRoundId, processedDeposits);
         processedDeposits = 0;
 
         return currentRoundId;
@@ -286,7 +286,7 @@ abstract contract BaseVault is IVault, ERC20Permit, ERC4626, Capped {
         _afterRoundEnd();
         _lastEndRound = block.timestamp;
 
-        emit EndRound(currentRoundId++);
+        emit RoundEnded(currentRoundId++);
     }
 
     /**
