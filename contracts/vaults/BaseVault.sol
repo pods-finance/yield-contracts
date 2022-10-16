@@ -220,7 +220,10 @@ abstract contract BaseVault is IVault, ERC20Permit, ERC4626, Capped {
      */
     function assetsOf(address owner) public view virtual returns (uint256) {
         uint256 shares = balanceOf(owner);
-        return convertToAssets(shares) + idleAssetsOf(owner);
+        uint256 committedAssets = supply == 0
+            ? 0
+            : shares.mulDiv(IERC20Metadata(asset()).balanceOf(address(this)), supply, Math.Rounding.Down);
+        return convertToAssets(shares) + idleAssetsOf(owner) + committedAssets;
     }
 
     /**
