@@ -219,6 +219,7 @@ abstract contract BaseVault is IVault, ERC20Permit, ERC4626, Capped {
      * @inheritdoc IVault
      */
     function assetsOf(address owner) public view virtual returns (uint256) {
+        uint256 supply = totalSupply();
         uint256 shares = balanceOf(owner);
         uint256 committedAssets = supply == 0
             ? 0
