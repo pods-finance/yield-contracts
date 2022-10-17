@@ -4,23 +4,29 @@ pragma solidity 0.8.17;
 
 import "@openzeppelin/contracts/token/ERC20/extensions/draft-IERC20Permit.sol";
 import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
+import "../interfaces/IConfigurationManager.sol";
 import "../interfaces/IVault.sol";
 
 contract Migration {
     using SafeERC20 for IERC20;
 
-    IVault public immutable from;
-    IVault public immutable to;
+    IConfigurationManager public immutable configuration;
 
-    error Migration__AssetsMustBeEqual();
+    error Migration__MigrationNotAllowed();
 
-    constructor(IVault _from, IVault _to) {
-        if (_from.asset() != _to.asset()) revert Migration__AssetsMustBeEqual();
-        from = _from;
-        to = _to;
+    constructor(IConfigurationManager _configuration) {
+        configuration = _configuration;
     }
 
-    function migrate(uint256 shares) external returns (uint256) {
+    function migrate(
+        IVault from,
+        IVault to,
+        uint256 shares
+    ) external returns (uint256) {
+        if (!configuration.isVaultMigrationAllowed(address(from), address(to))) {
+            revert Migration__MigrationNotAllowed();
+        }
+
         from.redeem(shares, address(this), msg.sender);
 
         IERC20 asset = IERC20(from.asset());
@@ -30,12 +36,18 @@ contract Migration {
     }
 
     function migrateWithPermit(
+        IVault from,
+        IVault to,
         uint256 shares,
         uint256 deadline,
         uint8 v,
         bytes32 r,
         bytes32 s
     ) external returns (uint256) {
+        if (!configuration.isVaultMigrationAllowed(address(from), address(to))) {
+            revert Migration__MigrationNotAllowed();
+        }
+
         IERC20Permit(address(from)).permit(msg.sender, address(this), shares, deadline, v, r, s);
         from.redeem(shares, address(this), msg.sender);
 

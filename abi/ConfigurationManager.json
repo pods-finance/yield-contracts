@@ -73,14 +73,14 @@
       {
         "indexed": true,
         "internalType": "address",
-        "name": "vault",
+        "name": "oldVault",
         "type": "address"
       },
       {
         "indexed": false,
-        "internalType": "bool",
-        "name": "allowed",
-        "type": "bool"
+        "internalType": "address",
+        "name": "newVault",
+        "type": "address"
       }
     ],
     "name": "VaultAllowanceSet",
@@ -152,11 +152,16 @@
     "inputs": [
       {
         "internalType": "address",
-        "name": "vault",
+        "name": "oldVault",
+        "type": "address"
+      },
+      {
+        "internalType": "address",
+        "name": "newVault",
         "type": "address"
       }
     ],
-    "name": "isVaultAllowed",
+    "name": "isVaultMigrationAllowed",
     "outputs": [
       {
         "internalType": "bool",
@@ -183,24 +188,6 @@
   {
     "inputs": [],
     "name": "renounceOwnership",
-    "outputs": [],
-    "stateMutability": "nonpayable",
-    "type": "function"
-  },
-  {
-    "inputs": [
-      {
-        "internalType": "address",
-        "name": "vault",
-        "type": "address"
-      },
-      {
-        "internalType": "bool",
-        "name": "allowed",
-        "type": "bool"
-      }
-    ],
-    "name": "setAllowedVault",
     "outputs": [],
     "stateMutability": "nonpayable",
     "type": "function"
@@ -242,6 +229,24 @@
       }
     ],
     "name": "setParameter",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "address",
+        "name": "oldVault",
+        "type": "address"
+      },
+      {
+        "internalType": "address",
+        "name": "newVault",
+        "type": "address"
+      }
+    ],
+    "name": "setVaultMigration",
     "outputs": [],
     "stateMutability": "nonpayable",
     "type": "function"

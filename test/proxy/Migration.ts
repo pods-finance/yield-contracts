@@ -68,7 +68,7 @@ describe('Migration', () => {
     )
 
     const Migration = await ethers.getContractFactory('Migration')
-    migration = await Migration.deploy(vaultFrom.address, vaultTo.address)
+    migration = await Migration.deploy(configuration.address)
 
     // Give approval upfront that the vault can pull money from the investor contract
     await investor.approveVaultToPull(vaultFrom.address)
@@ -105,6 +105,9 @@ describe('Migration', () => {
     const user1Deposit = assets
     const user2Deposit = assets
 
+    // Setup migration
+    await configuration.setVaultMigration(vaultFrom.address, vaultTo.address)
+
     // Setup vault `from`
     await vaultFrom.connect(user0).deposit(user0Deposit, user0.address)
     await vaultFrom.connect(user1).deposit(user1Deposit, user1.address)
@@ -124,7 +127,7 @@ describe('Migration', () => {
 
     // Execute migration
     await vaultFrom.connect(user1).approve(migration.address, ethers.constants.MaxUint256)
-    await migration.connect(user1).migrate(await vaultFrom.balanceOf(user1.address))
+    await migration.connect(user1).migrate(vaultFrom.address, vaultTo.address, await vaultFrom.balanceOf(user1.address))
 
     expect(await vaultFrom.totalAssets()).to.be.closeTo(vaultFromTotalAssets.sub(user1Withdrawable), 1)
     expect(await asset.balanceOf(migration.address)).to.be.closeTo(BigNumber.from('0'), 1)
@@ -134,6 +137,10 @@ describe('Migration', () => {
 
   it('migrates assets from one vault to the other with permit', async () => {
     const userDeposit = ethers.utils.parseEther('100')
+
+    // Setup migration
+    await configuration.setVaultMigration(vaultFrom.address, vaultTo.address)
+
     await asset.connect(user0).transfer(userPermit.address, userDeposit)
     await asset.connect(userPermit).approve(vaultFrom.address, userDeposit)
 
@@ -152,6 +159,8 @@ describe('Migration', () => {
       shares.toString()
     )
     await migration.connect(userPermit).migrateWithPermit(
+      vaultFrom.address,
+      vaultTo.address,
       shares,
       permit.deadline,
       permit.v,
@@ -160,14 +169,58 @@ describe('Migration', () => {
     )
   })
 
-  it('cannot migrate between vaults with different assets', async () => {
-    const Asset = await ethers.getContractFactory('Asset')
-    const asset = await Asset.deploy('Asset', 'AST')
-    const STETHVault = await ethers.getContractFactory('STETHVault')
-    vaultTo = await STETHVault.deploy(configuration.address, asset.address, investor.address)
+  it('should not migrate to disallowed vaults', async () => {
+    const assets = ethers.utils.parseEther('100')
+    const user0Deposit = assets.mul(2)
+    const user1Deposit = assets
+    const user2Deposit = assets
+    const userPermitDeposit = assets
 
-    const Migration = await ethers.getContractFactory('Migration')
-    await expect(Migration.deploy(vaultFrom.address, vaultTo.address))
-      .to.be.revertedWith('Migration__AssetsMustBeEqual()')
+    // Setup vault `from`
+    await vaultFrom.connect(user0).deposit(user0Deposit, user0.address)
+    await vaultFrom.connect(user1).deposit(user1Deposit, user1.address)
+    await asset.connect(user0).transfer(userPermit.address, userPermitDeposit)
+    await asset.connect(userPermit).approve(vaultFrom.address, userPermitDeposit)
+    await vaultFrom.connect(userPermit).deposit(userPermitDeposit, userPermit.address)
+    await vaultFrom.connect(vaultController).endRound()
+    await vaultFrom.connect(vaultController).processQueuedDeposits([user0.address, user1.address])
+    await vaultFrom.connect(vaultController).startRound()
+
+    // Setup vault `to`
+    await vaultTo.connect(user2).deposit(user2Deposit, user2.address)
+    await vaultTo.connect(vaultController).endRound()
+    await vaultTo.connect(vaultController).processQueuedDeposits([user2.address])
+    await vaultTo.connect(vaultController).startRound()
+
+    // Tries to migrate
+    let migrationTx
+    const shares = await vaultFrom.balanceOf(userPermit.address)
+    const permit = await signERC2612Permit(
+      userPermit,
+      vaultFrom.address,
+      userPermit.address,
+      migration.address,
+      shares.toString()
+    )
+    migrationTx = migration.connect(userPermit).migrateWithPermit(
+      vaultFrom.address,
+      vaultTo.address,
+      shares,
+      permit.deadline,
+      permit.v,
+      permit.r,
+      permit.s
+    )
+
+    await expect(migrationTx).to.be.revertedWith('Migration__MigrationNotAllowed()')
+
+    await vaultFrom.connect(user1).approve(migration.address, ethers.constants.MaxUint256)
+    migrationTx = migration.connect(user1).migrate(
+      vaultFrom.address,
+      vaultTo.address,
+      await vaultFrom.balanceOf(user1.address)
+    )
+
+    await expect(migrationTx).to.be.revertedWith('Migration__MigrationNotAllowed()')
   })
 })
