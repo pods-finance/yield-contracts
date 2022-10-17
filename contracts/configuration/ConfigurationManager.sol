@@ -13,7 +13,7 @@ import "../interfaces/IConfigurationManager.sol";
 contract ConfigurationManager is IConfigurationManager, Ownable {
     mapping(address => mapping(bytes32 => uint256)) private _parameters;
     mapping(address => uint256) private _caps;
-    mapping(address => bool) private _allowedVault;
+    mapping(address => address) private _allowedVaults;
     address private immutable _global = address(0);
 
     /**
@@ -71,19 +71,20 @@ contract ConfigurationManager is IConfigurationManager, Ownable {
 
     /**
      * @notice Sets the allowance to migrate to a `vault` address.
-     * @param vault The contract address
-     * @param allowed Allowance status
+     * @param oldVault The current vault address
+     * @param newVault The vault where assets are going to be migrated to
      */
-    function setAllowedVault(address vault, bool allowed) external override onlyOwner {
-        _allowedVault[vault] = allowed;
-        emit VaultAllowanceSet(vault, allowed);
+    function setVaultMigration(address oldVault, address newVault) external override onlyOwner {
+        _allowedVaults[oldVault] = newVault;
+        emit VaultAllowanceSet(oldVault, newVault);
     }
 
     /**
-     * @notice Returns if a vault is allowed.
-     * @param vault The contract address
+     * @notice Returns if the migration for a vault is allowed.
+     * @param oldVault The current vault address
+     * @param newVault The vault where assets are going to be migrated to
      */
-    function isVaultAllowed(address vault) external view override returns (bool) {
-        return _allowedVault[vault];
+    function isVaultMigrationAllowed(address oldVault, address newVault) external view override returns (bool) {
+        return _allowedVaults[oldVault] == newVault;
     }
 }

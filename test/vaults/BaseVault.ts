@@ -814,7 +814,7 @@ describe('BaseVault', () => {
         yieldSource.address
       )
 
-      await configuration.setAllowedVault(newVault.address, true)
+      await configuration.setVaultMigration(vault.address, newVault.address)
 
       expect(await vault.assetsOf(user0.address)).to.be.equal(assets)
       expect(await newVault.idleAssetsOf(user0.address)).to.be.equal(0)
@@ -843,31 +843,6 @@ describe('BaseVault', () => {
         asset.address,
         yieldSource.address
       )
-
-      const migrationTx = vault.connect(user0).migrate(newVault.address)
-      await expect(migrationTx)
-        .to.be.revertedWith('IVault__MigrationNotAllowed')
-    })
-
-    it('should not migrate to vaults with different assets', async () => {
-      const assets = ethers.utils.parseEther('100')
-
-      await asset.connect(user0).mint(assets)
-      await vault.connect(user0).deposit(assets, user0.address)
-      await vault.connect(vaultController).endRound()
-      await vault.connect(vaultController).processQueuedDeposits([user0.address])
-      await vault.connect(vaultController).startRound()
-
-      const Asset = await ethers.getContractFactory('Asset')
-      const Vault = await ethers.getContractFactory('YieldVaultMock')
-      const newAsset = await Asset.deploy('Asset', 'AST')
-      const newVault = await Vault.deploy(
-        configuration.address,
-        newAsset.address,
-        yieldSource.address
-      )
-
-      await configuration.setAllowedVault(newVault.address, true)
 
       const migrationTx = vault.connect(user0).migrate(newVault.address)
       await expect(migrationTx)

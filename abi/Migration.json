@@ -2,13 +2,8 @@
   {
     "inputs": [
       {
-        "internalType": "contract IVault",
-        "name": "_from",
-        "type": "address"
-      },
-      {
-        "internalType": "contract IVault",
-        "name": "_to",
+        "internalType": "contract IConfigurationManager",
+        "name": "_configuration",
         "type": "address"
       }
     ],
@@ -17,15 +12,15 @@
   },
   {
     "inputs": [],
-    "name": "Migration__AssetsMustBeEqual",
+    "name": "Migration__MigrationNotAllowed",
     "type": "error"
   },
   {
     "inputs": [],
-    "name": "from",
+    "name": "configuration",
     "outputs": [
       {
-        "internalType": "contract IVault",
+        "internalType": "contract IConfigurationManager",
         "name": "",
         "type": "address"
       }
@@ -35,6 +30,16 @@
   },
   {
     "inputs": [
+      {
+        "internalType": "contract IVault",
+        "name": "from",
+        "type": "address"
+      },
+      {
+        "internalType": "contract IVault",
+        "name": "to",
+        "type": "address"
+      },
       {
         "internalType": "uint256",
         "name": "shares",
@@ -54,6 +59,16 @@
   },
   {
     "inputs": [
+      {
+        "internalType": "contract IVault",
+        "name": "from",
+        "type": "address"
+      },
+      {
+        "internalType": "contract IVault",
+        "name": "to",
+        "type": "address"
+      },
       {
         "internalType": "uint256",
         "name": "shares",
@@ -89,19 +104,6 @@
       }
     ],
     "stateMutability": "nonpayable",
-    "type": "function"
-  },
-  {
-    "inputs": [],
-    "name": "to",
-    "outputs": [
-      {
-        "internalType": "contract IVault",
-        "name": "",
-        "type": "address"
-      }
-    ],
-    "stateMutability": "view",
     "type": "function"
   }
 ]

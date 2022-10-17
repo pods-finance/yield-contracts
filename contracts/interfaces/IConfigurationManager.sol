@@ -5,7 +5,7 @@ pragma solidity 0.8.17;
 interface IConfigurationManager {
     event SetCap(address indexed target, uint256 value);
     event ParameterSet(address indexed target, bytes32 indexed name, uint256 value);
-    event VaultAllowanceSet(address indexed vault, bool allowed);
+    event VaultAllowanceSet(address indexed oldVault, address newVault);
 
     error ConfigurationManager__TargetCannotBeTheZeroAddress();
 
@@ -23,7 +23,7 @@ interface IConfigurationManager {
 
     function getCap(address target) external view returns (uint256);
 
-    function setAllowedVault(address vault, bool allowed) external;
+    function setVaultMigration(address oldVault, address newVault) external;
 
-    function isVaultAllowed(address vault) external view returns (bool);
+    function isVaultMigrationAllowed(address oldVault, address newVault) external view returns (bool);
 }

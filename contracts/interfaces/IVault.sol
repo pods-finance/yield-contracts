@@ -84,6 +84,11 @@ interface IVault is IERC4626, IERC20Permit {
     function migrate(IVault newVault) external;
 
     /**
+     * @notice Handle migrated assets.
+     */
+    function handleMigration(uint256 assets, address receiver) external returns (uint256 shares);
+
+    /**
      * @notice Distribute shares to depositors queued in the deposit queue, effectively including their assets in the next round.
      *
      * @param depositors Array of owner addresses to process
