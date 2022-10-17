@@ -155,7 +155,7 @@ contract STETHVault is BaseVault {
         address from,
         address to,
         uint256 amount
-    ) internal returns (uint256 effectiveAmount) {
+    ) internal returns (uint256) {
         uint256 balanceBefore = IERC20Metadata(asset()).balanceOf(to);
         if (from == address(this)) {
             IERC20Metadata(asset()).safeTransfer(to, amount);

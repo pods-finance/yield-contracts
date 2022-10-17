@@ -596,7 +596,7 @@
     "outputs": [
       {
         "internalType": "uint256",
-        "name": "shares",
+        "name": "",
         "type": "uint256"
       }
     ],
@@ -653,7 +653,7 @@
     "outputs": [
       {
         "internalType": "uint256",
-        "name": "shares",
+        "name": "",
         "type": "uint256"
       }
     ],
@@ -805,7 +805,7 @@
     "outputs": [
       {
         "internalType": "uint256",
-        "name": "assets",
+        "name": "",
         "type": "uint256"
       }
     ],
@@ -842,7 +842,7 @@
     "outputs": [
       {
         "internalType": "uint256",
-        "name": "assets",
+        "name": "",
         "type": "uint256"
       }
     ],
@@ -886,7 +886,7 @@
     "outputs": [
       {
         "internalType": "uint256",
-        "name": "assets",
+        "name": "",
         "type": "uint256"
       }
     ],
@@ -1018,7 +1018,7 @@
     "outputs": [
       {
         "internalType": "uint256",
-        "name": "assets",
+        "name": "",
         "type": "uint256"
       }
     ],
@@ -1037,7 +1037,7 @@
     "outputs": [
       {
         "internalType": "uint256",
-        "name": "shares",
+        "name": "",
         "type": "uint256"
       }
     ],
@@ -1144,7 +1144,7 @@
     "outputs": [
       {
         "internalType": "uint256",
-        "name": "roundId",
+        "name": "",
         "type": "uint256"
       }
     ],

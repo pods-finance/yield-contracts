@@ -23,11 +23,11 @@ contract ETHAdapter {
         pool = _pool;
     }
 
-    function convertToSTETH(uint256 ethAmount) public view returns (uint256 stETHAmount) {
+    function convertToSTETH(uint256 ethAmount) public view returns (uint256) {
         return pool.get_dy(0, 1, ethAmount);
     }
 
-    function convertToETH(uint256 stETHAmount) public view returns (uint256 ethAmount) {
+    function convertToETH(uint256 stETHAmount) public view returns (uint256) {
         return pool.get_dy(1, 0, stETHAmount);
     }
 

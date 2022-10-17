@@ -40,7 +40,7 @@
     "outputs": [
       {
         "internalType": "uint256",
-        "name": "newShares",
+        "name": "",
         "type": "uint256"
       }
     ],
@@ -79,7 +79,7 @@
     "outputs": [
       {
         "internalType": "uint256",
-        "name": "newShares",
+        "name": "",
         "type": "uint256"
       }
     ],
