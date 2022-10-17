@@ -191,19 +191,6 @@
         "internalType": "uint256",
         "name": "roundId",
         "type": "uint256"
-      }
-    ],
-    "name": "EndRound",
-    "type": "event"
-  },
-  {
-    "anonymous": false,
-    "inputs": [
-      {
-        "indexed": true,
-        "internalType": "uint256",
-        "name": "roundId",
-        "type": "uint256"
       },
       {
         "indexed": false,
@@ -285,21 +272,9 @@
         "internalType": "uint256",
         "name": "roundId",
         "type": "uint256"
-      },
-      {
-        "indexed": false,
-        "internalType": "uint256",
-        "name": "startSharePrice",
-        "type": "uint256"
-      },
-      {
-        "indexed": false,
-        "internalType": "uint256",
-        "name": "endSharePrice",
-        "type": "uint256"
       }
     ],
-    "name": "SharePrice",
+    "name": "RoundEnded",
     "type": "event"
   },
   {
@@ -318,7 +293,32 @@
         "type": "uint256"
       }
     ],
-    "name": "StartRound",
+    "name": "RoundStarted",
+    "type": "event"
+  },
+  {
+    "anonymous": false,
+    "inputs": [
+      {
+        "indexed": true,
+        "internalType": "uint256",
+        "name": "roundId",
+        "type": "uint256"
+      },
+      {
+        "indexed": false,
+        "internalType": "uint256",
+        "name": "startSharePrice",
+        "type": "uint256"
+      },
+      {
+        "indexed": false,
+        "internalType": "uint256",
+        "name": "endSharePrice",
+        "type": "uint256"
+      }
+    ],
+    "name": "SharePrice",
     "type": "event"
   },
   {

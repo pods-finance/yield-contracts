@@ -33,7 +33,7 @@ describe('BaseVault', () => {
     )
 
     await expect(vault.deployTransaction)
-      .to.emit(vault, 'StartRound').withArgs(0, 0)
+      .to.emit(vault, 'RoundStarted').withArgs(0, 0)
 
     await configuration.setParameter(vault.address, ethers.utils.formatBytes32String('VAULT_CONTROLLER'), vaultController.address)
     await configuration.setParameter(vault.address, ethers.utils.formatBytes32String('WITHDRAW_FEE_RATIO'), BigNumber.from('100'))
@@ -206,7 +206,7 @@ describe('BaseVault', () => {
     // Process deposits
     // Since Round 0 started upon deployment, it should end the exact same round number "0"
     const endRoundTx = vault.connect(vaultController).endRound()
-    await expect(endRoundTx).to.emit(vault, 'EndRound').withArgs(0)
+    await expect(endRoundTx).to.emit(vault, 'RoundEnded').withArgs(0)
     expect(await vault.isProcessingDeposits()).to.be.equal(true)
     const depositProcessingTx = vault.connect(vaultController).processQueuedDeposits([user0.address])
     await expect(depositProcessingTx).to.emit(vault, 'DepositProcessed').withArgs(user0.address, 1, assets, expectedShares)
@@ -244,7 +244,7 @@ describe('BaseVault', () => {
     // Process deposits
     // Since Round 0 started upon deployment, it should end the exact same round number "0"
     const endRoundTx = vault.connect(vaultController).endRound()
-    await expect(endRoundTx).to.emit(vault, 'EndRound').withArgs(0)
+    await expect(endRoundTx).to.emit(vault, 'RoundEnded').withArgs(0)
     expect(await vault.isProcessingDeposits()).to.be.equal(true)
     const depositProcessingTx = vault.connect(vaultController).processQueuedDeposits([user0.address])
     await expect(depositProcessingTx).to.emit(vault, 'DepositProcessed').withArgs(user0.address, 1, assets, expectedShares)
@@ -384,7 +384,7 @@ describe('BaseVault', () => {
       await ethers.provider.send('evm_mine', [block.timestamp + 604800])
 
       startRoundTx = vault.connect(user0).startRound()
-      await expect(startRoundTx).to.emit(vault, 'StartRound')
+      await expect(startRoundTx).to.emit(vault, 'RoundStarted')
     })
     it('it should remove the same amount independently of the process order', async () => {
       await configuration.setParameter(vault.address, ethers.utils.formatBytes32String('WITHDRAW_FEE_RATIO'), BigNumber.from('0'))

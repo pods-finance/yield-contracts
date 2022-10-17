@@ -17,10 +17,10 @@ contract STETHVault is BaseVault {
     Fractional public lastSharePrice;
 
     /*
-     @dev investorRatio is the proportion that the weekly yield will be split
+     @dev INVESTOR_RATIO is the proportion that the weekly yield will be split
      The precision of this number is set by the variable DENOMINATOR. 5000 is equivalent to 50%
     */
-    uint256 public constant investorRatio = 5000;
+    uint256 public constant INVESTOR_RATIO = 5000;
     address public immutable investor;
 
     event StartRoundData(uint256 indexed roundId, uint256 lastRoundAssets, uint256 sharePrice);
@@ -68,7 +68,7 @@ contract STETHVault is BaseVault {
 
         if (supply != 0) {
             roundAccruedInterest = totalAssets() - lastRoundAssets;
-            uint256 investmentAmount = (roundAccruedInterest * investorRatio) / DENOMINATOR;
+            uint256 investmentAmount = (roundAccruedInterest * INVESTOR_RATIO) / DENOMINATOR;
 
             // Pulls the yields from investor
             if (investmentYield > 0) {
