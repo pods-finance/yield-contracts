@@ -43,11 +43,11 @@ contract PrincipalProtectedMock is BaseVault {
         sharePriceDecimals = _asset.decimals();
     }
 
-    function _afterRoundStart(uint256 assets) internal override {
+    function _afterRoundStart() internal override {
         lastRoundAssets = totalAssets();
-        if (assets > 0) {
-            IERC20Metadata(asset()).approve(address(yieldSource), assets);
-            yieldSource.deposit(assets, address(this));
+        if (processedDeposits > 0) {
+            IERC20Metadata(asset()).approve(address(yieldSource), processedDeposits);
+            yieldSource.deposit(processedDeposits, address(this));
         }
         uint256 supply = totalSupply();
 

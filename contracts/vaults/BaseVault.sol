@@ -267,7 +267,7 @@ abstract contract BaseVault is IVault, ERC20Permit, ERC4626, Capped {
 
         isProcessingDeposits = false;
 
-        _afterRoundStart(processedDeposits);
+        _afterRoundStart();
         emit RoundStarted(currentRoundId, processedDeposits);
         processedDeposits = 0;
 
@@ -432,7 +432,7 @@ abstract contract BaseVault is IVault, ERC20Permit, ERC4626, Capped {
     /* This hook should be implemented in the contract implementation.
         It will trigger after setting isProcessingDeposits to false
     */
-    function _afterRoundStart(uint256 assets) internal virtual {}
+    function _afterRoundStart() internal virtual {}
 
     // solhint-disable-next-line no-empty-blocks
     /* This hook should be implemented in the contract implementation.

@@ -48,7 +48,7 @@ contract STETHVault is BaseVault {
         sharePriceDecimals = _asset.decimals();
     }
 
-    function _afterRoundStart(uint256) internal override {
+    function _afterRoundStart() internal override {
         uint256 supply = totalSupply();
 
         lastRoundAssets = totalAssets();
