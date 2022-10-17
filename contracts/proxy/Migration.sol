@@ -12,8 +12,10 @@ contract Migration {
     IVault public immutable from;
     IVault public immutable to;
 
+    error Migration__AssetsMustBeEqual();
+
     constructor(IVault _from, IVault _to) {
-        require(_from.asset() == _to.asset(), "Vault assets must be the same");
+        if (_from.asset() != _to.asset()) revert Migration__AssetsMustBeEqual();
         from = _from;
         to = _to;
     }

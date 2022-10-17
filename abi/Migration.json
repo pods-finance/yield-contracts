@@ -17,6 +17,11 @@
   },
   {
     "inputs": [],
+    "name": "Migration__AssetsMustBeEqual",
+    "type": "error"
+  },
+  {
+    "inputs": [],
     "name": "from",
     "outputs": [
       {

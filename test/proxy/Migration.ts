@@ -168,6 +168,6 @@ describe('Migration', () => {
 
     const Migration = await ethers.getContractFactory('Migration')
     await expect(Migration.deploy(vaultFrom.address, vaultTo.address))
-      .to.be.revertedWith('Vault assets must be the same')
+      .to.be.revertedWith('Migration__AssetsMustBeEqual()')
   })
 })
