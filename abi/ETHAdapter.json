@@ -58,7 +58,7 @@
     "outputs": [
       {
         "internalType": "uint256",
-        "name": "ethAmount",
+        "name": "",
         "type": "uint256"
       }
     ],
@@ -77,7 +77,7 @@
     "outputs": [
       {
         "internalType": "uint256",
-        "name": "stETHAmount",
+        "name": "",
         "type": "uint256"
       }
     ],
