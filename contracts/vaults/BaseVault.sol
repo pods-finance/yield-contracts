@@ -100,7 +100,7 @@ abstract contract BaseVault is IVault, ERC20Permit, ERC4626, Capped {
         uint8 v,
         bytes32 r,
         bytes32 s
-    ) public whenNotProcessingDeposits returns (uint256) {
+    ) external whenNotProcessingDeposits returns (uint256) {
         IERC20Permit(asset()).permit(msg.sender, address(this), assets, deadline, v, r, s);
         return super.deposit(assets, receiver);
     }
@@ -125,7 +125,7 @@ abstract contract BaseVault is IVault, ERC20Permit, ERC4626, Capped {
         uint8 v,
         bytes32 r,
         bytes32 s
-    ) public whenNotProcessingDeposits returns (uint256) {
+    ) external whenNotProcessingDeposits returns (uint256) {
         uint256 assets = previewMint(shares);
         IERC20Permit(asset()).permit(msg.sender, address(this), assets, deadline, v, r, s);
         return super.mint(shares, receiver);
@@ -217,7 +217,7 @@ abstract contract BaseVault is IVault, ERC20Permit, ERC4626, Capped {
     /**
      * @inheritdoc IVault
      */
-    function assetsOf(address owner) public view virtual returns (uint256) {
+    function assetsOf(address owner) external view virtual returns (uint256) {
         uint256 supply = totalSupply();
         uint256 shares = balanceOf(owner);
         uint256 committedAssets = supply == 0

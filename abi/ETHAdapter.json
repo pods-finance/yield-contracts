@@ -12,6 +12,11 @@
   },
   {
     "inputs": [],
+    "name": "ETHAdapter__IncompatiblePool",
+    "type": "error"
+  },
+  {
+    "inputs": [],
     "name": "ETHAdapter__IncompatibleVault",
     "type": "error"
   },

@@ -17,17 +17,18 @@ contract ETHAdapter {
     address public constant STETH_ADDRESS = 0xae7ab96520DE3A18E5e111B5EaAb095312D7fE84;
 
     error ETHAdapter__IncompatibleVault();
+    error ETHAdapter__IncompatiblePool();
 
     constructor(ICurvePool _pool) {
-        require(_pool.coins(0) == ETH_ADDRESS && _pool.coins(1) == STETH_ADDRESS);
+        if (_pool.coins(0) != ETH_ADDRESS || _pool.coins(1) != STETH_ADDRESS) revert ETHAdapter__IncompatiblePool();
         pool = _pool;
     }
 
-    function convertToSTETH(uint256 ethAmount) public view returns (uint256) {
+    function convertToSTETH(uint256 ethAmount) external view returns (uint256) {
         return pool.get_dy(0, 1, ethAmount);
     }
 
-    function convertToETH(uint256 stETHAmount) public view returns (uint256) {
+    function convertToETH(uint256 stETHAmount) external view returns (uint256) {
         return pool.get_dy(1, 0, stETHAmount);
     }
 
