@@ -40,7 +40,7 @@ abstract contract BaseVault is IVault, ERC20Permit, ERC4626, Capped {
     The precision of this number is set by constant DENOMINATOR.
     */
     uint256 public constant MAX_WITHDRAW_FEE = 1000;
-    uint256 public constant MIN_INITIAL_DEPOSIT = 1e16;
+    uint256 public constant DEFAULT_MIN_INITIAL_DEPOSIT = 1e16;
 
     uint256 public processedDeposits = 0;
     uint256 internal _totalIdleAssets = 0;
@@ -391,7 +391,7 @@ abstract contract BaseVault is IVault, ERC20Permit, ERC4626, Capped {
         uint256 assets,
         uint256 shares
     ) internal virtual override {
-        if (totalSupply() == 0 && assets < MIN_INITIAL_DEPOSIT) {
+        if (totalSupply() == 0 && assets < _minInitialDeposit()) {
             revert IVault__DepositUnderMinimumAmount(assets);
         }
         IERC20Metadata(asset()).safeTransferFrom(caller, address(this), assets);
@@ -432,6 +432,11 @@ abstract contract BaseVault is IVault, ERC20Permit, ERC4626, Capped {
             emit FeeCollected(fee);
             IERC20Metadata(asset()).safeTransfer(controller(), fee);
         }
+    }
+
+    function _minInitialDeposit() internal view returns (uint256) {
+        uint256 minInitialDeposit = configuration.getParameter(address(this), "MIN_INITIAL_DEPOSIT");
+        return minInitialDeposit == 0 ? DEFAULT_MIN_INITIAL_DEPOSIT : minInitialDeposit;
     }
 
     /** Hooks **/
