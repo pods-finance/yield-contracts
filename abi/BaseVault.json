@@ -26,6 +26,17 @@
     "type": "error"
   },
   {
+    "inputs": [
+      {
+        "internalType": "uint256",
+        "name": "assets",
+        "type": "uint256"
+      }
+    ],
+    "name": "IVault__DepositUnderMinimumAmount",
+    "type": "error"
+  },
+  {
     "inputs": [],
     "name": "IVault__ForbiddenWhileProcessingDeposits",
     "type": "error"
@@ -343,6 +354,19 @@
   {
     "inputs": [],
     "name": "MAX_WITHDRAW_FEE",
+    "outputs": [
+      {
+        "internalType": "uint256",
+        "name": "",
+        "type": "uint256"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [],
+    "name": "MIN_INITIAL_DEPOSIT",
     "outputs": [
       {
         "internalType": "uint256",

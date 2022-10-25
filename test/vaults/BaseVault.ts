@@ -692,6 +692,13 @@ describe('BaseVault', () => {
 
       // Users deposits to vault
       await vault.connect(user0).deposit(assets, user0.address)
+      expect(await vault.idleAssetsOf(user0.address)).to.be.equal(assets)
+      expect(await vault.depositQueueSize()).to.be.equal(1)
+
+      await vault.connect(vaultController).endRound()
+      await vault.connect(vaultController).processQueuedDeposits([user0.address])
+      await vault.connect(vaultController).startRound()
+
       await vault.connect(user1).mint('0', user2.address)
       await vault.connect(user1).mint('0', user1.address)
       await vault.connect(user1).mint(assets, user2.address)
@@ -702,15 +709,12 @@ describe('BaseVault', () => {
       await vault.connect(user1).mint('0', user1.address)
 
       const idleAssetsUser1 = await vault.idleAssetsOf(user1.address)
-      const idleAssetsUser0 = await vault.idleAssetsOf(user0.address)
-      expect(idleAssetsUser0).to.be.equal(assets)
       expect(idleAssetsUser1).to.be.equal(previewMintedAssets)
 
       const totalIdleAssets = await vault.totalIdleAssets()
+      expect(totalIdleAssets).to.be.equal(previewMintedAssets.add(assets))
 
-      expect(totalIdleAssets).to.be.equal(previewMintedAssets.add(assets).add(assets))
-
-      expect(await vault.depositQueueSize()).to.be.equal(3)
+      expect(await vault.depositQueueSize()).to.be.equal(2)
       await vault.connect(vaultController).endRound()
       await vault.connect(vaultController).processQueuedDeposits([user0.address, user1.address])
       await vault.connect(vaultController).startRound()

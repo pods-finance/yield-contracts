@@ -33,7 +33,6 @@ abstract contract BaseVault is IVault, ERC20Permit, ERC4626, Capped {
     - MAX_WITHDRAW_FEE
     - InvestorRatio
     */
-
     uint256 public constant DENOMINATOR = 10000;
     /*
     MAX_WITHDRAW_FEE is a safe check in case the ConfigurationManager sets
@@ -42,6 +41,8 @@ abstract contract BaseVault is IVault, ERC20Permit, ERC4626, Capped {
     */
     uint256 public constant MAX_WITHDRAW_FEE = 1000;
     uint256 public constant EMERGENCY_INTERVAL = 604800;
+    uint256 public constant MIN_INITIAL_DEPOSIT = 1e16;
+
     uint256 public processedDeposits = 0;
     uint256 internal _totalIdleAssets = 0;
     uint256 private _lastEndRound;
@@ -391,6 +392,9 @@ abstract contract BaseVault is IVault, ERC20Permit, ERC4626, Capped {
         uint256 assets,
         uint256 shares
     ) internal virtual override {
+        if (totalSupply() == 0 && assets < MIN_INITIAL_DEPOSIT) {
+            revert IVault__DepositUnderMinimumAmount(assets);
+        }
         IERC20Metadata(asset()).safeTransferFrom(caller, address(this), assets);
 
         _spendCap(shares);
