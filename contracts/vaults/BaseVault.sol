@@ -40,7 +40,6 @@ abstract contract BaseVault is IVault, ERC20Permit, ERC4626, Capped {
     The precision of this number is set by constant DENOMINATOR.
     */
     uint256 public constant MAX_WITHDRAW_FEE = 1000;
-    uint256 public constant EMERGENCY_INTERVAL = 604800;
     uint256 public constant MIN_INITIAL_DEPOSIT = 1e16;
 
     uint256 public processedDeposits = 0;
@@ -68,7 +67,7 @@ abstract contract BaseVault is IVault, ERC20Permit, ERC4626, Capped {
     }
 
     modifier onlyRoundStarter() {
-        bool lastRoundEndedAWeekAgo = block.timestamp >= _lastEndRound + EMERGENCY_INTERVAL;
+        bool lastRoundEndedAWeekAgo = block.timestamp >= _lastEndRound + 1 weeks;
 
         if (!lastRoundEndedAWeekAgo && msg.sender != controller()) {
             revert IVault__CallerIsNotTheController();
