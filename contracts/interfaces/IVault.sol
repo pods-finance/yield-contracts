@@ -12,7 +12,7 @@ interface IVault is IERC4626, IERC20Permit {
     error IVault__ForbiddenWhileProcessingDeposits();
     error IVault__ZeroAssets();
     error IVault__MigrationNotAllowed();
-    error IVault__DepositUnderMinimumAmount(uint256 assets);
+    error IVault__AssetsUnderMinimumAmount(uint256 assets);
 
     event FeeCollected(uint256 fee);
     event RoundStarted(uint256 indexed roundId, uint256 amountAddedToStrategy);

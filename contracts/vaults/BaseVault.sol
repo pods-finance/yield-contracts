@@ -40,7 +40,12 @@ abstract contract BaseVault is IVault, ERC20Permit, ERC4626, Capped {
     The precision of this number is set by constant DENOMINATOR.
     */
     uint256 public constant MAX_WITHDRAW_FEE = 1000;
-    uint256 public constant DEFAULT_MIN_INITIAL_DEPOSIT = 1e16;
+    /**
+     * @notice Minimum asset amount for the first deposit
+     * @dev This amount that prevents the first depositor to steal funds from subsequent depositors.
+     * See https://code4rena.com/reports/2022-01-sherlock/#h-01-first-user-can-steal-everyone-elses-tokens
+     */
+    uint256 public immutable MIN_INITIAL_ASSETS;
 
     uint256 public processedDeposits = 0;
     uint256 internal _totalIdleAssets = 0;
@@ -59,6 +64,8 @@ abstract contract BaseVault is IVault, ERC20Permit, ERC4626, Capped {
         // Vault starts in `start` state
         emit RoundStarted(currentRoundId, 0);
         _lastEndRound = block.timestamp;
+
+        MIN_INITIAL_ASSETS = 10**uint256(asset_.decimals());
     }
 
     modifier onlyController() {
@@ -358,6 +365,11 @@ abstract contract BaseVault is IVault, ERC20Permit, ERC4626, Capped {
         uint256 shares = currentAssets == 0 || supply == 0
             ? assets
             : assets.mulDiv(supply, currentAssets, Math.Rounding.Down);
+
+        if (supply == 0 && assets < MIN_INITIAL_ASSETS) {
+            revert IVault__AssetsUnderMinimumAmount(assets);
+        }
+
         depositQueue.remove(depositor);
         _totalIdleAssets -= assets;
         _mint(depositor, shares);
@@ -391,9 +403,6 @@ abstract contract BaseVault is IVault, ERC20Permit, ERC4626, Capped {
         uint256 assets,
         uint256 shares
     ) internal virtual override {
-        if (totalSupply() == 0 && assets < _minInitialDeposit()) {
-            revert IVault__DepositUnderMinimumAmount(assets);
-        }
         IERC20Metadata(asset()).safeTransferFrom(caller, address(this), assets);
 
         _spendCap(shares);
@@ -432,11 +441,6 @@ abstract contract BaseVault is IVault, ERC20Permit, ERC4626, Capped {
             emit FeeCollected(fee);
             IERC20Metadata(asset()).safeTransfer(controller(), fee);
         }
-    }
-
-    function _minInitialDeposit() internal view returns (uint256) {
-        uint256 minInitialDeposit = configuration.getParameter(address(this), "MIN_INITIAL_DEPOSIT");
-        return minInitialDeposit == 0 ? DEFAULT_MIN_INITIAL_DEPOSIT : minInitialDeposit;
     }
 
     /** Hooks **/
