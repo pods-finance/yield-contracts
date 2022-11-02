@@ -271,7 +271,7 @@ describe('STETHVault', () => {
 
       await expect(
         vault.connect(user0).redeem(await vault.balanceOf(user0.address), user0.address, user0.address)
-      ).to.be.revertedWith('IVault__ForbiddenWhileProcessingDeposits()')
+      ).to.be.revertedWithCustomError(vault, 'IVault__ForbiddenWhileProcessingDeposits')
     })
 
     it('cannot deposit between a round\'s end and the beginning of the next', async () => {
@@ -280,7 +280,7 @@ describe('STETHVault', () => {
       await vault.connect(vaultController).endRound()
       await expect(
         vault.connect(user0).deposit(assetAmount, user0.address)
-      ).to.be.revertedWith('IVault__ForbiddenWhileProcessingDeposits()')
+      ).to.be.revertedWithCustomError(vault, 'IVault__ForbiddenWhileProcessingDeposits')
     })
 
     it('cannot processQueue After round started', async () => {
@@ -291,17 +291,17 @@ describe('STETHVault', () => {
       await vault.connect(vaultController).startRound()
       await expect(
         vault.connect(vaultController).processQueuedDeposits([user0.address])
-      ).to.be.revertedWith('IVault__NotProcessingDeposits()')
+      ).to.be.revertedWithCustomError(vault, 'IVault__NotProcessingDeposits')
     })
 
     it('cannot start or end rounds twice', async () => {
       await vault.connect(vaultController).endRound()
       await expect(vault.connect(vaultController).endRound())
-        .to.be.revertedWith('IVault__AlreadyProcessingDeposits()')
+        .to.be.revertedWithCustomError(vault, 'IVault__AlreadyProcessingDeposits')
 
       await vault.connect(vaultController).startRound()
       await expect(vault.connect(vaultController).startRound())
-        .to.be.revertedWith('IVault__NotProcessingDeposits()')
+        .to.be.revertedWithCustomError(vault, 'IVault__NotProcessingDeposits')
     })
   })
 
