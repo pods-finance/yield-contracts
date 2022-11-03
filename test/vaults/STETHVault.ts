@@ -181,7 +181,7 @@ describe('STETHVault', () => {
       await asset.connect(yieldGenerator).transfer(vault.address, newMint)
 
       await vault.connect(vaultController).endRound()
-      await vault.connect(vaultController).processQueuedDeposits([user0.address, user1.address, user2.address, user3.address, user4.address])
+      await vault.connect(vaultController).processQueuedDeposits([user1.address, user2.address, user3.address, user4.address, user0.address])
       await vault.connect(vaultController).startRound()
 
       const supplyUser0Before = await vault.balanceOf(user0.address)
@@ -192,7 +192,7 @@ describe('STETHVault', () => {
       const supplyUser0After = await vault.balanceOf(user0.address)
       const assetBalanceUser0After = await asset.balanceOf(user0.address)
 
-      expect(supplyUser0After).to.be.eq(supplyUser0Before.sub(1))
+      expect(supplyUser0After).to.be.eq(supplyUser0Before.sub(2))
       expect(assetBalanceUser0After).to.be.eq(assetBalanceUser0Before.add(2))
     })
   })
@@ -271,7 +271,7 @@ describe('STETHVault', () => {
 
       await expect(
         vault.connect(user0).redeem(await vault.balanceOf(user0.address), user0.address, user0.address)
-      ).to.be.revertedWith('IVault__ForbiddenWhileProcessingDeposits()')
+      ).to.be.revertedWithCustomError(vault, 'IVault__ForbiddenWhileProcessingDeposits')
     })
 
     it('cannot deposit between a round\'s end and the beginning of the next', async () => {
@@ -280,7 +280,7 @@ describe('STETHVault', () => {
       await vault.connect(vaultController).endRound()
       await expect(
         vault.connect(user0).deposit(assetAmount, user0.address)
-      ).to.be.revertedWith('IVault__ForbiddenWhileProcessingDeposits()')
+      ).to.be.revertedWithCustomError(vault, 'IVault__ForbiddenWhileProcessingDeposits')
     })
 
     it('cannot processQueue After round started', async () => {
@@ -291,17 +291,17 @@ describe('STETHVault', () => {
       await vault.connect(vaultController).startRound()
       await expect(
         vault.connect(vaultController).processQueuedDeposits([user0.address])
-      ).to.be.revertedWith('IVault__NotProcessingDeposits()')
+      ).to.be.revertedWithCustomError(vault, 'IVault__NotProcessingDeposits')
     })
 
     it('cannot start or end rounds twice', async () => {
       await vault.connect(vaultController).endRound()
       await expect(vault.connect(vaultController).endRound())
-        .to.be.revertedWith('IVault__AlreadyProcessingDeposits()')
+        .to.be.revertedWithCustomError(vault, 'IVault__AlreadyProcessingDeposits')
 
       await vault.connect(vaultController).startRound()
       await expect(vault.connect(vaultController).startRound())
-        .to.be.revertedWith('IVault__NotProcessingDeposits()')
+        .to.be.revertedWithCustomError(vault, 'IVault__NotProcessingDeposits')
     })
   })
 
@@ -340,7 +340,7 @@ describe('STETHVault', () => {
   it('it should remove the same amount independently of the process order', async () => {
     await configuration.setParameter(vault.address, ethers.utils.formatBytes32String('WITHDRAW_FEE_RATIO'), BigNumber.from('0'))
 
-    const user0DepositAmount = ethers.utils.parseEther('1')
+    const user0DepositAmount = ethers.utils.parseEther('1').add(1)
     const user1DepositAmount = ethers.utils.parseEther('50')
 
     await vault.connect(user0).deposit(user0DepositAmount, user0.address)
@@ -655,5 +655,66 @@ describe('STETHVault', () => {
         user2,
         user2Moment9maxWithdraw
       )
+  })
+
+  it('should not allow first depositor to steal funds from subsequent depositors', async () => {
+    const Asset = await ethers.getContractFactory('Asset')
+    const asset = await Asset.deploy('Asset', 'AST')
+
+    const STETHVault = await ethers.getContractFactory('STETHVault')
+    const vault = await STETHVault.deploy(
+      configuration.address,
+      asset.address,
+      investor.address
+    )
+
+    await investor.approveVaultToPull(vault.address)
+
+    await configuration.setParameter(
+      vault.address,
+      ethers.utils.formatBytes32String('VAULT_CONTROLLER'),
+      vaultController.address
+    )
+
+    const assetsUser0 = ethers.utils.parseEther('10')
+    const assetsUser1 = ethers.utils.parseEther('0.01')
+    const attacker = user2
+
+    // Legit users deposit
+    await asset.connect(user0).mint(assetsUser0)
+    await asset.connect(user0).approve(vault.address, assetsUser0)
+    await vault.connect(user0).deposit(assetsUser0, user0.address)
+    await asset.connect(user1).mint(assetsUser1)
+    await asset.connect(user1).approve(vault.address, assetsUser1)
+    await vault.connect(user1).deposit(assetsUser1, user1.address)
+
+    // Attacker setup
+    await asset.connect(attacker).mint(1)
+    await asset.connect(attacker).approve(vault.address, 1)
+    await vault.connect(attacker).deposit(1, attacker.address)
+
+    await vault.connect(vaultController).endRound()
+    // Attacker backruns endRound
+    const attackAmount = assetsUser0.add(1)
+    await asset.connect(attacker).mint(attackAmount)
+    await asset.connect(attacker).transfer(vault.address, attackAmount)
+
+    // Tries to process reordering the queue with the attacker address first
+    await expect(
+      vault.connect(attacker).processQueuedDeposits([attacker.address, user0.address, user1.address])
+    ).to.be.revertedWithCustomError(vault, 'IVault__AssetsUnderMinimumAmount')
+      .withArgs(1)
+
+    // Processing the queue with the first over the minimum initial assets
+    await vault.connect(attacker).processQueuedDeposits([user0.address, user1.address, attacker.address])
+
+    const attackerAssetBalanceBefore = await asset.balanceOf(attacker.address)
+    const attackerShares = await vault.balanceOf(attacker.address)
+    await vault.connect(vaultController).startRound()
+    await expect(vault.connect(attacker).redeem(attackerShares, attacker.address, attacker.address))
+      .to.be.revertedWithCustomError(vault, 'IVault__ZeroAssets')
+
+    const attackerAssetBalanceDiff = (await asset.balanceOf(attacker.address)).sub(attackerAssetBalanceBefore)
+    expect(attackerAssetBalanceDiff).to.be.lte(1)
   })
 })

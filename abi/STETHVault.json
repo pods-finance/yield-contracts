@@ -42,6 +42,17 @@
     "type": "error"
   },
   {
+    "inputs": [
+      {
+        "internalType": "uint256",
+        "name": "assets",
+        "type": "uint256"
+      }
+    ],
+    "name": "IVault__AssetsUnderMinimumAmount",
+    "type": "error"
+  },
+  {
     "inputs": [],
     "name": "IVault__CallerIsNotTheController",
     "type": "error"
@@ -431,19 +442,6 @@
   },
   {
     "inputs": [],
-    "name": "EMERGENCY_INTERVAL",
-    "outputs": [
-      {
-        "internalType": "uint256",
-        "name": "",
-        "type": "uint256"
-      }
-    ],
-    "stateMutability": "view",
-    "type": "function"
-  },
-  {
-    "inputs": [],
     "name": "INVESTOR_RATIO",
     "outputs": [
       {
@@ -458,6 +456,19 @@
   {
     "inputs": [],
     "name": "MAX_WITHDRAW_FEE",
+    "outputs": [
+      {
+        "internalType": "uint256",
+        "name": "",
+        "type": "uint256"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [],
+    "name": "MIN_INITIAL_ASSETS",
     "outputs": [
       {
         "internalType": "uint256",

@@ -21,6 +21,17 @@
     "type": "error"
   },
   {
+    "inputs": [
+      {
+        "internalType": "uint256",
+        "name": "assets",
+        "type": "uint256"
+      }
+    ],
+    "name": "IVault__AssetsUnderMinimumAmount",
+    "type": "error"
+  },
+  {
     "inputs": [],
     "name": "IVault__CallerIsNotTheController",
     "type": "error"
@@ -329,7 +340,7 @@
   },
   {
     "inputs": [],
-    "name": "EMERGENCY_INTERVAL",
+    "name": "MAX_WITHDRAW_FEE",
     "outputs": [
       {
         "internalType": "uint256",
@@ -342,7 +353,7 @@
   },
   {
     "inputs": [],
-    "name": "MAX_WITHDRAW_FEE",
+    "name": "MIN_INITIAL_ASSETS",
     "outputs": [
       {
         "internalType": "uint256",

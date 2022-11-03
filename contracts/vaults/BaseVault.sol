@@ -33,7 +33,6 @@ abstract contract BaseVault is IVault, ERC20Permit, ERC4626, Capped {
     - MAX_WITHDRAW_FEE
     - InvestorRatio
     */
-
     uint256 public constant DENOMINATOR = 10000;
     /*
     MAX_WITHDRAW_FEE is a safe check in case the ConfigurationManager sets
@@ -41,7 +40,13 @@ abstract contract BaseVault is IVault, ERC20Permit, ERC4626, Capped {
     The precision of this number is set by constant DENOMINATOR.
     */
     uint256 public constant MAX_WITHDRAW_FEE = 1000;
-    uint256 public constant EMERGENCY_INTERVAL = 604800;
+    /**
+     * @notice Minimum asset amount for the first deposit
+     * @dev This amount that prevents the first depositor to steal funds from subsequent depositors.
+     * See https://code4rena.com/reports/2022-01-sherlock/#h-01-first-user-can-steal-everyone-elses-tokens
+     */
+    uint256 public immutable MIN_INITIAL_ASSETS;
+
     uint256 public processedDeposits = 0;
     uint256 internal _totalIdleAssets = 0;
     uint256 private _lastEndRound;
@@ -59,6 +64,8 @@ abstract contract BaseVault is IVault, ERC20Permit, ERC4626, Capped {
         // Vault starts in `start` state
         emit RoundStarted(currentRoundId, 0);
         _lastEndRound = block.timestamp;
+
+        MIN_INITIAL_ASSETS = 10**uint256(asset_.decimals());
     }
 
     modifier onlyController() {
@@ -67,7 +74,7 @@ abstract contract BaseVault is IVault, ERC20Permit, ERC4626, Capped {
     }
 
     modifier onlyRoundStarter() {
-        bool lastRoundEndedAWeekAgo = block.timestamp >= _lastEndRound + EMERGENCY_INTERVAL;
+        bool lastRoundEndedAWeekAgo = block.timestamp >= _lastEndRound + 1 weeks;
 
         if (!lastRoundEndedAWeekAgo && msg.sender != controller()) {
             revert IVault__CallerIsNotTheController();
@@ -358,6 +365,11 @@ abstract contract BaseVault is IVault, ERC20Permit, ERC4626, Capped {
         uint256 shares = currentAssets == 0 || supply == 0
             ? assets
             : assets.mulDiv(supply, currentAssets, Math.Rounding.Down);
+
+        if (supply == 0 && assets < MIN_INITIAL_ASSETS) {
+            revert IVault__AssetsUnderMinimumAmount(assets);
+        }
+
         depositQueue.remove(depositor);
         _totalIdleAssets -= assets;
         _mint(depositor, shares);

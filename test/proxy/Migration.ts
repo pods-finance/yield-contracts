@@ -212,7 +212,7 @@ describe('Migration', () => {
       permit.s
     )
 
-    await expect(migrationTx).to.be.revertedWith('Migration__MigrationNotAllowed()')
+    await expect(migrationTx).to.be.revertedWithCustomError(migration, 'Migration__MigrationNotAllowed')
 
     await vaultFrom.connect(user1).approve(migration.address, ethers.constants.MaxUint256)
     migrationTx = migration.connect(user1).migrate(
@@ -221,6 +221,6 @@ describe('Migration', () => {
       await vaultFrom.balanceOf(user1.address)
     )
 
-    await expect(migrationTx).to.be.revertedWith('Migration__MigrationNotAllowed()')
+    await expect(migrationTx).to.be.revertedWithCustomError(migration, 'Migration__MigrationNotAllowed')
   })
 })

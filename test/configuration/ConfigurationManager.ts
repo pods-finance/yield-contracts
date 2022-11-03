@@ -51,7 +51,7 @@ describe('ConfigurationManager', () => {
 
     const tx = configuration.setCap(ethers.constants.AddressZero, capAmount)
     await expect(tx)
-      .to.be.revertedWith('ConfigurationManager__TargetCannotBeTheZeroAddress()')
+      .to.be.revertedWithCustomError(configuration, 'ConfigurationManager__TargetCannotBeTheZeroAddress')
 
     expect(await configuration.getCap(ethers.constants.AddressZero)).to.be.equal(0)
   })

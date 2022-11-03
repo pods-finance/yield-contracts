@@ -261,8 +261,8 @@ describe('BaseVault', () => {
   })
 
   it('cannot call controller functions without permission', async () => {
-    await expect(vault.connect(user0).startRound()).to.be.revertedWith('IVault__CallerIsNotTheController()')
-    await expect(vault.connect(user0).endRound()).to.be.revertedWith('IVault__CallerIsNotTheController()')
+    await expect(vault.connect(user0).startRound()).to.be.revertedWithCustomError(vault, 'IVault__CallerIsNotTheController')
+    await expect(vault.connect(user0).endRound()).to.be.revertedWithCustomError(vault, 'IVault__CallerIsNotTheController')
   })
 
   describe('Lifecycle', () => {
@@ -277,7 +277,7 @@ describe('BaseVault', () => {
 
       await expect(
         vault.connect(user0).redeem(shares, user0.address, user0.address)
-      ).to.be.revertedWith('IVault__ForbiddenWhileProcessingDeposits()')
+      ).to.be.revertedWithCustomError(vault, 'IVault__ForbiddenWhileProcessingDeposits')
     })
 
     it('cannot withdraw between a round\'s end and the beginning of the next', async () => {
@@ -290,7 +290,7 @@ describe('BaseVault', () => {
 
       await expect(
         vault.connect(user0).withdraw(assets, user0.address, user0.address)
-      ).to.be.revertedWith('IVault__ForbiddenWhileProcessingDeposits()')
+      ).to.be.revertedWithCustomError(vault, 'IVault__ForbiddenWhileProcessingDeposits')
     })
 
     it('cannot deposit between a round\'s end and the beginning of the next', async () => {
@@ -300,7 +300,7 @@ describe('BaseVault', () => {
       await vault.connect(vaultController).endRound()
       await expect(
         vault.connect(user0).deposit(assets, user0.address)
-      ).to.be.revertedWith('IVault__ForbiddenWhileProcessingDeposits()')
+      ).to.be.revertedWithCustomError(vault, 'IVault__ForbiddenWhileProcessingDeposits')
 
       const permit = await signERC2612Permit(
         user0,
@@ -319,7 +319,7 @@ describe('BaseVault', () => {
           permit.r,
           permit.s
         )
-      ).to.be.revertedWith('IVault__ForbiddenWhileProcessingDeposits()')
+      ).to.be.revertedWithCustomError(vault, 'IVault__ForbiddenWhileProcessingDeposits')
     })
 
     it('cannot mint between a round\'s end and the beginning of the next', async () => {
@@ -330,7 +330,7 @@ describe('BaseVault', () => {
       await vault.connect(vaultController).endRound()
       await expect(
         vault.connect(user0).mint(shares, user0.address)
-      ).to.be.revertedWith('IVault__ForbiddenWhileProcessingDeposits()')
+      ).to.be.revertedWithCustomError(vault, 'IVault__ForbiddenWhileProcessingDeposits')
 
       const permit = await signERC2612Permit(
         user0,
@@ -349,7 +349,7 @@ describe('BaseVault', () => {
           permit.r,
           permit.s
         )
-      ).to.be.revertedWith('IVault__ForbiddenWhileProcessingDeposits()')
+      ).to.be.revertedWithCustomError(vault, 'IVault__ForbiddenWhileProcessingDeposits')
     })
 
     it('cannot processQueue After round started', async () => {
@@ -361,23 +361,23 @@ describe('BaseVault', () => {
       await vault.connect(vaultController).startRound()
       await expect(
         vault.connect(vaultController).processQueuedDeposits([user0.address])
-      ).to.be.revertedWith('IVault__NotProcessingDeposits()')
+      ).to.be.revertedWithCustomError(vault, 'IVault__NotProcessingDeposits')
     })
 
     it('cannot start or end rounds twice', async () => {
       await vault.connect(vaultController).endRound()
       await expect(vault.connect(vaultController).endRound())
-        .to.be.revertedWith('IVault__AlreadyProcessingDeposits()')
+        .to.be.revertedWithCustomError(vault, 'IVault__AlreadyProcessingDeposits')
 
       await vault.connect(vaultController).startRound()
       await expect(vault.connect(vaultController).startRound())
-        .to.be.revertedWith('IVault__NotProcessingDeposits()')
+        .to.be.revertedWithCustomError(vault, 'IVault__NotProcessingDeposits')
     })
 
     it('after a week, anyone can start the round', async () => {
       await vault.connect(vaultController).endRound()
       let startRoundTx = vault.connect(user0).startRound()
-      await expect(startRoundTx).to.be.revertedWith('IVault__CallerIsNotTheController')
+      await expect(startRoundTx).to.be.revertedWithCustomError(vault, 'IVault__CallerIsNotTheController')
 
       // fast-forward a week
       const block = await ethers.provider.getBlock('latest')
@@ -676,7 +676,7 @@ describe('BaseVault', () => {
       expect(await vault.totalIdleAssets()).to.be.equal(assets.mul(3))
       expect(await vault.idleAssetsOf(user1.address)).to.be.equal(0)
 
-      await expect(vault.connect(user1).refund()).to.be.revertedWith('IVault__ZeroAssets')
+      await expect(vault.connect(user1).refund()).to.be.revertedWithCustomError(vault, 'IVault__ZeroAssets')
 
       expect(await vault.idleAssetsOf(user1.address)).to.be.equal(0)
       expect(await vault.totalIdleAssets()).to.be.equal(assets.mul(3))
@@ -692,6 +692,13 @@ describe('BaseVault', () => {
 
       // Users deposits to vault
       await vault.connect(user0).deposit(assets, user0.address)
+      expect(await vault.idleAssetsOf(user0.address)).to.be.equal(assets)
+      expect(await vault.depositQueueSize()).to.be.equal(1)
+
+      await vault.connect(vaultController).endRound()
+      await vault.connect(vaultController).processQueuedDeposits([user0.address])
+      await vault.connect(vaultController).startRound()
+
       await vault.connect(user1).mint('0', user2.address)
       await vault.connect(user1).mint('0', user1.address)
       await vault.connect(user1).mint(assets, user2.address)
@@ -702,15 +709,12 @@ describe('BaseVault', () => {
       await vault.connect(user1).mint('0', user1.address)
 
       const idleAssetsUser1 = await vault.idleAssetsOf(user1.address)
-      const idleAssetsUser0 = await vault.idleAssetsOf(user0.address)
-      expect(idleAssetsUser0).to.be.equal(assets)
       expect(idleAssetsUser1).to.be.equal(previewMintedAssets)
 
       const totalIdleAssets = await vault.totalIdleAssets()
+      expect(totalIdleAssets).to.be.equal(previewMintedAssets.add(assets))
 
-      expect(totalIdleAssets).to.be.equal(previewMintedAssets.add(assets).add(assets))
-
-      expect(await vault.depositQueueSize()).to.be.equal(3)
+      expect(await vault.depositQueueSize()).to.be.equal(2)
       await vault.connect(vaultController).endRound()
       await vault.connect(vaultController).processQueuedDeposits([user0.address, user1.address])
       await vault.connect(vaultController).startRound()
@@ -846,7 +850,7 @@ describe('BaseVault', () => {
 
       const migrationTx = vault.connect(user0).migrate(newVault.address)
       await expect(migrationTx)
-        .to.be.revertedWith('IVault__MigrationNotAllowed')
+        .to.be.revertedWithCustomError(vault, 'IVault__MigrationNotAllowed')
     })
   })
 
@@ -861,7 +865,7 @@ describe('BaseVault', () => {
 
     await expect(
       vault.connect(user0).redeem(0, user0.address, user0.address)
-    ).to.be.revertedWith('IVault__ZeroAssets()')
+    ).to.be.revertedWithCustomError(vault, 'IVault__ZeroAssets')
   })
 
   it('withdraws proportionally', async () => {
