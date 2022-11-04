@@ -21,10 +21,28 @@ interface IVault is IERC4626, IERC20Permit {
     event DepositRefunded(address indexed owner, uint256 indexed roundId, uint256 assets);
     event Migrated(address indexed caller, address indexed from, address indexed to, uint256 assets, uint256 shares);
 
+    struct VaultState {
+        uint256 processedDeposits;
+        uint256 totalIdleAssets;
+        uint32 currentRoundId;
+        uint32 lastEndRoundTimestamp;
+        bool isProcessingDeposits;
+    }
+
     struct Fractional {
         uint256 numerator;
         uint256 denominator;
     }
+
+    /**
+     * @notice Returns the current round ID.
+     */
+    function currentRoundId() external view returns (uint32);
+
+    /**
+     * @notice Returns the current round ID.
+     */
+    function isProcessingDeposits() external view returns (bool);
 
     /**
      * @notice Returns the fee charged on withdraws.

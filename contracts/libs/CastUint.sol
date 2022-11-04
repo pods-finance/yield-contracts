@@ -4,7 +4,7 @@ pragma solidity 0.8.17;
 
 library CastUint {
     /**
-     * @dev Converts a `uint256` to `address`
+     * @dev Strips and converts a `uint256` to `address`
      */
     function toAddress(uint256 value) internal pure returns (address) {
         if (value == 0) return address(0);

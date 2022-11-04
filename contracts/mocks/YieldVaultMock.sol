@@ -22,7 +22,7 @@ contract YieldVaultMock is BaseVault {
     }
 
     function totalAssets() public view override(ERC4626, IERC4626) returns (uint256) {
-        return yieldSource.convertToAssets(yieldSource.balanceOf(address(this))) + processedDeposits;
+        return yieldSource.convertToAssets(yieldSource.balanceOf(address(this))) + vaultState.processedDeposits;
     }
 
     function _beforeWithdraw(uint256, uint256 assets) internal override {
@@ -30,9 +30,9 @@ contract YieldVaultMock is BaseVault {
     }
 
     function _afterRoundStart() internal override {
-        if (yieldSource.previewDeposit(processedDeposits) > 0) {
-            IERC20Metadata(yieldSource.asset()).approve(address(yieldSource), processedDeposits);
-            yieldSource.deposit(processedDeposits, address(this));
+        if (yieldSource.previewDeposit(vaultState.processedDeposits) > 0) {
+            IERC20Metadata(yieldSource.asset()).approve(address(yieldSource), vaultState.processedDeposits);
+            yieldSource.deposit(vaultState.processedDeposits, address(this));
         }
     }
 }

@@ -57,7 +57,7 @@ contract STETHVault is BaseVault {
         uint256 sharePrice = lastSharePrice.denominator == 0
             ? 0
             : lastSharePrice.numerator.mulDiv(10**sharePriceDecimals, lastSharePrice.denominator, Math.Rounding.Down);
-        emit StartRoundData(currentRoundId, lastRoundAssets, sharePrice);
+        emit StartRoundData(vaultState.currentRoundId, lastRoundAssets, sharePrice);
     }
 
     function _afterRoundEnd() internal override {
@@ -87,8 +87,8 @@ contract STETHVault is BaseVault {
             ? 0
             : lastSharePrice.numerator.mulDiv(10**sharePriceDecimals, lastSharePrice.denominator, Math.Rounding.Down);
 
-        emit EndRoundData(currentRoundId, roundAccruedInterest, investmentYield, totalIdleAssets());
-        emit SharePrice(currentRoundId, startSharePrice, endSharePrice);
+        emit EndRoundData(vaultState.currentRoundId, roundAccruedInterest, investmentYield, totalIdleAssets());
+        emit SharePrice(vaultState.currentRoundId, startSharePrice, endSharePrice);
     }
 
     /**
