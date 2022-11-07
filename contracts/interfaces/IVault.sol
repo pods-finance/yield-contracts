@@ -21,10 +21,33 @@ interface IVault is IERC4626, IERC20Permit {
     event DepositRefunded(address indexed owner, uint256 indexed roundId, uint256 assets);
     event Migrated(address indexed caller, address indexed from, address indexed to, uint256 assets, uint256 shares);
 
+    /**
+     * @dev Describes the vault state variables.
+     */
+    struct VaultState {
+        uint256 processedDeposits;
+        uint256 totalIdleAssets;
+        uint32 currentRoundId;
+        uint32 lastEndRoundTimestamp;
+        bool isProcessingDeposits;
+    }
+
     struct Fractional {
         uint256 numerator;
         uint256 denominator;
     }
+
+    /**
+     * @notice Returns the current round ID.
+     */
+    function currentRoundId() external view returns (uint32);
+
+    /**
+     * @notice Determines whether the Vault is in the processing deposits state.
+     * @dev While it's processing deposits, `processDeposits` can be called and new shares can be created.
+     * During this period deposits, mints, withdraws and redeems are blocked.
+     */
+    function isProcessingDeposits() external view returns (bool);
 
     /**
      * @notice Returns the fee charged on withdraws.
@@ -66,7 +89,7 @@ interface IVault is IERC4626, IERC20Permit {
      * @notice Starts the next round, sending the idle funds to the
      * strategy where it should start accruing yield.
      */
-    function startRound() external returns (uint256 roundId);
+    function startRound() external returns (uint32 roundId);
 
     /**
      * @notice Closes the round, allowing deposits to the next round be processed.
