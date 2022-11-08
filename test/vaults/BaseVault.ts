@@ -248,6 +248,7 @@ describe('BaseVault', () => {
     expect(await vault.isProcessingDeposits()).to.be.equal(true)
     const depositProcessingTx = vault.connect(vaultController).processQueuedDeposits([user0.address])
     await expect(depositProcessingTx).to.emit(vault, 'DepositProcessed').withArgs(user0.address, 1, assets, expectedShares)
+    expect(await vault.processedDeposits()).to.be.equal(assets)
     expect(await vault.totalSupply()).to.be.equal(expectedShares)
     expect(await vault.depositQueueSize()).to.be.equal(0)
     expect(await vault.balanceOf(user0.address)).to.be.equal(expectedShares)
