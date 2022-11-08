@@ -54,6 +54,14 @@ contract STETHVault is BaseVault {
         sharePriceDecimals = _asset.decimals();
     }
 
+    /**
+     * @notice Return the stETH price per share
+     * @dev Each share is considered to be 10^(assets.decimals())
+     */
+    function sharePrice() external view returns (uint256) {
+        return totalAssets().mulDiv(10**sharePriceDecimals, totalSupply(), Math.Rounding.Down);
+    }
+
     function _afterRoundStart() internal override {
         uint256 supply = totalSupply();
 
