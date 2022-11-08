@@ -2,7 +2,7 @@
 
 pragma solidity 0.8.17;
 
-import "../interfaces/IConfigurationManager.sol";
+import { IConfigurationManager } from "../interfaces/IConfigurationManager.sol";
 
 abstract contract Capped {
     IConfigurationManager private immutable _configuration;
