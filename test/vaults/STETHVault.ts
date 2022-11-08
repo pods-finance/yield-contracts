@@ -334,6 +334,7 @@ describe('STETHVault', () => {
       await asset.connect(yieldGenerator).transfer(investor.address, ethers.utils.parseEther('100'))
       const endRoundTx2 = await vault.connect(vaultController).endRound()
       await expect(endRoundTx2).to.emit(vault, 'SharePrice').withArgs('2', '1050000000000000000', '1614695121951219512')
+      expect(await vault.sharePrice()).to.be.equal('1614695121951219512')
     })
   })
 
