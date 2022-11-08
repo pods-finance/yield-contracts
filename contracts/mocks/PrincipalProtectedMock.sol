@@ -45,9 +45,9 @@ contract PrincipalProtectedMock is BaseVault {
 
     function _afterRoundStart() internal override {
         lastRoundAssets = totalAssets();
-        if (processedDeposits > 0) {
-            IERC20Metadata(asset()).approve(address(yieldSource), processedDeposits);
-            yieldSource.deposit(processedDeposits, address(this));
+        if (vaultState.processedDeposits > 0) {
+            IERC20Metadata(asset()).approve(address(yieldSource), vaultState.processedDeposits);
+            yieldSource.deposit(vaultState.processedDeposits, address(this));
         }
         uint256 supply = totalSupply();
 
@@ -56,7 +56,7 @@ contract PrincipalProtectedMock is BaseVault {
         uint256 sharePrice = lastSharePrice.denominator == 0
             ? 0
             : lastSharePrice.numerator.mulDiv(10**sharePriceDecimals, lastSharePrice.denominator, Math.Rounding.Down);
-        emit StartRoundData(currentRoundId, lastRoundAssets, sharePrice);
+        emit StartRoundData(vaultState.currentRoundId, lastRoundAssets, sharePrice);
     }
 
     function _afterRoundEnd() internal override {
@@ -98,15 +98,15 @@ contract PrincipalProtectedMock is BaseVault {
             ? 0
             : lastSharePrice.numerator.mulDiv(10**sharePriceDecimals, lastSharePrice.denominator, Math.Rounding.Down);
 
-        emit EndRoundData(currentRoundId, roundAccruedInterest, investmentYield, idleAssets);
-        emit SharePrice(currentRoundId, startSharePrice, endSharePrice);
+        emit EndRoundData(vaultState.currentRoundId, roundAccruedInterest, investmentYield, idleAssets);
+        emit SharePrice(vaultState.currentRoundId, startSharePrice, endSharePrice);
     }
 
     /**
      * @dev See {BaseVault-totalAssets}.
      */
     function totalAssets() public view override(ERC4626, IERC4626) returns (uint256) {
-        return yieldSource.previewRedeem(yieldSource.balanceOf(address(this))) + processedDeposits;
+        return yieldSource.previewRedeem(yieldSource.balanceOf(address(this))) + vaultState.processedDeposits;
     }
 
     function _beforeWithdraw(uint256 shares, uint256 assets) internal override {

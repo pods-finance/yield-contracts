@@ -25,9 +25,6 @@ abstract contract BaseVault is IVault, ERC20Permit, ERC4626, Capped {
 
     IConfigurationManager public immutable configuration;
 
-    uint256 public currentRoundId;
-    bool public isProcessingDeposits = false;
-
     /*
     DENOMINATOR represents the precision for the following system variables:
     - MAX_WITHDRAW_FEE
@@ -47,10 +44,7 @@ abstract contract BaseVault is IVault, ERC20Permit, ERC4626, Capped {
      */
     uint256 public immutable MIN_INITIAL_ASSETS;
 
-    uint256 public processedDeposits = 0;
-    uint256 internal _totalIdleAssets = 0;
-    uint256 private _lastEndRound;
-
+    VaultState internal vaultState;
     EnumerableMap.AddressToUintMap internal depositQueue;
 
     constructor(
@@ -62,8 +56,8 @@ abstract contract BaseVault is IVault, ERC20Permit, ERC4626, Capped {
         configuration = configuration_;
 
         // Vault starts in `start` state
-        emit RoundStarted(currentRoundId, 0);
-        _lastEndRound = block.timestamp;
+        emit RoundStarted(vaultState.currentRoundId, 0);
+        vaultState.lastEndRoundTimestamp = uint32(block.timestamp);
 
         MIN_INITIAL_ASSETS = 10**uint256(asset_.decimals());
     }
@@ -74,7 +68,7 @@ abstract contract BaseVault is IVault, ERC20Permit, ERC4626, Capped {
     }
 
     modifier onlyRoundStarter() {
-        bool lastRoundEndedAWeekAgo = block.timestamp >= _lastEndRound + 1 weeks;
+        bool lastRoundEndedAWeekAgo = block.timestamp >= vaultState.lastEndRoundTimestamp + 1 weeks;
 
         if (!lastRoundEndedAWeekAgo && msg.sender != controller()) {
             revert IVault__CallerIsNotTheController();
@@ -83,8 +77,29 @@ abstract contract BaseVault is IVault, ERC20Permit, ERC4626, Capped {
     }
 
     modifier whenNotProcessingDeposits() {
-        if (isProcessingDeposits) revert IVault__ForbiddenWhileProcessingDeposits();
+        if (vaultState.isProcessingDeposits) revert IVault__ForbiddenWhileProcessingDeposits();
         _;
+    }
+
+    /**
+     * @inheritdoc IVault
+     */
+    function currentRoundId() external view returns (uint32) {
+        return vaultState.currentRoundId;
+    }
+
+    /**
+     * @inheritdoc IVault
+     */
+    function isProcessingDeposits() external view returns (bool) {
+        return vaultState.isProcessingDeposits;
+    }
+
+    /**
+     * @inheritdoc IVault
+     */
+    function processedDeposits() external view returns (uint256) {
+        return vaultState.processedDeposits;
     }
 
     /**
@@ -237,7 +252,7 @@ abstract contract BaseVault is IVault, ERC20Permit, ERC4626, Capped {
      * @inheritdoc IVault
      */
     function totalIdleAssets() public view virtual returns (uint256) {
-        return _totalIdleAssets;
+        return vaultState.totalIdleAssets;
     }
 
     /**
@@ -269,29 +284,29 @@ abstract contract BaseVault is IVault, ERC20Permit, ERC4626, Capped {
     /**
      * @inheritdoc IVault
      */
-    function startRound() external virtual onlyRoundStarter returns (uint256) {
-        if (!isProcessingDeposits) revert IVault__NotProcessingDeposits();
+    function startRound() external virtual onlyRoundStarter returns (uint32) {
+        if (!vaultState.isProcessingDeposits) revert IVault__NotProcessingDeposits();
 
-        isProcessingDeposits = false;
+        vaultState.isProcessingDeposits = false;
 
         _afterRoundStart();
-        emit RoundStarted(currentRoundId, processedDeposits);
-        processedDeposits = 0;
+        emit RoundStarted(vaultState.currentRoundId, vaultState.processedDeposits);
+        vaultState.processedDeposits = 0;
 
-        return currentRoundId;
+        return vaultState.currentRoundId;
     }
 
     /**
      * @inheritdoc IVault
      */
     function endRound() external virtual onlyController {
-        if (isProcessingDeposits) revert IVault__AlreadyProcessingDeposits();
+        if (vaultState.isProcessingDeposits) revert IVault__AlreadyProcessingDeposits();
 
-        isProcessingDeposits = true;
+        vaultState.isProcessingDeposits = true;
         _afterRoundEnd();
-        _lastEndRound = block.timestamp;
+        vaultState.lastEndRoundTimestamp = uint32(block.timestamp);
 
-        emit RoundEnded(currentRoundId++);
+        emit RoundEnded(vaultState.currentRoundId++);
     }
 
     /**
@@ -302,11 +317,11 @@ abstract contract BaseVault is IVault, ERC20Permit, ERC4626, Capped {
         if (assets == 0) revert IVault__ZeroAssets();
 
         if (depositQueue.remove(msg.sender)) {
-            _totalIdleAssets -= assets;
+            vaultState.totalIdleAssets -= assets;
             _restoreCap(convertToShares(assets));
         }
 
-        emit DepositRefunded(msg.sender, currentRoundId, assets);
+        emit DepositRefunded(msg.sender, vaultState.currentRoundId, assets);
         IERC20Metadata(asset()).safeTransfer(msg.sender, assets);
     }
 
@@ -344,11 +359,11 @@ abstract contract BaseVault is IVault, ERC20Permit, ERC4626, Capped {
      * @inheritdoc IVault
      */
     function processQueuedDeposits(address[] calldata depositors) external {
-        if (!isProcessingDeposits) revert IVault__NotProcessingDeposits();
+        if (!vaultState.isProcessingDeposits) revert IVault__NotProcessingDeposits();
 
         for (uint256 i = 0; i < depositors.length; i++) {
             if (depositQueue.contains(depositors[i])) {
-                processedDeposits += _processDeposit(depositors[i]);
+                vaultState.processedDeposits += _processDeposit(depositors[i]);
             }
         }
     }
@@ -371,9 +386,9 @@ abstract contract BaseVault is IVault, ERC20Permit, ERC4626, Capped {
         }
 
         depositQueue.remove(depositor);
-        _totalIdleAssets -= assets;
+        vaultState.totalIdleAssets -= assets;
         _mint(depositor, shares);
-        emit DepositProcessed(depositor, currentRoundId, assets, shares);
+        emit DepositProcessed(depositor, vaultState.currentRoundId, assets, shares);
 
         return assets;
     }
@@ -383,7 +398,7 @@ abstract contract BaseVault is IVault, ERC20Permit, ERC4626, Capped {
      */
     function _addToDepositQueue(address receiver, uint256 assets) internal {
         (, uint256 previous) = depositQueue.tryGet(receiver);
-        _totalIdleAssets += assets;
+        vaultState.totalIdleAssets += assets;
         depositQueue.set(receiver, previous + assets);
     }
 

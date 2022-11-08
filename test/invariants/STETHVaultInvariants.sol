@@ -105,14 +105,14 @@ contract STETHVaultInvariants is STETHVault, FuzzyAddresses {
 
     function deposit(uint256 assets, address) public override returns (uint256 shares) {
         uint256 createdShares = convertToShares(assets);
-        LastDeposit memory newDeposit = LastDeposit({ amount: assets, roundId: currentRoundId, shares: createdShares });
+        LastDeposit memory newDeposit = LastDeposit({ amount: assets, roundId: vaultState.currentRoundId, shares: createdShares });
         lastDeposits[msg.sender] = newDeposit;
         return this.deposit(assets, msg.sender);
     }
 
     function mint(uint256 shares, address) public override returns (uint256 assets) {
         uint256 assets2 = convertToAssets(shares);
-        LastDeposit memory newDeposit = LastDeposit({ amount: assets2, roundId: currentRoundId, shares: shares });
+        LastDeposit memory newDeposit = LastDeposit({ amount: assets2, roundId: vaultState.currentRoundId, shares: shares });
         lastDeposits[msg.sender] = newDeposit;
         return this.mint(shares, msg.sender);
     }
@@ -122,7 +122,7 @@ contract STETHVaultInvariants is STETHVault, FuzzyAddresses {
         address,
         address
     ) public override returns (uint256 shares) {
-        bool isNextRound = currentRoundId == lastDeposits[msg.sender].roundId + 1;
+        bool isNextRound = vaultState.currentRoundId == lastDeposits[msg.sender].roundId + 1;
         this.withdraw(assets, msg.sender, msg.sender);
 
         if (isNextRound && assets > 0) {
@@ -141,7 +141,7 @@ contract STETHVaultInvariants is STETHVault, FuzzyAddresses {
         address,
         address
     ) public override returns (uint256 assets) {
-        bool isNextRound = currentRoundId == lastDeposits[msg.sender].roundId + 1;
+        bool isNextRound = vaultState.currentRoundId == lastDeposits[msg.sender].roundId + 1;
         this.redeem(shares, msg.sender, msg.sender);
         if (isNextRound && shares > 0) {
             if (shares <= lastDeposits[msg.sender].shares) {
