@@ -2,9 +2,14 @@
 
 pragma solidity 0.8.17;
 
-import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
-import "../vaults/BaseVault.sol";
-import "../mocks/YieldSourceMock.sol";
+import { IERC4626 } from "@openzeppelin/contracts/interfaces/IERC4626.sol";
+import { IERC20Metadata } from "@openzeppelin/contracts/token/ERC20/extensions/IERC20Metadata.sol";
+import { ERC4626 } from "@openzeppelin/contracts/token/ERC20/extensions/ERC4626.sol";
+import { SafeERC20 } from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
+import { Math } from "@openzeppelin/contracts/utils/math/Math.sol";
+import { IConfigurationManager } from "../interfaces/IConfigurationManager.sol";
+import { BaseVault } from "../vaults/BaseVault.sol";
+import { YieldSourceMock } from "../mocks/YieldSourceMock.sol";
 
 /**
  * @title A Vault that use variable weekly yields to buy strangles
