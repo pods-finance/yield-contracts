@@ -1094,6 +1094,19 @@
   },
   {
     "inputs": [],
+    "name": "processedDeposits",
+    "outputs": [
+      {
+        "internalType": "uint256",
+        "name": "",
+        "type": "uint256"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [],
     "name": "queuedDeposits",
     "outputs": [
       {
@@ -1165,9 +1178,9 @@
     "name": "startRound",
     "outputs": [
       {
-        "internalType": "uint256",
+        "internalType": "uint32",
         "name": "",
-        "type": "uint256"
+        "type": "uint32"
       }
     ],
     "stateMutability": "nonpayable",

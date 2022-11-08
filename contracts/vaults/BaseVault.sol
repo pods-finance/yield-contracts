@@ -23,11 +23,11 @@ abstract contract BaseVault is IVault, ERC20Permit, ERC4626, Capped {
     using CastUint for uint256;
     using EnumerableMap for EnumerableMap.AddressToUintMap;
 
-    /**
-     * @dev DENOMINATOR represents the precision for the following system variables:
-     * - MAX_WITHDRAW_FEE
-     * - INVESTOR_RATIO
-     */
+    /*
+    DENOMINATOR represents the precision for the following system variables:
+    - MAX_WITHDRAW_FEE
+    - InvestorRatio
+    */
     uint256 public constant DENOMINATOR = 10000;
     /**
      * @dev MAX_WITHDRAW_FEE is a safe check in case the ConfigurationManager sets
@@ -75,17 +75,30 @@ abstract contract BaseVault is IVault, ERC20Permit, ERC4626, Capped {
         _;
     }
 
+    modifier whenNotProcessingDeposits() {
+        if (vaultState.isProcessingDeposits) revert IVault__ForbiddenWhileProcessingDeposits();
+        _;
+    }
+
+    /**
+     * @inheritdoc IVault
+     */
     function currentRoundId() external view returns (uint32) {
         return vaultState.currentRoundId;
     }
 
+    /**
+     * @inheritdoc IVault
+     */
     function isProcessingDeposits() external view returns (bool) {
         return vaultState.isProcessingDeposits;
     }
 
-    modifier whenNotProcessingDeposits() {
-        if (vaultState.isProcessingDeposits) revert IVault__ForbiddenWhileProcessingDeposits();
-        _;
+    /**
+     * @inheritdoc IVault
+     */
+    function processedDeposits() external view returns (uint256) {
+        return vaultState.processedDeposits;
     }
 
     /**
@@ -270,7 +283,7 @@ abstract contract BaseVault is IVault, ERC20Permit, ERC4626, Capped {
     /**
      * @inheritdoc IVault
      */
-    function startRound() external virtual onlyRoundStarter returns (uint256) {
+    function startRound() external virtual onlyRoundStarter returns (uint32) {
         if (!vaultState.isProcessingDeposits) revert IVault__NotProcessingDeposits();
 
         vaultState.isProcessingDeposits = false;
@@ -292,9 +305,7 @@ abstract contract BaseVault is IVault, ERC20Permit, ERC4626, Capped {
         _afterRoundEnd();
         vaultState.lastEndRoundTimestamp = uint32(block.timestamp);
 
-        emit RoundEnded(vaultState.currentRoundId);
-
-        vaultState.currentRoundId += 1;
+        emit RoundEnded(vaultState.currentRoundId++);
     }
 
     /**
