@@ -50,6 +50,11 @@ interface IVault is IERC4626, IERC20Permit {
     function isProcessingDeposits() external view returns (bool);
 
     /**
+     * @notice Returns the amount of processed deposits entering the next round.
+     */
+    function processedDeposits() external view returns (uint256);
+
+    /**
      * @notice Returns the fee charged on withdraws.
      */
     function getWithdrawFeeRatio() external view returns (uint256);

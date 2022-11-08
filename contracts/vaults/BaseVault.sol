@@ -96,6 +96,13 @@ abstract contract BaseVault is IVault, ERC20Permit, ERC4626, Capped {
     }
 
     /**
+     * @inheritdoc IVault
+     */
+    function processedDeposits() external view returns (uint256) {
+        return vaultState.processedDeposits;
+    }
+
+    /**
      * @inheritdoc IERC4626
      */
     function deposit(uint256 assets, address receiver)
