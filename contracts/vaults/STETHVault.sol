@@ -5,23 +5,23 @@ pragma solidity 0.8.17;
 import "./BaseVault.sol";
 
 /**
- * @title A Vault that use variable weekly yields to buy strangles
+ * @title STETHVault
+ * @notice A Vault that use variable weekly yields to buy strangles
  * @author Pods Finance
  */
 contract STETHVault is BaseVault {
     using SafeERC20 for IERC20Metadata;
     using Math for uint256;
 
+    /**
+     * @dev INVESTOR_RATIO is the proportion that the weekly yield will be split
+     * The precision of this number is set by the variable DENOMINATOR. 5000 is equivalent to 50%
+     */
+    uint256 public constant INVESTOR_RATIO = 5000;
+    address public immutable investor;
     uint8 public immutable sharePriceDecimals;
     uint256 public lastRoundAssets;
     Fractional public lastSharePrice;
-
-    /*
-     @dev INVESTOR_RATIO is the proportion that the weekly yield will be split
-     The precision of this number is set by the variable DENOMINATOR. 5000 is equivalent to 50%
-    */
-    uint256 public constant INVESTOR_RATIO = 5000;
-    address public immutable investor;
 
     event StartRoundData(uint256 indexed roundId, uint256 lastRoundAssets, uint256 sharePrice);
     event EndRoundData(
@@ -48,6 +48,16 @@ contract STETHVault is BaseVault {
         sharePriceDecimals = _asset.decimals();
     }
 
+    /**
+     * @inheritdoc IERC4626
+     */
+    function totalAssets() public view override(ERC4626, IERC4626) returns (uint256) {
+        return IERC20Metadata(asset()).balanceOf(address(this)) - totalIdleAssets();
+    }
+
+    /**
+     * @inheritdoc BaseVault
+     */
     function _afterRoundStart() internal override {
         uint256 supply = totalSupply();
 
@@ -60,6 +70,9 @@ contract STETHVault is BaseVault {
         emit StartRoundData(vaultState.currentRoundId, lastRoundAssets, sharePrice);
     }
 
+    /**
+     * @inheritdoc BaseVault
+     */
     function _afterRoundEnd() internal override {
         uint256 roundAccruedInterest = 0;
         uint256 endSharePrice = 0;
@@ -92,12 +105,8 @@ contract STETHVault is BaseVault {
     }
 
     /**
-     * @dev See {BaseVault-totalAssets}.
+     * @inheritdoc BaseVault
      */
-    function totalAssets() public view override(ERC4626, IERC4626) returns (uint256) {
-        return IERC20Metadata(asset()).balanceOf(address(this)) - totalIdleAssets();
-    }
-
     function _deposit(
         address caller,
         address receiver,
@@ -112,6 +121,9 @@ contract STETHVault is BaseVault {
         emit Deposit(caller, receiver, assets, shares);
     }
 
+    /**
+     * @inheritdoc BaseVault
+     */
     function _withdrawWithFees(
         address caller,
         address receiver,

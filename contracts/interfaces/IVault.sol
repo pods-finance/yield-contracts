@@ -91,6 +91,38 @@ interface IVault is IERC4626, IERC20Permit {
     function queuedDeposits() external view returns (address[] memory);
 
     /**
+     * @notice Deposit ERC20 tokens with permit, a gasless token approval.
+     * @dev Mints shares to receiver by depositing exactly amount of underlying tokens.
+     *
+     * For more information on the signature format, see the EIP2612 specification:
+     * https://eips.ethereum.org/EIPS/eip-2612#specification
+     */
+    function depositWithPermit(
+        uint256 assets,
+        address receiver,
+        uint256 deadline,
+        uint8 v,
+        bytes32 r,
+        bytes32 s
+    ) external returns (uint256);
+
+    /**
+     * @notice Mint shares with permit, a gasless token approval.
+     * @dev Mints exactly shares to receiver by depositing amount of underlying tokens.
+     *
+     * For more information on the signature format, see the EIP2612 specification:
+     * https://eips.ethereum.org/EIPS/eip-2612#specification
+     */
+    function mintWithPermit(
+        uint256 shares,
+        address receiver,
+        uint256 deadline,
+        uint8 v,
+        bytes32 r,
+        bytes32 s
+    ) external returns (uint256);
+
+    /**
      * @notice Starts the next round, sending the idle funds to the
      * strategy where it should start accruing yield.
      */

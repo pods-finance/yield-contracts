@@ -14,7 +14,8 @@ import "../libs/CastUint.sol";
 import "../mixins/Capped.sol";
 
 /**
- * @title A Vault that tokenize shares of strategy
+ * @title BaseVault
+ * @notice A Vault that tokenize shares of strategy
  * @author Pods Finance
  */
 abstract contract BaseVault is IVault, ERC20Permit, ERC4626, Capped {
@@ -23,11 +24,11 @@ abstract contract BaseVault is IVault, ERC20Permit, ERC4626, Capped {
     using CastUint for uint256;
     using EnumerableMap for EnumerableMap.AddressToUintMap;
 
-    /*
-    DENOMINATOR represents the precision for the following system variables:
-    - MAX_WITHDRAW_FEE
-    - InvestorRatio
-    */
+    /**
+     * @dev DENOMINATOR represents the precision for the following system variables:
+     * - MAX_WITHDRAW_FEE
+     * - INVESTOR_RATIO
+     */
     uint256 public constant DENOMINATOR = 10000;
     /**
      * @dev MAX_WITHDRAW_FEE is a safe check in case the ConfigurationManager sets
@@ -114,6 +115,9 @@ abstract contract BaseVault is IVault, ERC20Permit, ERC4626, Capped {
         return super.deposit(assets, receiver);
     }
 
+    /**
+     * @inheritdoc IVault
+     */
     function depositWithPermit(
         uint256 assets,
         address receiver,
@@ -121,7 +125,7 @@ abstract contract BaseVault is IVault, ERC20Permit, ERC4626, Capped {
         uint8 v,
         bytes32 r,
         bytes32 s
-    ) external whenNotProcessingDeposits returns (uint256) {
+    ) external override whenNotProcessingDeposits returns (uint256) {
         IERC20Permit(asset()).permit(msg.sender, address(this), assets, deadline, v, r, s);
         return super.deposit(assets, receiver);
     }
@@ -139,6 +143,9 @@ abstract contract BaseVault is IVault, ERC20Permit, ERC4626, Capped {
         return super.mint(shares, receiver);
     }
 
+    /**
+     * @inheritdoc IVault
+     */
     function mintWithPermit(
         uint256 shares,
         address receiver,
@@ -146,7 +153,7 @@ abstract contract BaseVault is IVault, ERC20Permit, ERC4626, Capped {
         uint8 v,
         bytes32 r,
         bytes32 s
-    ) external whenNotProcessingDeposits returns (uint256) {
+    ) external override whenNotProcessingDeposits returns (uint256) {
         uint256 assets = previewMint(shares);
         IERC20Permit(asset()).permit(msg.sender, address(this), assets, deadline, v, r, s);
         return super.mint(shares, receiver);
@@ -459,21 +466,25 @@ abstract contract BaseVault is IVault, ERC20Permit, ERC4626, Capped {
 
     /** Hooks **/
 
-    // solhint-disable-next-line no-empty-blocks
-    /* This hook should be implemented in the contract implementation.
-        It will trigger after the shares were burned
-    */
+    /* solhint-disable no-empty-blocks */
+
+    /**
+     * @dev This hook should be implemented in the contract implementation.
+     * It will trigger after the shares were burned
+     */
     function _beforeWithdraw(uint256 shares, uint256 assets) internal virtual {}
 
-    // solhint-disable-next-line no-empty-blocks
-    /* This hook should be implemented in the contract implementation.
-        It will trigger after setting isProcessingDeposits to false
-    */
+    /**
+     * @dev This hook should be implemented in the contract implementation.
+     * It will trigger after setting isProcessingDeposits to false
+     */
     function _afterRoundStart() internal virtual {}
 
-    // solhint-disable-next-line no-empty-blocks
-    /* This hook should be implemented in the contract implementation.
-        It will trigger after setting isProcessingDeposits to true
-    */
+    /**
+     * @dev This hook should be implemented in the contract implementation.
+     * It will trigger after setting isProcessingDeposits to true
+     */
     function _afterRoundEnd() internal virtual {}
+
+    /* solhint-enable no-empty-blocks */
 }
