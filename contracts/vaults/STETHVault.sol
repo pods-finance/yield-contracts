@@ -68,10 +68,10 @@ contract STETHVault is BaseVault {
         lastRoundAssets = totalAssets();
         lastSharePrice = Fractional({ numerator: supply == 0 ? 0 : lastRoundAssets, denominator: supply });
 
-        uint256 sharePrice = lastSharePrice.denominator == 0
+        uint256 _sharePrice = lastSharePrice.denominator == 0
             ? 0
             : lastSharePrice.numerator.mulDiv(10**sharePriceDecimals, lastSharePrice.denominator, Math.Rounding.Down);
-        emit StartRoundData(vaultState.currentRoundId, lastRoundAssets, sharePrice);
+        emit StartRoundData(vaultState.currentRoundId, lastRoundAssets, _sharePrice);
     }
 
     function _afterRoundEnd() internal override {
