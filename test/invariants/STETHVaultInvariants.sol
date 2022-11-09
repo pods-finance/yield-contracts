@@ -105,14 +105,22 @@ contract STETHVaultInvariants is STETHVault, FuzzyAddresses {
 
     function deposit(uint256 assets, address) public override returns (uint256 shares) {
         uint256 createdShares = convertToShares(assets);
-        LastDeposit memory newDeposit = LastDeposit({ amount: assets, roundId: vaultState.currentRoundId, shares: createdShares });
+        LastDeposit memory newDeposit = LastDeposit({
+            amount: assets,
+            roundId: vaultState.currentRoundId,
+            shares: createdShares
+        });
         lastDeposits[msg.sender] = newDeposit;
         return this.deposit(assets, msg.sender);
     }
 
     function mint(uint256 shares, address) public override returns (uint256 assets) {
         uint256 assets2 = convertToAssets(shares);
-        LastDeposit memory newDeposit = LastDeposit({ amount: assets2, roundId: vaultState.currentRoundId, shares: shares });
+        LastDeposit memory newDeposit = LastDeposit({
+            amount: assets2,
+            roundId: vaultState.currentRoundId,
+            shares: shares
+        });
         lastDeposits[msg.sender] = newDeposit;
         return this.mint(shares, msg.sender);
     }
@@ -123,13 +131,19 @@ contract STETHVaultInvariants is STETHVault, FuzzyAddresses {
         address
     ) public override returns (uint256 shares) {
         bool isNextRound = vaultState.currentRoundId == lastDeposits[msg.sender].roundId + 1;
+        uint256 burnShares = _convertToShares(assets, Math.Rounding.Up);
+
         this.withdraw(assets, msg.sender, msg.sender);
+        uint256 userSharesAfterWithdraw = this.balanceOf(msg.sender);
 
         if (isNextRound && assets > 0) {
-            uint256 burnShares = previewWithdraw(assets);
-            if (burnShares <= lastDeposits[msg.sender].shares) {
-                bool isWithdrawLowerThanInitial = assets <= lastDeposits[msg.sender].amount;
-                if (!isWithdrawLowerThanInitial) {
+            if (burnShares < lastDeposits[msg.sender].shares) {
+                lastDeposits[msg.sender].shares -= burnShares;
+                lastDeposits[msg.sender].amount -= assets;
+            }
+            if (burnShares == lastDeposits[msg.sender].shares || userSharesAfterWithdraw == 0) {
+                bool isWithdrawLowerThanInitial = assets < lastDeposits[msg.sender].amount;
+                if (isWithdrawLowerThanInitial) {
                     emit AssertionFailed(isWithdrawLowerThanInitial);
                 }
             }
@@ -142,12 +156,17 @@ contract STETHVaultInvariants is STETHVault, FuzzyAddresses {
         address
     ) public override returns (uint256 assets) {
         bool isNextRound = vaultState.currentRoundId == lastDeposits[msg.sender].roundId + 1;
+        uint256 assetsToWithdraw = convertToAssets(shares);
+        uint256 balanceOfShares = this.balanceOf(msg.sender);
         this.redeem(shares, msg.sender, msg.sender);
         if (isNextRound && shares > 0) {
-            if (shares <= lastDeposits[msg.sender].shares) {
-                uint256 withdrawAssets = convertToAssets(shares);
-                bool isWithdrawLowerThanInitial = withdrawAssets <= lastDeposits[msg.sender].amount;
-                if (!isWithdrawLowerThanInitial) {
+            if (shares < lastDeposits[msg.sender].shares) {
+                lastDeposits[msg.sender].shares -= shares;
+                lastDeposits[msg.sender].amount -= assetsToWithdraw;
+            }
+            if (shares == lastDeposits[msg.sender].shares || shares == balanceOfShares) {
+                bool isWithdrawLowerThanInitial = assetsToWithdraw < lastDeposits[msg.sender].amount;
+                if (isWithdrawLowerThanInitial) {
                     emit AssertionFailed(isWithdrawLowerThanInitial);
                 }
             }
