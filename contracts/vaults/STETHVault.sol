@@ -2,7 +2,13 @@
 
 pragma solidity 0.8.17;
 
-import "./BaseVault.sol";
+import { IERC4626 } from "@openzeppelin/contracts/interfaces/IERC4626.sol";
+import { ERC4626 } from "@openzeppelin/contracts/token/ERC20/extensions/ERC4626.sol";
+import { IERC20Metadata } from "@openzeppelin/contracts/token/ERC20/extensions/IERC20Metadata.sol";
+import { SafeERC20 } from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
+import { Math } from "@openzeppelin/contracts/utils/math/Math.sol";
+import { BaseVault } from "./BaseVault.sol";
+import { IConfigurationManager } from "../interfaces/IConfigurationManager.sol";
 
 /**
  * @title STETHVault
@@ -56,6 +62,14 @@ contract STETHVault is BaseVault {
     }
 
     /**
+     * @notice Return the stETH price per share
+     * @dev Each share is considered to be 10^(assets.decimals())
+     */
+    function sharePrice() external view returns (uint256) {
+        return totalAssets().mulDiv(10**sharePriceDecimals, totalSupply(), Math.Rounding.Down);
+    }
+
+    /**
      * @inheritdoc BaseVault
      */
     function _afterRoundStart() internal override {
@@ -64,10 +78,10 @@ contract STETHVault is BaseVault {
         lastRoundAssets = totalAssets();
         lastSharePrice = Fractional({ numerator: supply == 0 ? 0 : lastRoundAssets, denominator: supply });
 
-        uint256 sharePrice = lastSharePrice.denominator == 0
+        uint256 currentSharePrice = lastSharePrice.denominator == 0
             ? 0
             : lastSharePrice.numerator.mulDiv(10**sharePriceDecimals, lastSharePrice.denominator, Math.Rounding.Down);
-        emit StartRoundData(vaultState.currentRoundId, lastRoundAssets, sharePrice);
+        emit StartRoundData(vaultState.currentRoundId, lastRoundAssets, currentSharePrice);
     }
 
     /**

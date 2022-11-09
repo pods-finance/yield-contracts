@@ -2,7 +2,7 @@
 
 pragma solidity 0.8.17;
 
-import "./Asset.sol";
+import { Asset } from "./Asset.sol";
 
 contract InvestorActorMock {
     Asset public immutable asset;

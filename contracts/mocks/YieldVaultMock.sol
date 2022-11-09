@@ -2,8 +2,12 @@
 
 pragma solidity 0.8.17;
 
-import "../vaults/BaseVault.sol";
-import "./YieldSourceMock.sol";
+import { IERC20Metadata } from "@openzeppelin/contracts/token/ERC20/extensions/IERC20Metadata.sol";
+import { IERC4626 } from "@openzeppelin/contracts/interfaces/IERC4626.sol";
+import { ERC4626 } from "@openzeppelin/contracts/token/ERC20/extensions/ERC4626.sol";
+import { BaseVault } from "../vaults/BaseVault.sol";
+import { YieldSourceMock } from "./YieldSourceMock.sol";
+import { IConfigurationManager } from "../interfaces/IConfigurationManager.sol";
 
 contract YieldVaultMock is BaseVault {
     YieldSourceMock public yieldSource;
