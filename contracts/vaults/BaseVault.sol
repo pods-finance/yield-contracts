@@ -312,7 +312,9 @@ abstract contract BaseVault is IVault, ERC20Permit, ERC4626, Capped {
         _afterRoundEnd();
         vaultState.lastEndRoundTimestamp = uint32(block.timestamp);
 
-        emit RoundEnded(vaultState.currentRoundId++);
+        emit RoundEnded(vaultState.currentRoundId);
+
+        vaultState.currentRoundId += 1;
     }
 
     /**
