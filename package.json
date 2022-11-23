@@ -32,7 +32,8 @@
     "hardhat-contract-sizer": "^2.5.1",
     "hardhat-gas-reporter": "^1.0.7",
     "hardhat-spdx-license-identifier": "^2.0.3",
-    "husky": "^8.0.1",
+    "husky": "8.0.2",
+    "lint-staged": "13.0.3",
     "prettier": "^2.5.1",
     "prettier-plugin-solidity": "^1.0.0-beta.19",
     "solhint": "^3.3.7",
@@ -48,5 +49,13 @@
   "engines": {
     "node": ">=16.14.0"
   },
-  "license": "AGPL-3.0-or-later"
+  "license": "AGPL-3.0-or-later",
+  "lint-staged": {
+    "**/*.ts": [
+      "ts-standard --fix ."
+    ],
+    "**/*.sol": [
+      "./node_modules/.bin/prettier --write ."
+    ]
+  }
 }
