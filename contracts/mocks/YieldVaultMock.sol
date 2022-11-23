@@ -7,10 +7,13 @@ import { IERC4626 } from "@openzeppelin/contracts/interfaces/IERC4626.sol";
 import { ERC4626 } from "@openzeppelin/contracts/token/ERC20/extensions/ERC4626.sol";
 import { BaseVault } from "../vaults/BaseVault.sol";
 import { YieldSourceMock } from "./YieldSourceMock.sol";
+import { Math } from "@openzeppelin/contracts/utils/math/Math.sol";
 import { IConfigurationManager } from "../interfaces/IConfigurationManager.sol";
+import { IVault } from "../interfaces/IVault.sol";
 
 contract YieldVaultMock is BaseVault {
     YieldSourceMock public yieldSource;
+    using Math for uint256;
 
     constructor(
         IConfigurationManager _configuration,
@@ -20,7 +23,10 @@ contract YieldVaultMock is BaseVault {
         yieldSource = YieldSourceMock(_yieldSource);
     }
 
-    function assetsOf(address owner) public view override returns (uint256) {
+    /**
+     * @inheritdoc IVault
+     */
+    function assetsOf(address owner) external view virtual returns (uint256) {
         uint256 shares = balanceOf(owner);
         return convertToAssets(shares) + idleAssetsOf(owner);
     }

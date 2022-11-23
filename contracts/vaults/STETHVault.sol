@@ -9,6 +9,7 @@ import { SafeERC20 } from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.s
 import { Math } from "@openzeppelin/contracts/utils/math/Math.sol";
 import { BaseVault } from "./BaseVault.sol";
 import { IConfigurationManager } from "../interfaces/IConfigurationManager.sol";
+import { IVault } from "../interfaces/IVault.sol";
 
 /**
  * @title STETHVault
@@ -52,6 +53,14 @@ contract STETHVault is BaseVault {
     {
         investor = _investor;
         sharePriceDecimals = _asset.decimals();
+    }
+
+     /**
+     * @inheritdoc IVault
+     */
+    function assetsOf(address owner) external view virtual returns (uint256) {
+        uint256 shares = balanceOf(owner);
+        return convertToAssets(shares) + idleAssetsOf(owner);
     }
 
     /**

@@ -8,6 +8,7 @@ import { ERC4626 } from "@openzeppelin/contracts/token/ERC20/extensions/ERC4626.
 import { SafeERC20 } from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import { Math } from "@openzeppelin/contracts/utils/math/Math.sol";
 import { IConfigurationManager } from "../interfaces/IConfigurationManager.sol";
+import { IVault } from "../interfaces/IVault.sol";
 import { BaseVault } from "../vaults/BaseVault.sol";
 import { YieldSourceMock } from "../mocks/YieldSourceMock.sol";
 
@@ -105,6 +106,18 @@ contract PrincipalProtectedMock is BaseVault {
 
         emit EndRoundData(vaultState.currentRoundId, roundAccruedInterest, investmentYield, idleAssets);
         emit SharePrice(vaultState.currentRoundId, startSharePrice, endSharePrice);
+    }
+
+     /**
+     * @inheritdoc IVault
+     */
+    function assetsOf(address owner) external view virtual returns (uint256) {
+        uint256 supply = totalSupply();
+        uint256 shares = balanceOf(owner);
+        uint256 committedAssets = supply == 0
+            ? 0
+            : shares.mulDiv(IERC20Metadata(asset()).balanceOf(address(this)), supply, Math.Rounding.Down);
+        return convertToAssets(shares) + idleAssetsOf(owner) + committedAssets;
     }
 
     /**
