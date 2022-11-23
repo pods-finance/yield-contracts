@@ -508,7 +508,7 @@ describe('STETHVault', () => {
     await asset.connect(yieldGenerator).transfer(vault.address, ethers.utils.parseEther('20'))
     await asset.connect(yieldGenerator).transfer(investor.address, ethers.utils.parseEther('1300'))
     await vault.connect(vaultController).endRound()
-    await vault.connect(vaultController).processQueuedDeposits([user1.address])
+    await vault.connect(vaultController).processQueuedDeposits([user0.address, user1.address])
 
     // Round 3
     await vault.connect(vaultController).startRound()
