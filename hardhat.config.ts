@@ -35,18 +35,6 @@ const config: HardhatUserConfig = {
         mnemonic: process.env.DEV_MNEMONIC ?? ''
       }
     },
-    kovan: {
-      url: `https://kovan.infura.io/v3/${process.env.INFURA_PROJECT_ID ?? ''}`,
-      accounts: {
-        mnemonic: process.env.DEV_MNEMONIC ?? ''
-      }
-    },
-    rinkeby: {
-      url: `https://rinkeby.infura.io/v3/${process.env.INFURA_PROJECT_ID ?? ''}`,
-      accounts: {
-        mnemonic: process.env.DEV_MNEMONIC ?? ''
-      }
-    },
     polygon: {
       url: `https://polygon-mainnet.infura.io/v3/${process.env.INFURA_PROJECT_ID ?? ''}`,
       accounts: {
