@@ -26,6 +26,10 @@ contract YieldSourceMock is ERC20, ERC4626 {
         return _symbol;
     }
 
+    function decimals() public view override(ERC20, ERC4626) returns (uint8) {
+        return super.decimals();
+    }
+
     function generateInterest(uint256 amount) external {
         _asset.mint(amount);
     }

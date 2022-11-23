@@ -259,6 +259,36 @@ describe('STETHVault', () => {
       expect(user0maxRedeem).to.be.equal(user0maxShares)
       expect(user1maxRedeem).to.be.equal(user1maxShares)
     })
+
+    it('assetsOf should match in a mixed case', async () => {
+      const assets = ethers.utils.parseEther('100')
+      const user0Deposit = assets
+
+      await vault.connect(user0).deposit(user0Deposit, user0.address)
+      expect(await vault.assetsOf(user0.address)).to.be.equal(assets.sub(1))
+
+      await vault.connect(vaultController).endRound()
+      await vault.connect(vaultController).processQueuedDeposits([user0.address])
+
+      expect(await vault.assetsOf(user0.address)).to.be.equal(assets.sub(1))
+
+      // Round 1
+      await vault.connect(vaultController).startRound()
+      expect(await vault.assetsOf(user0.address)).to.be.equal(assets.sub(1))
+
+      await vault.connect(user0).deposit(user0Deposit, user0.address)
+
+      expect(await vault.assetsOf(user0.address)).to.be.equal(assets.mul(2).sub(2))
+
+      await vault.connect(vaultController).endRound()
+      await vault.connect(vaultController).processQueuedDeposits([user0.address])
+      expect(await vault.assetsOf(user0.address)).to.be.equal(assets.mul(2).sub(2))
+
+      await asset.connect(yieldGenerator).transfer(vault.address, assets)
+
+      expect(await vault.assetsOf(user0.address)).to.be.equal(assets.mul(3).sub(3))
+
+    })
   })
 
   describe('Lifecycle', () => {

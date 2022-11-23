@@ -85,6 +85,13 @@ abstract contract BaseVault is IVault, ERC20Permit, ERC4626, Capped {
     }
 
     /**
+     * @inheritdoc ERC20
+     */
+    function decimals() public view override(ERC20, ERC4626, IERC20Metadata) returns (uint8) {
+        return super.decimals();
+    }
+
+    /**
      * @inheritdoc IVault
      */
     function currentRoundId() external view returns (uint32) {
@@ -243,18 +250,6 @@ abstract contract BaseVault is IVault, ERC20Permit, ERC4626, Capped {
     function idleAssetsOf(address owner) public view virtual returns (uint256) {
         (, uint256 assets) = depositQueue.tryGet(owner);
         return assets;
-    }
-
-    /**
-     * @inheritdoc IVault
-     */
-    function assetsOf(address owner) external view virtual returns (uint256) {
-        uint256 supply = totalSupply();
-        uint256 shares = balanceOf(owner);
-        uint256 committedAssets = supply == 0
-            ? 0
-            : shares.mulDiv(IERC20Metadata(asset()).balanceOf(address(this)), supply, Math.Rounding.Down);
-        return convertToAssets(shares) + idleAssetsOf(owner) + committedAssets;
     }
 
     /**
