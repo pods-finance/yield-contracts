@@ -21,7 +21,7 @@ jobs:
         run: yarn
 
       - name: lint
-        run: yarn solhint
+        run: yarn prettier --check && yarn lint:ts
 
       - name: compile
         run: yarn compile
