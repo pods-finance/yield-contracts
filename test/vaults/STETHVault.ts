@@ -1,15 +1,17 @@
 import { expect } from 'chai'
 import hre, { ethers } from 'hardhat'
-import { BigNumber } from 'ethers'
+import { BigNumber, utils } from 'ethers'
 import { SignerWithAddress } from '@nomiclabs/hardhat-ethers/signers'
+import helpers from '@nomicfoundation/hardhat-network-helpers'
 import minus from '../utils/minus'
 import { startMainnetFork, stopMainnetFork } from '../utils/mainnetFork'
 import createConfigurationManager from '../utils/createConfigurationManager'
 import { feeExcluded } from '../utils/feeExcluded'
-import { ConfigurationManager, ERC20, InvestorActorMock, STETHVault } from '../../typechain'
+import { ConfigurationManager, STETH, InvestorActorMock, STETHVault } from '../../typechain'
+import { keccak256 } from 'ethers/lib/utils'
 
 describe('STETHVault', () => {
-  let asset: ERC20, vault: STETHVault, investor: InvestorActorMock,
+  let asset: STETH, vault: STETHVault, investor: InvestorActorMock,
     configuration: ConfigurationManager
 
   let user0: SignerWithAddress, user1: SignerWithAddress, user2: SignerWithAddress, user3: SignerWithAddress, user4: SignerWithAddress,
@@ -66,7 +68,7 @@ describe('STETHVault', () => {
     configuration = await createConfigurationManager()
 
     // Lido's stEth
-    asset = await ethers.getContractAt('ERC20', '0xae7ab96520DE3A18E5e111B5EaAb095312D7fE84')
+    asset = await ethers.getContractAt('STETH', '0xae7ab96520DE3A18E5e111B5EaAb095312D7fE84')
 
     const InvestorActorMock = await ethers.getContractFactory('InvestorActorMock')
     investor = await InvestorActorMock.deploy(asset.address)
@@ -368,7 +370,55 @@ describe('STETHVault', () => {
     })
   })
 
-  it('it should remove the same amount independently of the process order', async () => {
+  describe('Blocker possibilities', () => {
+    it('should be able to end a round even in a negative rebasing event', async () => {
+      const user0DepositAmount = ethers.utils.parseEther('1').add(1)
+      const user1DepositAmount = ethers.utils.parseEther('50')
+  
+      await vault.connect(user0).deposit(user0DepositAmount, user0.address)
+      await vault.connect(user1).deposit(user1DepositAmount, user1.address)
+      await vault.connect(vaultController).endRound()
+  
+      await vault.connect(vaultController).processQueuedDeposits([user0.address, user1.address])
+      await vault.connect(vaultController).startRound()
+
+      await vault.connect(user0).deposit(user0DepositAmount, user0.address)
+
+      // Force reduction of Lidos balance to simulate a slashing event
+      // SLOT_STETH_BALANCE is equal to keccak256("lido.Lido.beaconBalance")
+      const SLOT_STETH_BALANCE = "0xa66d35f054e68143c18f32c990ed5cb972bb68a68f500cd2dd3a16bbf3686483"
+
+      const balanceSTETHBefore = await asset.getTotalPooledEther()
+      const newBalance = balanceSTETHBefore.div(3).mul(2)
+      const newBalancePad32 = ethers.utils.hexZeroPad(ethers.utils.hexValue(newBalance), 32)
+
+      await ethers.provider.send("hardhat_setStorageAt", [
+        asset.address,
+        SLOT_STETH_BALANCE,
+        newBalancePad32
+      ]);
+
+      const balanceSTETHAfter = await asset.getTotalPooledEther()
+
+      // Check if storage manipulation was successful 
+      expect(balanceSTETHAfter).to.be.lt(balanceSTETHBefore)
+      
+      await vault.connect(vaultController).endRound()
+      await vault.connect(vaultController).processQueuedDeposits([user0.address])
+      await vault.connect(vaultController).startRound()
+
+      // Reset state
+      const oldBalancePad32 = ethers.utils.hexZeroPad(ethers.utils.hexValue(balanceSTETHBefore), 32)
+
+      await ethers.provider.send("hardhat_setStorageAt", [
+        asset.address,
+        SLOT_STETH_BALANCE,
+        oldBalancePad32
+      ]);
+    })
+  })
+
+  it('should remove the same amount independently of the process order', async () => {
     await configuration.setParameter(vault.address, ethers.utils.formatBytes32String('WITHDRAW_FEE_RATIO'), BigNumber.from('0'))
 
     const user0DepositAmount = ethers.utils.parseEther('1').add(1)
@@ -640,9 +690,9 @@ describe('STETHVault', () => {
     const user2Moment8maxWithdraw = await vault.maxWithdraw(user2.address)
 
     // console.log(‘MOMENT 8 - Should have more amount than MOMENT 7’)
-    expect(user0Moment8maxWithdraw).to.be.gt(user0Moment7maxWithdraw)
-    expect(user1Moment8maxWithdraw).to.be.gt(user1Moment7maxWithdraw)
-    expect(user2Moment8maxWithdraw).to.be.gt(user2Moment7maxWithdraw)
+    expect(user0Moment8maxWithdraw).to.be.gte(user0Moment7maxWithdraw)
+    expect(user1Moment8maxWithdraw).to.be.gte(user1Moment7maxWithdraw)
+    expect(user2Moment8maxWithdraw).to.be.gte(user2Moment7maxWithdraw)
 
     await vault.connect(vaultController).startRound()
 
