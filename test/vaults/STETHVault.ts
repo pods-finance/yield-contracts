@@ -1,14 +1,12 @@
 import { expect } from 'chai'
 import hre, { ethers } from 'hardhat'
-import { BigNumber, utils } from 'ethers'
+import { BigNumber } from 'ethers'
 import { SignerWithAddress } from '@nomiclabs/hardhat-ethers/signers'
-import helpers from '@nomicfoundation/hardhat-network-helpers'
 import minus from '../utils/minus'
 import { startMainnetFork, stopMainnetFork } from '../utils/mainnetFork'
 import createConfigurationManager from '../utils/createConfigurationManager'
 import { feeExcluded } from '../utils/feeExcluded'
 import { ConfigurationManager, STETH, InvestorActorMock, STETHVault } from '../../typechain'
-import { keccak256 } from 'ethers/lib/utils'
 
 describe('STETHVault', () => {
   let asset: STETH, vault: STETHVault, investor: InvestorActorMock,
@@ -289,7 +287,6 @@ describe('STETHVault', () => {
       await asset.connect(yieldGenerator).transfer(vault.address, assets)
 
       expect(await vault.assetsOf(user0.address)).to.be.equal(assets.mul(3).sub(3))
-
     })
   })
 
@@ -370,52 +367,50 @@ describe('STETHVault', () => {
     })
   })
 
-  describe('Blocker possibilities', () => {
-    it('should be able to end a round even in a negative rebasing event', async () => {
-      const user0DepositAmount = ethers.utils.parseEther('1').add(1)
-      const user1DepositAmount = ethers.utils.parseEther('50')
-  
-      await vault.connect(user0).deposit(user0DepositAmount, user0.address)
-      await vault.connect(user1).deposit(user1DepositAmount, user1.address)
-      await vault.connect(vaultController).endRound()
-  
-      await vault.connect(vaultController).processQueuedDeposits([user0.address, user1.address])
-      await vault.connect(vaultController).startRound()
+  it('should be able to end a round even in a negative rebasing event', async () => {
+    const user0DepositAmount = ethers.utils.parseEther('1').add(1)
+    const user1DepositAmount = ethers.utils.parseEther('50')
 
-      await vault.connect(user0).deposit(user0DepositAmount, user0.address)
+    await vault.connect(user0).deposit(user0DepositAmount, user0.address)
+    await vault.connect(user1).deposit(user1DepositAmount, user1.address)
+    await vault.connect(vaultController).endRound()
 
-      // Force reduction of Lidos balance to simulate a slashing event
-      // SLOT_STETH_BALANCE is equal to keccak256("lido.Lido.beaconBalance")
-      const SLOT_STETH_BALANCE = "0xa66d35f054e68143c18f32c990ed5cb972bb68a68f500cd2dd3a16bbf3686483"
+    await vault.connect(vaultController).processQueuedDeposits([user0.address, user1.address])
+    await vault.connect(vaultController).startRound()
 
-      const balanceSTETHBefore = await asset.getTotalPooledEther()
-      const newBalance = balanceSTETHBefore.div(3).mul(2)
-      const newBalancePad32 = ethers.utils.hexZeroPad(ethers.utils.hexValue(newBalance), 32)
+    await vault.connect(user0).deposit(user0DepositAmount, user0.address)
 
-      await ethers.provider.send("hardhat_setStorageAt", [
-        asset.address,
-        SLOT_STETH_BALANCE,
-        newBalancePad32
-      ]);
+    // Force reduction of Lidos balance to simulate a slashing event
+    // SLOT_STETH_BALANCE is equal to keccak256("lido.Lido.beaconBalance")
+    const SLOT_STETH_BALANCE = '0xa66d35f054e68143c18f32c990ed5cb972bb68a68f500cd2dd3a16bbf3686483'
 
-      const balanceSTETHAfter = await asset.getTotalPooledEther()
+    const balanceSTETHBefore = await asset.getTotalPooledEther()
+    const newBalance = balanceSTETHBefore.div(3).mul(2)
+    const newBalancePad32 = ethers.utils.hexZeroPad(ethers.utils.hexValue(newBalance), 32)
 
-      // Check if storage manipulation was successful 
-      expect(balanceSTETHAfter).to.be.lt(balanceSTETHBefore)
-      
-      await vault.connect(vaultController).endRound()
-      await vault.connect(vaultController).processQueuedDeposits([user0.address])
-      await vault.connect(vaultController).startRound()
+    await ethers.provider.send('hardhat_setStorageAt', [
+      asset.address,
+      SLOT_STETH_BALANCE,
+      newBalancePad32
+    ])
 
-      // Reset state
-      const oldBalancePad32 = ethers.utils.hexZeroPad(ethers.utils.hexValue(balanceSTETHBefore), 32)
+    const balanceSTETHAfter = await asset.getTotalPooledEther()
 
-      await ethers.provider.send("hardhat_setStorageAt", [
-        asset.address,
-        SLOT_STETH_BALANCE,
-        oldBalancePad32
-      ]);
-    })
+    // Check if storage manipulation was successful
+    expect(balanceSTETHAfter).to.be.lt(balanceSTETHBefore)
+
+    await vault.connect(vaultController).endRound()
+    await vault.connect(vaultController).processQueuedDeposits([user0.address])
+    await vault.connect(vaultController).startRound()
+
+    // Reset state
+    const oldBalancePad32 = ethers.utils.hexZeroPad(ethers.utils.hexValue(balanceSTETHBefore), 32)
+
+    await ethers.provider.send('hardhat_setStorageAt', [
+      asset.address,
+      SLOT_STETH_BALANCE,
+      oldBalancePad32
+    ])
   })
 
   it('should remove the same amount independently of the process order', async () => {
