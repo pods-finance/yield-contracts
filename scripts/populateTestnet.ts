@@ -35,7 +35,7 @@ async function main (): Promise<void> {
 
   await (await vault.endRound()).wait(WAIT_CONFIRMATIONS)
   console.log('Round 0 Ended')
-  await (await vault.processQueuedDeposits(0, 2)).wait(WAIT_CONFIRMATIONS)
+  await (await vault.processQueuedDeposits([user0.address, user1.address])).wait(WAIT_CONFIRMATIONS)
   console.log('Payments processed')
   await (await vault.startRound()).wait(WAIT_CONFIRMATIONS)
   console.log('Round 1 Started')

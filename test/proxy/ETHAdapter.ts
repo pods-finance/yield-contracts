@@ -89,7 +89,7 @@ describe('ETHAdapter', () => {
         value: assets
       })
 
-      await expect(async () => await tx)
+      await expect(tx)
         .to.changeEtherBalances(
           [user0, pool],
           [minus(assets), assets]
@@ -139,7 +139,7 @@ describe('ETHAdapter', () => {
         expectedETH
       )
 
-      await expect(async () => await withdrawTx)
+      await expect(withdrawTx)
         .to.changeEtherBalances(
           [pool, user0],
           [minus(expectedETH), expectedETH]
@@ -192,7 +192,7 @@ describe('ETHAdapter', () => {
         permit.s
       )
 
-      await expect(async () => await withdrawTx)
+      await expect(withdrawTx)
         .to.changeEtherBalances(
           [pool, userPermit],
           [minus(expectedETH), expectedETH]
@@ -232,7 +232,7 @@ describe('ETHAdapter', () => {
         expectedETH
       )
 
-      await expect(async () => await withdrawTx)
+      await expect(withdrawTx)
         .to.changeEtherBalances(
           [pool, user0],
           [minus(expectedETH), expectedETH]
@@ -285,7 +285,7 @@ describe('ETHAdapter', () => {
         permit.s
       )
 
-      await expect(async () => await redeemTx)
+      await expect(redeemTx)
         .to.changeEtherBalances(
           [pool, userPermit],
           [minus(expectedETH), expectedETH]

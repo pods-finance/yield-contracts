@@ -214,14 +214,14 @@ describe('STETHVault', () => {
       const user0maxWithdraw = await vault.maxWithdraw(user0.address)
       const user1maxWithdraw = await vault.maxWithdraw(user1.address)
 
-      await expect(async () => await vault.connect(user0).redeem(await vault.balanceOf(user0.address), user0.address, user0.address))
+      await expect(vault.connect(user0).redeem(await vault.balanceOf(user0.address), user0.address, user0.address))
         .to.changeTokenBalance(
           asset,
           user0,
           user0maxWithdraw.sub(1)
         )
 
-      await expect(async () => await vault.connect(user1).redeem(await vault.balanceOf(user1.address), user1.address, user1.address))
+      await expect(vault.connect(user1).redeem(await vault.balanceOf(user1.address), user1.address, user1.address))
         .to.changeTokenBalance(
           asset,
           user1,
@@ -418,7 +418,7 @@ describe('STETHVault', () => {
     const assetAmountEffective = assetAmount.sub(1)
 
     // User0 deposits to vault
-    await expect(async () => await vault.connect(user0).deposit(assetAmount, user0.address))
+    await expect(vault.connect(user0).deposit(assetAmount, user0.address))
       .to.changeTokenBalances(
         asset,
         [user0, vault],
@@ -448,13 +448,13 @@ describe('STETHVault', () => {
     const effectiveTotal = assetAmountUser0Effective.add(assetAmountUser1Effective)
 
     // Users deposits to vault
-    await expect(async () => await vault.connect(user0).deposit(assetAmountUser0, user0.address))
+    await expect(vault.connect(user0).deposit(assetAmountUser0, user0.address))
       .to.changeTokenBalances(
         asset,
         [user0, vault],
         [minus(assetAmountUser0Effective), assetAmountUser0Effective]
       )
-    await expect(async () => await vault.connect(user1).deposit(assetAmountUser1, user1.address))
+    await expect(vault.connect(user1).deposit(assetAmountUser1, user1.address))
       .to.changeTokenBalances(
         asset,
         [user1, vault],
@@ -516,18 +516,14 @@ describe('STETHVault', () => {
     const expectedUser0Amount = BigNumber.from('1495424836601307189549')
     const expectedUser1Amount = BigNumber.from('104575163398692810446')
 
-    await expect(async () =>
-      await vault.connect(user0).redeem(await vault.balanceOf(user0.address), user0.address, user0.address)
-    )
+    await expect(vault.connect(user0).redeem(await vault.balanceOf(user0.address), user0.address, user0.address))
       .to.changeTokenBalances(
         asset,
         [vault, user0],
         [minus(expectedUser0Amount), feeExcluded(expectedUser0Amount).add(1)]
       )
 
-    await expect(async () =>
-      await vault.connect(user1).redeem(await vault.balanceOf(user1.address), user1.address, user1.address)
-    )
+    await expect(vault.connect(user1).redeem(await vault.balanceOf(user1.address), user1.address, user1.address))
       .to.changeTokenBalances(
         asset,
         [vault, user1],
@@ -659,27 +655,21 @@ describe('STETHVault', () => {
     const sharesAmount2 = await vault.balanceOf(user2.address)
 
     // console.log(‘MOMENT 10 - Should have the same amount as 8 and 9 minus fee’)
-    await expect(async () =>
-      await vault.connect(user0).redeem(sharesAmount0, user0.address, user0.address)
-    )
+    await expect(vault.connect(user0).redeem(sharesAmount0, user0.address, user0.address))
       .to.changeTokenBalance(
         asset,
         user0,
         user0Moment9maxWithdraw.sub(1)
       )
 
-    await expect(async () =>
-      await vault.connect(user1).redeem(sharesAmount1, user1.address, user1.address)
-    )
+    await expect(vault.connect(user1).redeem(sharesAmount1, user1.address, user1.address))
       .to.changeTokenBalance(
         asset,
         user1,
         user1Moment9maxWithdraw
       )
 
-    await expect(async () =>
-      await vault.connect(user2).redeem(sharesAmount2, user2.address, user2.address)
-    )
+    await expect(vault.connect(user2).redeem(sharesAmount2, user2.address, user2.address))
       .to.changeTokenBalance(
         asset,
         user2,
