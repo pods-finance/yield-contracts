@@ -108,7 +108,7 @@ contract PrincipalProtectedMock is BaseVault {
         emit SharePrice(vaultState.currentRoundId, startSharePrice, endSharePrice);
     }
 
-     /**
+    /**
      * @inheritdoc IVault
      */
     function assetsOf(address owner) external view virtual returns (uint256) {

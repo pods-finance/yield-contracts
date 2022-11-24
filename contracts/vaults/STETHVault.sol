@@ -55,7 +55,7 @@ contract STETHVault is BaseVault {
         sharePriceDecimals = _asset.decimals();
     }
 
-     /**
+    /**
      * @inheritdoc IVault
      */
     function assetsOf(address owner) external view virtual returns (uint256) {
@@ -103,16 +103,23 @@ contract STETHVault is BaseVault {
         uint256 supply = totalSupply();
 
         if (supply != 0) {
-            roundAccruedInterest = totalAssets() - lastRoundAssets;
-            uint256 investmentAmount = (roundAccruedInterest * INVESTOR_RATIO) / DENOMINATOR;
+            if (totalAssets() >= lastRoundAssets) {
+                roundAccruedInterest = totalAssets() - lastRoundAssets;
+                uint256 investmentAmount = (roundAccruedInterest * INVESTOR_RATIO) / DENOMINATOR;
 
-            // Pulls the yields from investor
-            if (investmentYield > 0) {
-                IERC20Metadata(asset()).safeTransferFrom(investor, address(this), investmentYield);
-            }
+                // Pulls the yields from investor
+                if (investmentYield > 0) {
+                    IERC20Metadata(asset()).safeTransferFrom(investor, address(this), investmentYield);
+                }
 
-            if (investmentAmount > 0) {
-                IERC20Metadata(asset()).safeTransfer(investor, investmentAmount);
+                if (investmentAmount > 0) {
+                    IERC20Metadata(asset()).safeTransfer(investor, investmentAmount);
+                }
+            } else {
+                // Pulls the yields from investor
+                if (investmentYield > 0) {
+                    IERC20Metadata(asset()).safeTransferFrom(investor, address(this), investmentYield);
+                }
             }
 
             // End Share price needs to be calculated after the transfers between investor and vault
