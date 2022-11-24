@@ -55,7 +55,7 @@ contract STETHVault is BaseVault {
         sharePriceDecimals = _asset.decimals();
     }
 
-    /**
+     /**
      * @inheritdoc IVault
      */
     function assetsOf(address owner) external view virtual returns (uint256) {
