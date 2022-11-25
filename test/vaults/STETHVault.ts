@@ -205,7 +205,7 @@ describe('STETHVault', () => {
       const initialSharePrice = await vault.sharePrice()
       expect(initialSharePrice).to.be.eq(BigNumber.from('10').pow(sharePriceDecimals))
     })
-    
+
     it('maxWithdraw and withdraw should match', async () => {
       const assets = ethers.utils.parseEther('100')
       const user0Deposit = assets.mul(2)
