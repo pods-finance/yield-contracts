@@ -60,7 +60,7 @@ abstract contract BaseVault is IVault, ERC20Permit, ERC4626, Capped {
 
         // Vault starts in `start` state
         emit RoundStarted(vaultState.currentRoundId, 0);
-        vaultState.lastEndRoundTimestamp = uint32(block.timestamp);
+        vaultState.lastEndRoundTimestamp = uint40(block.timestamp);
 
         MIN_INITIAL_ASSETS = 10**uint256(asset_.decimals());
     }
@@ -308,7 +308,7 @@ abstract contract BaseVault is IVault, ERC20Permit, ERC4626, Capped {
 
         vaultState.isProcessingDeposits = true;
         _afterRoundEnd();
-        vaultState.lastEndRoundTimestamp = uint32(block.timestamp);
+        vaultState.lastEndRoundTimestamp = uint40(block.timestamp);
 
         emit RoundEnded(vaultState.currentRoundId);
 
