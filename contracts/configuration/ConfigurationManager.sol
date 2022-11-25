@@ -2,8 +2,8 @@
 
 pragma solidity 0.8.17;
 
-import "@openzeppelin/contracts/access/Ownable.sol";
-import "../interfaces/IConfigurationManager.sol";
+import { Ownable } from "@openzeppelin/contracts/access/Ownable.sol";
+import { IConfigurationManager } from "../interfaces/IConfigurationManager.sol";
 
 /**
  * @title ConfigurationManager
