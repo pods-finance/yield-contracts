@@ -88,10 +88,13 @@ contract STETHVault is BaseVault {
         uint256 supply = totalSupply();
 
         lastRoundAssets = totalAssets();
-        lastSharePrice = Fractional({ numerator: supply == 0 ? 0 : lastRoundAssets, denominator: supply });
+        lastSharePrice = Fractional({
+            numerator: supply == 0 ? MIN_INITIAL_ASSETS : lastRoundAssets,
+            denominator: supply == 0 ? 10**sharePriceDecimals : supply
+        });
 
         uint256 currentSharePrice = lastSharePrice.denominator == 0
-            ? 0
+            ? convertToAssets(10**sharePriceDecimals)
             : lastSharePrice.numerator.mulDiv(10**sharePriceDecimals, lastSharePrice.denominator, Math.Rounding.Down);
         emit StartRoundData(vaultState.currentRoundId, lastRoundAssets, currentSharePrice);
     }
@@ -101,7 +104,6 @@ contract STETHVault is BaseVault {
      */
     function _afterRoundEnd() internal override {
         uint256 roundAccruedInterest = 0;
-        uint256 endSharePrice = 0;
         uint256 investmentYield = IERC20Metadata(asset()).balanceOf(investor);
         uint256 supply = totalSupply();
 
@@ -124,13 +126,12 @@ contract STETHVault is BaseVault {
                     IERC20Metadata(asset()).safeTransferFrom(investor, address(this), investmentYield);
                 }
             }
-
-            // End Share price needs to be calculated after the transfers between investor and vault
-            endSharePrice = (totalAssets()).mulDiv(10**sharePriceDecimals, supply, Math.Rounding.Down);
         }
+        // End Share price needs to be calculated after the transfers between investor and vault
+        uint256 endSharePrice = convertToAssets(10**sharePriceDecimals);
 
         uint256 startSharePrice = lastSharePrice.denominator == 0
-            ? 0
+            ? convertToAssets(10**sharePriceDecimals)
             : lastSharePrice.numerator.mulDiv(10**sharePriceDecimals, lastSharePrice.denominator, Math.Rounding.Down);
 
         emit EndRoundData(vaultState.currentRoundId, roundAccruedInterest, investmentYield, totalIdleAssets());
