@@ -40,7 +40,7 @@ contract ETHAdapter {
     ) external payable returns (uint256 shares) {
         if (vault.asset() != STETH_ADDRESS) revert ETHAdapter__IncompatibleVault();
         uint256 assets = pool.exchange{ value: msg.value }(0, 1, msg.value, minOutput);
-        IERC20(vault.asset()).safeApprove(address(vault), assets);
+        IERC20(vault.asset()).safeIncreaseAllowance(address(vault), assets);
         return vault.deposit(assets, receiver);
     }
 
@@ -109,7 +109,7 @@ contract ETHAdapter {
         IERC20 asset = IERC20(vault.asset());
 
         uint256 balance = asset.balanceOf(address(this));
-        asset.safeApprove(address(pool), balance);
+        asset.safeIncreaseAllowance(address(pool), balance);
         pool.exchange(1, 0, balance, minOutput);
 
         payable(receiver).sendValue(address(this).balance);

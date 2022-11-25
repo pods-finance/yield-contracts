@@ -344,7 +344,7 @@ abstract contract BaseVault is IVault, ERC20Permit, ERC4626, Capped {
         uint256 assets = redeem(shares, address(this), msg.sender);
 
         // Deposit assets to `newVault`
-        IERC20Metadata(asset()).safeApprove(address(newVault), assets);
+        IERC20Metadata(asset()).safeIncreaseAllowance(address(newVault), assets);
         newVault.handleMigration(assets, msg.sender);
 
         emit Migrated(msg.sender, address(this), address(newVault), assets, shares);
