@@ -287,7 +287,6 @@ describe('STETHVault', () => {
       await asset.connect(yieldGenerator).transfer(vault.address, assets)
 
       expect(await vault.assetsOf(user0.address)).to.be.equal(assets.mul(3).sub(3))
-
     })
   })
 
