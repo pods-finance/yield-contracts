@@ -32,7 +32,7 @@ contract Migration {
 
         IERC20 asset = IERC20(from.asset());
         uint256 balance = asset.balanceOf(address(this));
-        asset.safeApprove(address(to), balance);
+        asset.safeIncreaseAllowance(address(to), balance);
         return to.deposit(balance, msg.sender);
     }
 
@@ -54,7 +54,7 @@ contract Migration {
 
         IERC20 asset = IERC20(from.asset());
         uint256 balance = asset.balanceOf(address(this));
-        asset.safeApprove(address(to), balance);
+        asset.safeIncreaseAllowance(address(to), balance);
         return to.deposit(balance, msg.sender);
     }
 }
