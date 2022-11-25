@@ -144,9 +144,9 @@
       },
       {
         "indexed": true,
-        "internalType": "uint256",
+        "internalType": "uint32",
         "name": "roundId",
-        "type": "uint256"
+        "type": "uint32"
       },
       {
         "indexed": false,
@@ -175,9 +175,9 @@
       },
       {
         "indexed": true,
-        "internalType": "uint256",
+        "internalType": "uint32",
         "name": "roundId",
-        "type": "uint256"
+        "type": "uint32"
       },
       {
         "indexed": false,
@@ -275,9 +275,9 @@
     "inputs": [
       {
         "indexed": true,
-        "internalType": "uint256",
+        "internalType": "uint32",
         "name": "roundId",
-        "type": "uint256"
+        "type": "uint32"
       }
     ],
     "name": "RoundEnded",
@@ -288,9 +288,9 @@
     "inputs": [
       {
         "indexed": true,
-        "internalType": "uint256",
+        "internalType": "uint32",
         "name": "roundId",
-        "type": "uint256"
+        "type": "uint32"
       },
       {
         "indexed": false,
