@@ -288,6 +288,37 @@ describe('STETHVault', () => {
 
       expect(await vault.assetsOf(user0.address)).to.be.equal(assets.mul(3).sub(3))
     })
+
+    it('previewWithdraw and withdrawn shares should match', async () => {
+      const assets = ethers.utils.parseEther('100')
+      const user0Deposit = assets.mul(2)
+      const user1Deposit = assets
+
+      await vault.connect(user0).deposit(user0Deposit, user0.address)
+      await vault.connect(user1).deposit(user1Deposit, user1.address)
+      await vault.connect(vaultController).endRound()
+      await vault.connect(vaultController).processQueuedDeposits([user0.address, user1.address])
+      // Round 1
+      await vault.connect(vaultController).startRound()
+      await asset.connect(yieldGenerator).transfer(vault.address, ethers.utils.parseEther('103'))
+
+      const user0previewWithdraw = await vault.previewWithdraw(assets.div(2))
+      const user1previewWithdraw = await vault.previewWithdraw(assets.div(2))
+
+      await expect(async () => await vault.connect(user0).redeem(user0previewWithdraw, user0.address, user0.address))
+        .to.changeTokenBalance(
+          asset,
+          user0,
+          assets.div(2)
+        )
+
+      await expect(async () => await vault.connect(user1).redeem(user1previewWithdraw, user1.address, user1.address))
+        .to.changeTokenBalance(
+          asset,
+          user1,
+          assets.div(2).add(1)
+        )
+    })
   })
 
   describe('Lifecycle', () => {
