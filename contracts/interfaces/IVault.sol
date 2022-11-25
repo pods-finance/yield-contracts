@@ -15,10 +15,10 @@ interface IVault is IERC4626, IERC20Permit {
     error IVault__AssetsUnderMinimumAmount(uint256 assets);
 
     event FeeCollected(uint256 fee);
-    event RoundStarted(uint256 indexed roundId, uint256 amountAddedToStrategy);
-    event RoundEnded(uint256 indexed roundId);
-    event DepositProcessed(address indexed owner, uint256 indexed roundId, uint256 assets, uint256 shares);
-    event DepositRefunded(address indexed owner, uint256 indexed roundId, uint256 assets);
+    event RoundStarted(uint32 indexed roundId, uint256 amountAddedToStrategy);
+    event RoundEnded(uint32 indexed roundId);
+    event DepositProcessed(address indexed owner, uint32 indexed roundId, uint256 assets, uint256 shares);
+    event DepositRefunded(address indexed owner, uint32 indexed roundId, uint256 assets);
     event Migrated(address indexed caller, address indexed from, address indexed to, uint256 assets, uint256 shares);
 
     /**
