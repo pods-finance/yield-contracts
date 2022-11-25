@@ -14,23 +14,43 @@ contract ETHAdapter {
 
     ICurvePool public immutable pool;
 
+    /**
+     * @dev ETH coin index in the Curve Pool
+     */
+    int128 public constant ETH_INDEX = 0;
+
+    /**
+     * @dev stETH coin index in the Curve Pool
+     */
+    int128 public constant STETH_INDEX = 1;
+
+    /**
+     * @dev ETH token address representation
+     */
     address public constant ETH_ADDRESS = 0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE;
+
+    /**
+     * @dev stETH token address representation
+     */
     address public constant STETH_ADDRESS = 0xae7ab96520DE3A18E5e111B5EaAb095312D7fE84;
 
     error ETHAdapter__IncompatibleVault();
     error ETHAdapter__IncompatiblePool();
 
     constructor(ICurvePool _pool) {
-        if (_pool.coins(0) != ETH_ADDRESS || _pool.coins(1) != STETH_ADDRESS) revert ETHAdapter__IncompatiblePool();
+        if (
+            _pool.coins(uint256(uint128(ETH_INDEX))) != ETH_ADDRESS ||
+            _pool.coins(uint256(uint128(STETH_INDEX))) != STETH_ADDRESS
+        ) revert ETHAdapter__IncompatiblePool();
         pool = _pool;
     }
 
     function convertToSTETH(uint256 ethAmount) external view returns (uint256) {
-        return pool.get_dy(0, 1, ethAmount);
+        return pool.get_dy(ETH_INDEX, STETH_INDEX, ethAmount);
     }
 
     function convertToETH(uint256 stETHAmount) external view returns (uint256) {
-        return pool.get_dy(1, 0, stETHAmount);
+        return pool.get_dy(STETH_INDEX, ETH_INDEX, stETHAmount);
     }
 
     function deposit(
@@ -39,7 +59,7 @@ contract ETHAdapter {
         uint256 minOutput
     ) external payable returns (uint256 shares) {
         if (vault.asset() != STETH_ADDRESS) revert ETHAdapter__IncompatibleVault();
-        uint256 assets = pool.exchange{ value: msg.value }(0, 1, msg.value, minOutput);
+        uint256 assets = pool.exchange{ value: msg.value }(ETH_INDEX, STETH_INDEX, msg.value, minOutput);
         IERC20(vault.asset()).safeIncreaseAllowance(address(vault), assets);
         return vault.deposit(assets, receiver);
     }
@@ -110,7 +130,7 @@ contract ETHAdapter {
 
         uint256 balance = asset.balanceOf(address(this));
         asset.safeIncreaseAllowance(address(pool), balance);
-        pool.exchange(1, 0, balance, minOutput);
+        pool.exchange(STETH_INDEX, ETH_INDEX, balance, minOutput);
 
         payable(receiver).sendValue(address(this).balance);
     }
