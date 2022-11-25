@@ -289,7 +289,7 @@ describe('STETHVault', () => {
       expect(await vault.assetsOf(user0.address)).to.be.equal(assets.mul(3).sub(3))
     })
 
-    it('previewWithdraw and withdrawn shares should match', async () => {
+    it.only('previewWithdraw and withdrawn shares should match', async () => {
       const assets = ethers.utils.parseEther('100')
       const user0Deposit = assets.mul(2)
       const user1Deposit = assets
@@ -302,21 +302,24 @@ describe('STETHVault', () => {
       await vault.connect(vaultController).startRound()
       await asset.connect(yieldGenerator).transfer(vault.address, ethers.utils.parseEther('103'))
 
-      const user0previewWithdraw = await vault.previewWithdraw(assets.div(2))
-      const user1previewWithdraw = await vault.previewWithdraw(assets.div(2))
+      const user0previewWithdrawAssets = assets.div(2)
+      const user1previewWithdrawAssets = assets.div(4)
+
+      const user0previewWithdraw = await vault.previewWithdraw(user0previewWithdrawAssets)
+      const user1previewWithdraw = await vault.previewWithdraw(user1previewWithdrawAssets)
 
       await expect(async () => await vault.connect(user0).redeem(user0previewWithdraw, user0.address, user0.address))
         .to.changeTokenBalance(
           asset,
           user0,
-          assets.div(2)
+          user0previewWithdrawAssets
         )
 
       await expect(async () => await vault.connect(user1).redeem(user1previewWithdraw, user1.address, user1.address))
         .to.changeTokenBalance(
           asset,
           user1,
-          assets.div(2).add(1)
+          user1previewWithdrawAssets.add(1)
         )
     })
   })
