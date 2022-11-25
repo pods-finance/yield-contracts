@@ -5,7 +5,7 @@ pragma solidity 0.8.17;
 interface IConfigurationManager {
     event SetCap(address indexed target, uint256 value);
     event ParameterSet(address indexed target, bytes32 indexed name, uint256 value);
-    event VaultAllowanceSet(address indexed oldVault, address newVault);
+    event VaultAllowanceSet(address indexed oldVault, address indexed newVault);
 
     error ConfigurationManager__TargetCannotBeTheZeroAddress();
 
