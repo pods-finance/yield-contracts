@@ -28,7 +28,7 @@ interface IVault is IERC4626, IERC20Permit {
         uint256 processedDeposits;
         uint256 totalIdleAssets;
         uint32 currentRoundId;
-        uint32 lastEndRoundTimestamp;
+        uint40 lastEndRoundTimestamp;
         bool isProcessingDeposits;
     }
 
