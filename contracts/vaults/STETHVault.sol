@@ -73,9 +73,12 @@ contract STETHVault is BaseVault {
     /**
      * @notice Return the stETH price per share
      * @dev Each share is considered to be 10^(assets.decimals())
+     * The share price represents the amount of stETH needed to mint one vault share. When the number of vault
+     * shares that has been minted thus far is zero, the share price should simply be the ratio of the
+     * underlying asset's decimals to the vault's decimals.
      */
     function sharePrice() external view returns (uint256) {
-        return totalAssets().mulDiv(10**sharePriceDecimals, totalSupply(), Math.Rounding.Down);
+        return convertToAssets(10**sharePriceDecimals);
     }
 
     /**
