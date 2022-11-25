@@ -199,7 +199,10 @@ abstract contract BaseVault is IVault, ERC20Permit, ERC4626, Capped {
      * @inheritdoc IERC4626
      */
     function previewWithdraw(uint256 assets) public view override(ERC4626, IERC4626) returns (uint256) {
-        return _convertToShares(assets, Math.Rounding.Up);
+        uint256 invertedFee = DENOMINATOR - getWithdrawFeeRatio();
+
+        uint256 assetsIncludingFee = assets.mulDiv(DENOMINATOR, invertedFee, Math.Rounding.Up);
+        return _convertToShares(assetsIncludingFee, Math.Rounding.Up);
     }
 
     /**
