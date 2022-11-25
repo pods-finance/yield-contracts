@@ -125,8 +125,9 @@ interface IVault is IERC4626, IERC20Permit {
     /**
      * @notice Starts the next round, sending the idle funds to the
      * strategy where it should start accruing yield.
+     * @return The new round id
      */
-    function startRound() external returns (uint32 roundId);
+    function startRound() external returns (uint32);
 
     /**
      * @notice Closes the round, allowing deposits to the next round be processed.
@@ -146,8 +147,9 @@ interface IVault is IERC4626, IERC20Permit {
 
     /**
      * @notice Handle migrated assets.
+     * @return Estimation of shares created.
      */
-    function handleMigration(uint256 assets, address receiver) external returns (uint256 shares);
+    function handleMigration(uint256 assets, address receiver) external returns (uint256);
 
     /**
      * @notice Distribute shares to depositors queued in the deposit queue, effectively including their assets in the next round.

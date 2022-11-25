@@ -57,7 +57,7 @@ contract ETHAdapter {
         IVault vault,
         address receiver,
         uint256 minOutput
-    ) external payable returns (uint256 shares) {
+    ) external payable returns (uint256) {
         if (vault.asset() != STETH_ADDRESS) revert ETHAdapter__IncompatibleVault();
         uint256 assets = pool.exchange{ value: msg.value }(ETH_INDEX, STETH_INDEX, msg.value, minOutput);
         IERC20(vault.asset()).safeApprove(address(vault), assets);
@@ -69,9 +69,10 @@ contract ETHAdapter {
         uint256 shares,
         address receiver,
         uint256 minOutput
-    ) external returns (uint256 assets) {
-        assets = vault.redeem(shares, address(this), msg.sender);
+    ) external returns (uint256) {
+        uint256 assets = vault.redeem(shares, address(this), msg.sender);
         _returnETH(vault, receiver, minOutput);
+        return assets;
     }
 
     function redeemWithPermit(
