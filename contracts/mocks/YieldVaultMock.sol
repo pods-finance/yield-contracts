@@ -31,7 +31,7 @@ contract YieldVaultMock is BaseVault {
         return convertToAssets(shares) + idleAssetsOf(owner);
     }
 
-    function totalAssets() public view override(ERC4626, IERC4626) returns (uint256) {
+    function totalAssets() public view override returns (uint256) {
         return yieldSource.convertToAssets(yieldSource.balanceOf(address(this))) + vaultState.processedDeposits;
     }
 
