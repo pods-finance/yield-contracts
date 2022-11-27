@@ -375,6 +375,58 @@ describe('STETHVault', () => {
     })
   })
 
+  describe('Refund', () => {
+    it('should match the variation in Cap and the refund shares', async () => {
+      const cap = ethers.utils.parseEther('30')
+
+      // This test will only work if InvestRatio = 50%
+      const user0Amount = ethers.utils.parseEther('10')
+      const user1Amount = ethers.utils.parseEther('3')
+      const user2Amount = ethers.utils.parseEther('0.2')
+      const user3Amount = ethers.utils.parseEther('1')
+
+      // Round 0
+      await configuration.setCap(vault.address, cap)
+      await vault.connect(user0).deposit(user0Amount, user0.address)
+
+      await vault.connect(vaultController).endRound()
+      await vault.connect(vaultController).processQueuedDeposits([user0.address])
+
+      // Round 1
+      await vault.connect(vaultController).startRound()
+      await asset.connect(yieldGenerator).transfer(vault.address, ethers.utils.parseEther('20'))
+      await vault.connect(vaultController).endRound()
+
+      // Round 2
+      await vault.connect(vaultController).startRound()
+      await vault.connect(user1).deposit(user1Amount, user1.address)
+      await vault.connect(user2).deposit(user2Amount, user2.address)
+      await asset.connect(yieldGenerator).transfer(vault.address, ethers.utils.parseEther('20'))
+      await asset.connect(yieldGenerator).transfer(investor.address, ethers.utils.parseEther('1300'))
+      await vault.connect(vaultController).endRound()
+      await vault.connect(vaultController).processQueuedDeposits([user1.address, user2.address])
+
+      // Round 3
+      await vault.connect(vaultController).startRound()
+      await vault.connect(user3).deposit(user3Amount, user3.address)
+
+      const avaiableCapBeforeRefund = await vault.availableCap()
+      await vault.connect(user3).refund()
+
+      const avaiableCapAfterRefund = await vault.availableCap()
+      const diffRefund = avaiableCapAfterRefund.sub(avaiableCapBeforeRefund)
+
+      await vault.connect(user3).deposit(user3Amount, user3.address)
+      await investor.buyOptionsWithYield()
+      await vault.connect(vaultController).endRound()
+      await vault.connect(vaultController).processQueuedDeposits([user3.address])
+      await vault.connect(vaultController).startRound()
+
+      const user3Shares = await vault.balanceOf(user3.address)
+      expect(user3Shares).to.be.eq(diffRefund)
+    })
+  })
+
   it('should be able to end a round even in a negative rebasing event', async () => {
     const user0DepositAmount = ethers.utils.parseEther('1').add(1)
     const user1DepositAmount = ethers.utils.parseEther('50')
