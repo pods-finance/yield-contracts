@@ -10,7 +10,6 @@ import { Math } from "@openzeppelin/contracts/utils/math/Math.sol";
 import { BaseVault } from "./BaseVault.sol";
 import { IConfigurationManager } from "../interfaces/IConfigurationManager.sol";
 import { IVault } from "../interfaces/IVault.sol";
-import "hardhat/console.sol";
 
 /**
  * @title STETHVault

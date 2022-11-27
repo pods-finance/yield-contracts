@@ -15,7 +15,6 @@ import { IConfigurationManager } from "../interfaces/IConfigurationManager.sol";
 import { IVault } from "../interfaces/IVault.sol";
 import { CastUint } from "../libs/CastUint.sol";
 import { Capped } from "../mixins/Capped.sol";
-import "hardhat/console.sol";
 
 /**
  * @title BaseVault
