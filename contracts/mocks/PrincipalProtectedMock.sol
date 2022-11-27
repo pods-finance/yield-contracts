@@ -123,7 +123,7 @@ contract PrincipalProtectedMock is BaseVault {
     /**
      * @dev See {BaseVault-totalAssets}.
      */
-    function totalAssets() public view override(ERC4626, IERC4626) returns (uint256) {
+    function totalAssets() public view override returns (uint256) {
         return yieldSource.previewRedeem(yieldSource.balanceOf(address(this))) + vaultState.processedDeposits;
     }
 
