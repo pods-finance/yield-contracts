@@ -10,6 +10,7 @@ import { Math } from "@openzeppelin/contracts/utils/math/Math.sol";
 import { BaseVault } from "./BaseVault.sol";
 import { IConfigurationManager } from "../interfaces/IConfigurationManager.sol";
 import { IVault } from "../interfaces/IVault.sol";
+import "hardhat/console.sol";
 
 /**
  * @title STETHVault
@@ -141,10 +142,10 @@ contract STETHVault is BaseVault {
         uint256 shares
     ) internal virtual override {
         assets = _stETHTransferFrom(caller, address(this), assets);
-        shares = previewDeposit(assets);
-
-        _spendCap(shares);
         _addToDepositQueue(receiver, assets);
+
+        shares = previewDeposit(assets);
+        _spendCap(shares);
         emit Deposit(caller, receiver, assets, shares);
     }
 
