@@ -7,7 +7,7 @@ import { IConfigurationManager } from "../interfaces/IConfigurationManager.sol";
 /**
  * @title Capped
  * @notice absctract responsible for managing Vault's cap
- * @author Pods Financea
+ * @author Pods Finance
  */
 abstract contract Capped {
     IConfigurationManager private immutable _configuration;
