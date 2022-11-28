@@ -8,29 +8,37 @@ import { Address } from "@openzeppelin/contracts/utils/Address.sol";
 import { ICurvePool } from "../interfaces/ICurvePool.sol";
 import { IVault } from "../interfaces/IVault.sol";
 
+/**
+ * @title ETHAdapter
+ * @notice A Proxy contract responsible for converting ETH into stETH and depositing into the Vault
+ * @author Pods Finance
+ */
 contract ETHAdapter {
     using SafeERC20 for IERC20;
     using Address for address payable;
 
+    /**
+     * @notice Curve's pool ETH <> stETH
+     */
     ICurvePool public immutable pool;
 
     /**
-     * @dev ETH coin index in the Curve Pool
+     * @notice ETH coin index in the Curve Pool
      */
     int128 public constant ETH_INDEX = 0;
 
     /**
-     * @dev stETH coin index in the Curve Pool
+     * @notice stETH coin index in the Curve Pool
      */
     int128 public constant STETH_INDEX = 1;
 
     /**
-     * @dev ETH token address representation
+     * @notice ETH token address representation
      */
     address public constant ETH_ADDRESS = 0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE;
 
     /**
-     * @dev stETH token address representation
+     * @notice stETH token address representation
      */
     address public constant STETH_ADDRESS = 0xae7ab96520DE3A18E5e111B5EaAb095312D7fE84;
 
@@ -45,14 +53,31 @@ contract ETHAdapter {
         pool = _pool;
     }
 
+    /**
+     * @notice Convert `ethAmount` ETH to stETH using Curve pool
+     * @param ethAmount Amount of ETH to convert
+     * @return uint256 Amount of stETH received in exchange
+     */
     function convertToSTETH(uint256 ethAmount) external view returns (uint256) {
         return pool.get_dy(ETH_INDEX, STETH_INDEX, ethAmount);
     }
 
+    /**
+     * @notice Convert 'stETHAmount' stETH to ETH using Curve pool
+     * @param stETHAmount Amount of stETH to convert
+     * @return uint256 Amount of ETH received in exchange
+     */
     function convertToETH(uint256 stETHAmount) external view returns (uint256) {
         return pool.get_dy(STETH_INDEX, ETH_INDEX, stETHAmount);
     }
 
+    /**
+     * @notice Deposit `msg.value` of ETH, convert to stETH and deposit into `vault`
+     * @param vault Pods' strategy vault that will receive the stETH
+     * @param receiver Address that will be the owner of the Vault's shares
+     * @param minOutput slippage control. Minimum acceptable amount of stETH
+     * @return uint256 Amount of shares returned by vault ERC4626 contract
+     */
     function deposit(
         IVault vault,
         address receiver,
@@ -64,6 +89,14 @@ contract ETHAdapter {
         return vault.deposit(assets, receiver);
     }
 
+    /**
+     * @notice Redeem `shares` shares, receive stETH, trade stETH for ETH and send to receiver
+     * @param vault Pods' strategy vault that will receive the shares and payback stETH
+     * @param shares Amount of Vault's shares to redeem
+     * @param receiver Address that will receive back the ETH withdrawn from the `vault`
+     * @param minOutput slippage control. Minimum acceptable amount of ETH
+     * @return uint256 Amount of assets received from Vault ERC4626
+     */
     function redeem(
         IVault vault,
         uint256 shares,
@@ -75,6 +108,19 @@ contract ETHAdapter {
         return assets;
     }
 
+    /**
+     * @notice redeemWithPermit `shares` shares, receive stETH, trade stETH for ETH and send to receiver
+     * @dev Do not need to approve the shares in advance. The vault tokenized shares supports Permit
+     * @param vault Pods' strategy vault that will receive the shares and payback stETH
+     * @param shares Amount of Vault's shares to redeem
+     * @param receiver Address that will receive back the ETH withdrawn from `vault`
+     * @param minOutput slippage control. Minimum acceptable amount of ETH
+     * @param deadline deadline that this transaction will be valid
+     * @param v recovery id
+     * @param r ECDSA signature output
+     * @param s ECDSA signature output
+     * @return assets Amount of assets received from Vault ERC4626
+     */
     function redeemWithPermit(
         IVault vault,
         uint256 shares,
@@ -90,6 +136,15 @@ contract ETHAdapter {
         _returnETH(vault, receiver, minOutput);
     }
 
+    /**
+     * @notice Withdraw `assets` assets, receive stETH, trade stETH for ETH and send to receiver
+     * @dev Do not need to approve the shares in advance. The vault tokenized shares supports Permit
+     * @param vault Pods' strategy vault that will receive the shares and payback stETH
+     * @param assets Amount of assets (stETH) to redeem
+     * @param receiver Address that will receive back the ETH withdrawn from the Vault
+     * @param minOutput slippage control. Minimum acceptable amount of ETH
+     * @return shares Amount of shares burned in order to receive assets
+     */
     function withdraw(
         IVault vault,
         uint256 assets,
@@ -100,6 +155,19 @@ contract ETHAdapter {
         _returnETH(vault, receiver, minOutput);
     }
 
+    /**
+     * @notice withdrawWithPermit `assets` assets, receive stETH, trade stETH for ETH and send to receiver
+     * @dev Do not need to approve the shares in advance. Vault's tokenized shares supports Permit
+     * @param vault Pods' strategy vault that will receive the shares and payback stETH
+     * @param assets Amount of assets (stETH) to redeem
+     * @param receiver Address that will receive back the ETH withdrawn from the Vault
+     * @param minOutput slippage control. Minimum acceptable amount of ETH
+     * @param deadline deadline that this transaction will be valid
+     * @param v recovery id
+     * @param r ECDSA signature output
+     * @param s ECDSA signature output
+     * @return shares Amount of shares burned in order to receive assets
+     */
     function withdrawWithPermit(
         IVault vault,
         uint256 assets,
@@ -121,6 +189,10 @@ contract ETHAdapter {
     */
     receive() external payable {}
 
+    /**
+     *  @dev internal function used to convert stETH into ETH and send back
+     * to receiver
+     */
     function _returnETH(
         IVault vault,
         address receiver,
