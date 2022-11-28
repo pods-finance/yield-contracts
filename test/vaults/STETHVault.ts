@@ -364,6 +364,54 @@ describe('STETHVault', () => {
     })
   })
 
+  describe('Permit', () => {
+    it('can deposit with permits', async () => {
+      const assets = ethers.utils.parseEther('10')
+
+      const mockPermit = {
+        deadline: +new Date(),
+        v: 0,
+        r: ethers.utils.randomBytes(32),
+        s: ethers.utils.randomBytes(32)
+      }
+
+      const tx = vault.connect(user0).depositWithPermit(
+        assets,
+        user0.address,
+        mockPermit.deadline,
+        mockPermit.v,
+        mockPermit.r,
+        mockPermit.s
+      )
+
+      await expect(tx)
+        .to.be.revertedWithCustomError(vault, 'STETHVault__PermitNotAvailable')
+    })
+
+    it('can mint with permits', async () => {
+      const shares = ethers.utils.parseEther('10')
+
+      const mockPermit = {
+        deadline: +new Date(),
+        v: 0,
+        r: ethers.utils.randomBytes(32),
+        s: ethers.utils.randomBytes(32)
+      }
+
+      const tx = vault.connect(user0).mintWithPermit(
+        shares,
+        user0.address,
+        mockPermit.deadline,
+        mockPermit.v,
+        mockPermit.r,
+        mockPermit.s
+      )
+
+      await expect(tx)
+        .to.be.revertedWithCustomError(vault, 'STETHVault__PermitNotAvailable')
+    })
+  })
+
   describe('Events', () => {
     it('endSharePrice should be consistent with the vault state', async () => {
       // This test will only work if InvestRatio = 50%
