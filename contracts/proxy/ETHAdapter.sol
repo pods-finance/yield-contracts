@@ -54,7 +54,7 @@ contract ETHAdapter {
     }
 
     /**
-     * @notice Convert 'ethAmount' ETH to stETH using Curve pool
+     * @notice Convert `ethAmount` ETH to stETH using Curve pool
      * @param ethAmount Amount of ETH to convert
      * @return uint256 Amount of stETH received in exchange
      */
@@ -72,7 +72,7 @@ contract ETHAdapter {
     }
 
     /**
-     * @notice Deposit 'msg.value' of ETH, convert to stETH and deposit into 'vault'
+     * @notice Deposit `msg.value` of ETH, convert to stETH and deposit into `vault`
      * @param vault Pods' strategy vault that will receive the stETH
      * @param receiver Address that will be the owner of the Vault's shares
      * @param minOutput slippage control. Minimum acceptable amount of stETH
@@ -90,10 +90,10 @@ contract ETHAdapter {
     }
 
     /**
-     * @notice Redeem 'shares' shares, receive stETH, trade stETH for ETH and send to receiver
+     * @notice Redeem `shares` shares, receive stETH, trade stETH for ETH and send to receiver
      * @param vault Pods' strategy vault that will receive the shares and payback stETH
      * @param shares Amount of Vault's shares to redeem
-     * @param receiver Address that will receive back the ETH withdrawn from the Vault
+     * @param receiver Address that will receive back the ETH withdrawn from the `vault`
      * @param minOutput slippage control. Minimum acceptable amount of ETH
      * @return uint256 Amount of assets received from Vault ERC4626
      */
@@ -109,11 +109,11 @@ contract ETHAdapter {
     }
 
     /**
-     * @notice redeemWithPermit 'shares' shares, receive stETH, trade stETH for ETH and send to receiver
+     * @notice redeemWithPermit `shares` shares, receive stETH, trade stETH for ETH and send to receiver
      * @dev Do not need to approve the shares in advance. The vault tokenized shares supports Permit
      * @param vault Pods' strategy vault that will receive the shares and payback stETH
      * @param shares Amount of Vault's shares to redeem
-     * @param receiver Address that will receive back the ETH withdrawn from the Vault
+     * @param receiver Address that will receive back the ETH withdrawn from `vault`
      * @param minOutput slippage control. Minimum acceptable amount of ETH
      * @param deadline deadline that this transaction will be valid
      * @param v recovery id
@@ -137,7 +137,7 @@ contract ETHAdapter {
     }
 
     /**
-     * @notice Withdraw 'assets' assets, receive stETH, trade stETH for ETH and send to receiver
+     * @notice Withdraw `assets` assets, receive stETH, trade stETH for ETH and send to receiver
      * @dev Do not need to approve the shares in advance. The vault tokenized shares supports Permit
      * @param vault Pods' strategy vault that will receive the shares and payback stETH
      * @param assets Amount of assets (stETH) to redeem
@@ -156,7 +156,7 @@ contract ETHAdapter {
     }
 
     /**
-     * @notice withdrawWithPermit 'assets' assets, receive stETH, trade stETH for ETH and send to receiver
+     * @notice withdrawWithPermit `assets` assets, receive stETH, trade stETH for ETH and send to receiver
      * @dev Do not need to approve the shares in advance. Vault's tokenized shares supports Permit
      * @param vault Pods' strategy vault that will receive the shares and payback stETH
      * @param assets Amount of assets (stETH) to redeem
