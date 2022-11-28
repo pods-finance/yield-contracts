@@ -78,6 +78,11 @@
     "type": "error"
   },
   {
+    "inputs": [],
+    "name": "STETHVault__PermitNotAvailable",
+    "type": "error"
+  },
+  {
     "anonymous": false,
     "inputs": [
       {
