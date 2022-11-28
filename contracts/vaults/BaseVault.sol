@@ -330,8 +330,8 @@ abstract contract BaseVault is IVault, ERC20Permit, ERC4626, Capped {
         if (assets == 0) revert IVault__ZeroAssets();
 
         if (depositQueue.remove(msg.sender)) {
-            vaultState.totalIdleAssets -= assets;
             _restoreCap(convertToShares(assets));
+            vaultState.totalIdleAssets -= assets;
         }
 
         emit DepositRefunded(msg.sender, vaultState.currentRoundId, assets);

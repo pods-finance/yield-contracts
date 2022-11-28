@@ -171,10 +171,10 @@ contract STETHVault is BaseVault {
         uint256 shares
     ) internal virtual override {
         assets = _stETHTransferFrom(caller, address(this), assets);
-        shares = previewDeposit(assets);
-
-        _spendCap(shares);
         _addToDepositQueue(receiver, assets);
+
+        shares = previewDeposit(assets);
+        _spendCap(shares);
         emit Deposit(caller, receiver, assets, shares);
     }
 
