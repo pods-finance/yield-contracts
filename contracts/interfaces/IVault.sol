@@ -5,6 +5,11 @@ pragma solidity 0.8.17;
 import { IERC20Permit } from "@openzeppelin/contracts/token/ERC20/extensions/draft-IERC20Permit.sol";
 import { IERC4626 } from "@openzeppelin/contracts/interfaces/IERC4626.sol";
 
+/**
+ * @title IVault
+ * @notice Interface contract for Pods' Vault
+ * @author Pods Finance
+ */
 interface IVault is IERC4626, IERC20Permit {
     error IVault__CallerIsNotTheController();
     error IVault__NotProcessingDeposits();

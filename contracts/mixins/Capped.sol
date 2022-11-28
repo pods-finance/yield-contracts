@@ -4,6 +4,11 @@ pragma solidity 0.8.17;
 
 import { IConfigurationManager } from "../interfaces/IConfigurationManager.sol";
 
+/**
+ * @title Capped
+ * @notice absctract responsible for managing Vault's cap
+ * @author Pods Financea
+ */
 abstract contract Capped {
     IConfigurationManager private immutable _configuration;
     uint256 public spentCap;
