@@ -154,19 +154,14 @@
         "internalType": "address",
         "name": "oldVault",
         "type": "address"
-      },
-      {
-        "internalType": "address",
-        "name": "newVault",
-        "type": "address"
       }
     ],
-    "name": "isVaultMigrationAllowed",
+    "name": "getVaultMigration",
     "outputs": [
       {
-        "internalType": "bool",
+        "internalType": "address",
         "name": "",
-        "type": "bool"
+        "type": "address"
       }
     ],
     "stateMutability": "view",

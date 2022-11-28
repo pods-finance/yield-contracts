@@ -341,8 +341,10 @@ abstract contract BaseVault is IVault, ERC20Permit, ERC4626, Capped {
     /**
      * @inheritdoc IVault
      */
-    function migrate(IVault newVault) external override {
-        if (!configuration.isVaultMigrationAllowed(address(this), address(newVault))) {
+    function migrate() external override {
+        IVault newVault = IVault(configuration.getVaultMigration(address(this)));
+
+        if (newVault == IVault(address(0))) {
             revert IVault__MigrationNotAllowed();
         }
 
@@ -361,7 +363,9 @@ abstract contract BaseVault is IVault, ERC20Permit, ERC4626, Capped {
      * @inheritdoc IVault
      */
     function handleMigration(uint256 assets, address receiver) external override returns (uint256) {
-        if (!configuration.isVaultMigrationAllowed(msg.sender, address(this))) {
+        IVault newVault = IVault(configuration.getVaultMigration(msg.sender));
+
+        if (address(newVault) != address(this)) {
             revert IVault__MigrationNotAllowed();
         }
 

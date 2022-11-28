@@ -127,7 +127,7 @@ describe('Migration', () => {
 
     // Execute migration
     await vaultFrom.connect(user1).approve(migration.address, ethers.constants.MaxUint256)
-    await migration.connect(user1).migrate(vaultFrom.address, vaultTo.address, await vaultFrom.balanceOf(user1.address))
+    await migration.connect(user1).migrate(vaultFrom.address, await vaultFrom.balanceOf(user1.address))
 
     expect(await vaultFrom.totalAssets()).to.be.closeTo(vaultFromTotalAssets.sub(user1Withdrawable), 1)
     expect(await asset.balanceOf(migration.address)).to.be.closeTo(BigNumber.from('0'), 1)
@@ -160,7 +160,6 @@ describe('Migration', () => {
     )
     await migration.connect(userPermit).migrateWithPermit(
       vaultFrom.address,
-      vaultTo.address,
       shares,
       permit.deadline,
       permit.v,
@@ -204,7 +203,6 @@ describe('Migration', () => {
     )
     migrationTx = migration.connect(userPermit).migrateWithPermit(
       vaultFrom.address,
-      vaultTo.address,
       shares,
       permit.deadline,
       permit.v,
@@ -217,7 +215,6 @@ describe('Migration', () => {
     await vaultFrom.connect(user1).approve(migration.address, ethers.constants.MaxUint256)
     migrationTx = migration.connect(user1).migrate(
       vaultFrom.address,
-      vaultTo.address,
       await vaultFrom.balanceOf(user1.address)
     )
 

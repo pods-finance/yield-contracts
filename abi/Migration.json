@@ -36,11 +36,6 @@
         "type": "address"
       },
       {
-        "internalType": "contract IVault",
-        "name": "to",
-        "type": "address"
-      },
-      {
         "internalType": "uint256",
         "name": "shares",
         "type": "uint256"
@@ -62,11 +57,6 @@
       {
         "internalType": "contract IVault",
         "name": "from",
-        "type": "address"
-      },
-      {
-        "internalType": "contract IVault",
-        "name": "to",
         "type": "address"
       },
       {

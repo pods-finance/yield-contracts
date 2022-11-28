@@ -30,16 +30,13 @@ contract Migration {
      * It will withdraw from the old vault and it will deposit into the new vault
      * @dev The new shares only will be available after the process deposit of the new vault
      * @param from origin vault (old Vault) from the liquidity will be migrated
-     * @param to destination vault (new Vault) to deposit
      * @param shares amount of shares to withdraw from the origin vault (from)
      * @return uint256 shares' amount returned by the new vault contract
      */
-    function migrate(
-        IVault from,
-        IVault to,
-        uint256 shares
-    ) external returns (uint256) {
-        if (!configuration.isVaultMigrationAllowed(address(from), address(to))) {
+    function migrate(IVault from, uint256 shares) external returns (uint256) {
+        IVault to = IVault(configuration.getVaultMigration(address(from)));
+
+        if (to == IVault(address(0))) {
             revert Migration__MigrationNotAllowed();
         }
 
@@ -55,7 +52,6 @@ contract Migration {
      * @notice migrateWithPermit liquidity from an old vault to a new vault
      * * It will withdraw from the old vault and it will deposit into the new vault
      * @param from origin vault (old Vault) from where the liquidity will be migrated
-     * @param to destination vault (new Vault) to deposit
      * @param shares amount of shares to withdraw from the origin vault (from)
      * @param deadline deadline that this transaction will be valid
      * @param v recovery id
@@ -65,14 +61,15 @@ contract Migration {
      */
     function migrateWithPermit(
         IVault from,
-        IVault to,
         uint256 shares,
         uint256 deadline,
         uint8 v,
         bytes32 r,
         bytes32 s
     ) external returns (uint256) {
-        if (!configuration.isVaultMigrationAllowed(address(from), address(to))) {
+        IVault to = IVault(configuration.getVaultMigration(address(from)));
+
+        if (to == IVault(address(0))) {
             revert Migration__MigrationNotAllowed();
         }
 
