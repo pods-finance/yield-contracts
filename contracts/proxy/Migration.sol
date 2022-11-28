@@ -28,8 +28,8 @@ contract Migration {
     /**
      * @notice migrate liquidity from an old vault to a new vault
      * It will withdraw from the old vault and it will deposit into the new vault
-     * @dev The new shares only will be avaiable after the process deposit of the new vault
-     * @param from origin vault (old Vault) from the liqudity will be migrated
+     * @dev The new shares only will be available after the process deposit of the new vault
+     * @param from origin vault (old Vault) from the liquidity will be migrated
      * @param to destination vault (new Vault) to deposit
      * @param shares amount of shares to withdraw from the origin vault (from)
      * @return uint256 shares' amount returned by the new vault contract
@@ -54,7 +54,7 @@ contract Migration {
     /**
      * @notice migrateWithPermit liquidity from an old vault to a new vault
      * * It will withdraw from the old vault and it will deposit into the new vault
-     * @param from origin vault (old Vault) from where the liqudity will be migrated
+     * @param from origin vault (old Vault) from where the liquidity will be migrated
      * @param to destination vault (new Vault) to deposit
      * @param shares amount of shares to withdraw from the origin vault (from)
      * @param deadline deadline that this transaction will be valid
