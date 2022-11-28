@@ -299,10 +299,23 @@ describe('STETHVault', () => {
   })
 
   describe('Lifecycle', () => {
-    it('cannot withdraw between a round\'s end and the beginning of the next', async () => {
-      const assetAmount = ethers.utils.parseEther('100')
+    it('cannot redeem between a round\'s end and the beginning of the next', async () => {
+      const assets = ethers.utils.parseEther('100')
 
-      await vault.connect(user0).deposit(assetAmount, user0.address)
+      await vault.connect(user0).deposit(assets, user0.address)
+      await vault.connect(vaultController).endRound()
+      await vault.connect(vaultController).processQueuedDeposits([user0.address])
+      const shares = await vault.balanceOf(user0.address)
+
+      await expect(
+        vault.connect(user0).redeem(shares, user0.address, user0.address)
+      ).to.be.revertedWithCustomError(vault, 'IVault__ForbiddenWhileProcessingDeposits')
+    })
+
+    it('cannot withdraw between a round\'s end and the beginning of the next', async () => {
+      const assets = ethers.utils.parseEther('100')
+
+      await vault.connect(user0).deposit(assets, user0.address)
       await vault.connect(vaultController).endRound()
       await vault.connect(vaultController).processQueuedDeposits([user0.address])
 
@@ -312,11 +325,20 @@ describe('STETHVault', () => {
     })
 
     it('cannot deposit between a round\'s end and the beginning of the next', async () => {
-      const assetAmount = ethers.utils.parseEther('10')
+      const assets = ethers.utils.parseEther('10')
 
       await vault.connect(vaultController).endRound()
       await expect(
-        vault.connect(user0).deposit(assetAmount, user0.address)
+        vault.connect(user0).deposit(assets, user0.address)
+      ).to.be.revertedWithCustomError(vault, 'IVault__ForbiddenWhileProcessingDeposits')
+    })
+
+    it('cannot mint between a round\'s end and the beginning of the next', async () => {
+      const shares = ethers.utils.parseEther('10')
+
+      await vault.connect(vaultController).endRound()
+      await expect(
+        vault.connect(user0).mint(shares, user0.address)
       ).to.be.revertedWithCustomError(vault, 'IVault__ForbiddenWhileProcessingDeposits')
     })
 
@@ -339,6 +361,54 @@ describe('STETHVault', () => {
       await vault.connect(vaultController).startRound()
       await expect(vault.connect(vaultController).startRound())
         .to.be.revertedWithCustomError(vault, 'IVault__NotProcessingDeposits')
+    })
+  })
+
+  describe('Permit', () => {
+    it('can deposit with permits', async () => {
+      const assets = ethers.utils.parseEther('10')
+
+      const mockPermit = {
+        deadline: +new Date(),
+        v: 0,
+        r: ethers.utils.randomBytes(32),
+        s: ethers.utils.randomBytes(32)
+      }
+
+      const tx = vault.connect(user0).depositWithPermit(
+        assets,
+        user0.address,
+        mockPermit.deadline,
+        mockPermit.v,
+        mockPermit.r,
+        mockPermit.s
+      )
+
+      await expect(tx)
+        .to.be.revertedWithCustomError(vault, 'STETHVault__PermitNotAvailable')
+    })
+
+    it('can mint with permits', async () => {
+      const shares = ethers.utils.parseEther('10')
+
+      const mockPermit = {
+        deadline: +new Date(),
+        v: 0,
+        r: ethers.utils.randomBytes(32),
+        s: ethers.utils.randomBytes(32)
+      }
+
+      const tx = vault.connect(user0).mintWithPermit(
+        shares,
+        user0.address,
+        mockPermit.deadline,
+        mockPermit.v,
+        mockPermit.r,
+        mockPermit.s
+      )
+
+      await expect(tx)
+        .to.be.revertedWithCustomError(vault, 'STETHVault__PermitNotAvailable')
     })
   })
 

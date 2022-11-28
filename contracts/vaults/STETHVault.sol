@@ -39,6 +39,8 @@ contract STETHVault is BaseVault {
     );
     event SharePrice(uint256 indexed roundId, uint256 startSharePrice, uint256 endSharePrice);
 
+    error STETHVault__PermitNotAvailable();
+
     constructor(
         IConfigurationManager _configuration,
         IERC20Metadata _asset,
@@ -72,6 +74,34 @@ contract STETHVault is BaseVault {
      */
     function sharePrice() external view returns (uint256) {
         return convertToAssets(10**sharePriceDecimals);
+    }
+
+    /**
+     * @inheritdoc IVault
+     */
+    function depositWithPermit(
+        uint256 assets,
+        address receiver,
+        uint256 deadline,
+        uint8 v,
+        bytes32 r,
+        bytes32 s
+    ) external override returns (uint256) {
+        revert STETHVault__PermitNotAvailable();
+    }
+
+    /**
+     * @inheritdoc IVault
+     */
+    function mintWithPermit(
+        uint256 shares,
+        address receiver,
+        uint256 deadline,
+        uint8 v,
+        bytes32 r,
+        bytes32 s
+    ) external override returns (uint256) {
+        revert STETHVault__PermitNotAvailable();
     }
 
     /**
