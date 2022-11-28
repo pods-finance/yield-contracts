@@ -824,7 +824,7 @@ describe('BaseVault', () => {
       expect(await vault.assetsOf(user0.address)).to.be.equal(assets)
       expect(await newVault.idleAssetsOf(user0.address)).to.be.equal(0)
 
-      const migrationTx = vault.connect(user0).migrate(newVault.address)
+      const migrationTx = vault.connect(user0).migrate()
       await expect(migrationTx)
         .to.emit(vault, 'Migrated')
         .withArgs(user0.address, vault.address, newVault.address, feeExcluded(assets), shares)
@@ -833,7 +833,7 @@ describe('BaseVault', () => {
       expect(await newVault.idleAssetsOf(user0.address)).to.be.equal(feeExcluded(assets))
     })
 
-    it('should not migrate to disallowed vaults', async () => {
+    it('should not migrate if a vault was not assigned', async () => {
       const assets = ethers.utils.parseEther('100')
 
       await asset.connect(user0).mint(assets)
@@ -842,14 +842,7 @@ describe('BaseVault', () => {
       await vault.connect(vaultController).processQueuedDeposits([user0.address])
       await vault.connect(vaultController).startRound()
 
-      const Vault = await ethers.getContractFactory('YieldVaultMock')
-      const newVault = await Vault.deploy(
-        configuration.address,
-        asset.address,
-        yieldSource.address
-      )
-
-      const migrationTx = vault.connect(user0).migrate(newVault.address)
+      const migrationTx = vault.connect(user0).migrate()
       await expect(migrationTx)
         .to.be.revertedWithCustomError(vault, 'IVault__MigrationNotAllowed')
     })

@@ -62,9 +62,8 @@ interface IConfigurationManager {
     function setVaultMigration(address oldVault, address newVault) external;
 
     /**
-     * @notice Returns if the migration for a vault is allowed.
+     * @notice Returns the new Vault address.
      * @param oldVault The current vault address
-     * @param newVault The vault where assets are going to be migrated to
      */
-    function isVaultMigrationAllowed(address oldVault, address newVault) external view returns (bool);
+    function getVaultMigration(address oldVault) external view returns (address);
 }

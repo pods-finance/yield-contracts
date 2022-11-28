@@ -146,9 +146,10 @@ interface IVault is IERC4626, IERC20Permit {
     function refund() external returns (uint256 assets);
 
     /**
-     * @notice Migrate assets from this vault to `newVault`.
+     * @notice Migrate assets from this vault to the next vault.
+     * @dev The `newVault` will be assigned by the ConfigurationManager
      */
-    function migrate(IVault newVault) external;
+    function migrate() external;
 
     /**
      * @notice Handle migrated assets.

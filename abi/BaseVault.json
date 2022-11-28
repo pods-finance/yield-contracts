@@ -848,13 +848,7 @@
     "type": "function"
   },
   {
-    "inputs": [
-      {
-        "internalType": "contract IVault",
-        "name": "newVault",
-        "type": "address"
-      }
-    ],
+    "inputs": [],
     "name": "migrate",
     "outputs": [],
     "stateMutability": "nonpayable",

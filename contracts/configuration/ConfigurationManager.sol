@@ -69,7 +69,7 @@ contract ConfigurationManager is IConfigurationManager, Ownable {
     /**
      * @inheritdoc IConfigurationManager
      */
-    function isVaultMigrationAllowed(address oldVault, address newVault) external view override returns (bool) {
-        return _allowedVaults[oldVault] == newVault;
+    function getVaultMigration(address oldVault) external view override returns (address) {
+        return _allowedVaults[oldVault];
     }
 }
