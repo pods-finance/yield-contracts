@@ -7,7 +7,7 @@ import { IERC4626 } from "@openzeppelin/contracts/interfaces/IERC4626.sol";
 
 /**
  * @title IVault
- * @notice Interface contract for Pods' Vault
+ * @notice Interface contract for Pods Vault
  * @author Pods Finance
  */
 interface IVault is IERC4626, IERC20Permit {
