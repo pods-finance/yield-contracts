@@ -88,7 +88,6 @@ contract STETHVault is BaseVault {
         bytes32 s
     ) external override returns (uint256) {
         revert STETHVault__PermitNotAvailable();
-        return 0;
     }
 
     /**
@@ -103,7 +102,6 @@ contract STETHVault is BaseVault {
         bytes32 s
     ) external override returns (uint256) {
         revert STETHVault__PermitNotAvailable();
-        return 0;
     }
 
     /**
