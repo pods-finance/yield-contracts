@@ -197,15 +197,9 @@ abstract contract BaseVault is IVault, ERC20Permit, ERC4626, Capped {
 
     /**
      * @inheritdoc IERC4626
-     * @dev This function is supposed to return the exactly number of shares that will be used to
-     * claim assets. Because of rounding issues, this function sometimes overestimate the number of shares
-     * in 1 unit. You can check more about that discussion here: https://ethereum-magicians.org/t/eip-4626-yield-bearing-vault-standard/7900/104
      */
     function previewWithdraw(uint256 assets) public view override(ERC4626, IERC4626) returns (uint256) {
-        uint256 invertedFee = DENOMINATOR - getWithdrawFeeRatio();
-
-        uint256 assetsIncludingFee = assets.mulDiv(DENOMINATOR, invertedFee, Math.Rounding.Up);
-        return _convertToShares(assetsIncludingFee, Math.Rounding.Up);
+        return _convertToShares(assets, Math.Rounding.Up);
     }
 
     /**
