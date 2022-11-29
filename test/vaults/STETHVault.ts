@@ -198,6 +198,14 @@ describe('STETHVault', () => {
   })
 
   describe('Reading functions', () => {
+    it('sharePrice should not revert in the case of 0 totalSupply', async () => {
+      const sharePriceDecimals = await vault.sharePriceDecimals()
+      const totalSupply = await vault.totalSupply()
+      expect(totalSupply).to.be.eq(0)
+      const initialSharePrice = await vault.sharePrice()
+      expect(initialSharePrice).to.be.eq(BigNumber.from('10').pow(sharePriceDecimals))
+    })
+
     it('maxWithdraw and withdraw should match', async () => {
       const assets = ethers.utils.parseEther('100')
       const user0Deposit = assets.mul(2)
@@ -325,10 +333,23 @@ describe('STETHVault', () => {
   })
 
   describe('Lifecycle', () => {
-    it('cannot withdraw between a round\'s end and the beginning of the next', async () => {
-      const assetAmount = ethers.utils.parseEther('100')
+    it('cannot redeem between a round\'s end and the beginning of the next', async () => {
+      const assets = ethers.utils.parseEther('100')
 
-      await vault.connect(user0).deposit(assetAmount, user0.address)
+      await vault.connect(user0).deposit(assets, user0.address)
+      await vault.connect(vaultController).endRound()
+      await vault.connect(vaultController).processQueuedDeposits([user0.address])
+      const shares = await vault.balanceOf(user0.address)
+
+      await expect(
+        vault.connect(user0).redeem(shares, user0.address, user0.address)
+      ).to.be.revertedWithCustomError(vault, 'IVault__ForbiddenWhileProcessingDeposits')
+    })
+
+    it('cannot withdraw between a round\'s end and the beginning of the next', async () => {
+      const assets = ethers.utils.parseEther('100')
+
+      await vault.connect(user0).deposit(assets, user0.address)
       await vault.connect(vaultController).endRound()
       await vault.connect(vaultController).processQueuedDeposits([user0.address])
 
@@ -338,11 +359,20 @@ describe('STETHVault', () => {
     })
 
     it('cannot deposit between a round\'s end and the beginning of the next', async () => {
-      const assetAmount = ethers.utils.parseEther('10')
+      const assets = ethers.utils.parseEther('10')
 
       await vault.connect(vaultController).endRound()
       await expect(
-        vault.connect(user0).deposit(assetAmount, user0.address)
+        vault.connect(user0).deposit(assets, user0.address)
+      ).to.be.revertedWithCustomError(vault, 'IVault__ForbiddenWhileProcessingDeposits')
+    })
+
+    it('cannot mint between a round\'s end and the beginning of the next', async () => {
+      const shares = ethers.utils.parseEther('10')
+
+      await vault.connect(vaultController).endRound()
+      await expect(
+        vault.connect(user0).mint(shares, user0.address)
       ).to.be.revertedWithCustomError(vault, 'IVault__ForbiddenWhileProcessingDeposits')
     })
 
@@ -365,6 +395,54 @@ describe('STETHVault', () => {
       await vault.connect(vaultController).startRound()
       await expect(vault.connect(vaultController).startRound())
         .to.be.revertedWithCustomError(vault, 'IVault__NotProcessingDeposits')
+    })
+  })
+
+  describe('Permit', () => {
+    it('can deposit with permits', async () => {
+      const assets = ethers.utils.parseEther('10')
+
+      const mockPermit = {
+        deadline: +new Date(),
+        v: 0,
+        r: ethers.utils.randomBytes(32),
+        s: ethers.utils.randomBytes(32)
+      }
+
+      const tx = vault.connect(user0).depositWithPermit(
+        assets,
+        user0.address,
+        mockPermit.deadline,
+        mockPermit.v,
+        mockPermit.r,
+        mockPermit.s
+      )
+
+      await expect(tx)
+        .to.be.revertedWithCustomError(vault, 'STETHVault__PermitNotAvailable')
+    })
+
+    it('can mint with permits', async () => {
+      const shares = ethers.utils.parseEther('10')
+
+      const mockPermit = {
+        deadline: +new Date(),
+        v: 0,
+        r: ethers.utils.randomBytes(32),
+        s: ethers.utils.randomBytes(32)
+      }
+
+      const tx = vault.connect(user0).mintWithPermit(
+        shares,
+        user0.address,
+        mockPermit.deadline,
+        mockPermit.v,
+        mockPermit.r,
+        mockPermit.s
+      )
+
+      await expect(tx)
+        .to.be.revertedWithCustomError(vault, 'STETHVault__PermitNotAvailable')
     })
   })
 
@@ -398,6 +476,58 @@ describe('STETHVault', () => {
       const endRoundTx2 = await vault.connect(vaultController).endRound()
       await expect(endRoundTx2).to.emit(vault, 'SharePrice').withArgs('2', '1050000000000000000', '1614695121951219512')
       expect(await vault.sharePrice()).to.be.equal('1614695121951219512')
+    })
+  })
+
+  describe('Refund', () => {
+    it('should match the variation in Cap and the refund shares', async () => {
+      const cap = ethers.utils.parseEther('30')
+
+      // This test will only work if InvestRatio = 50%
+      const user0Amount = ethers.utils.parseEther('10')
+      const user1Amount = ethers.utils.parseEther('3')
+      const user2Amount = ethers.utils.parseEther('0.2')
+      const user3Amount = ethers.utils.parseEther('1')
+
+      // Round 0
+      await configuration.setCap(vault.address, cap)
+      await vault.connect(user0).deposit(user0Amount, user0.address)
+
+      await vault.connect(vaultController).endRound()
+      await vault.connect(vaultController).processQueuedDeposits([user0.address])
+
+      // Round 1
+      await vault.connect(vaultController).startRound()
+      await asset.connect(yieldGenerator).transfer(vault.address, ethers.utils.parseEther('20'))
+      await vault.connect(vaultController).endRound()
+
+      // Round 2
+      await vault.connect(vaultController).startRound()
+      await vault.connect(user1).deposit(user1Amount, user1.address)
+      await vault.connect(user2).deposit(user2Amount, user2.address)
+      await asset.connect(yieldGenerator).transfer(vault.address, ethers.utils.parseEther('20'))
+      await asset.connect(yieldGenerator).transfer(investor.address, ethers.utils.parseEther('1300'))
+      await vault.connect(vaultController).endRound()
+      await vault.connect(vaultController).processQueuedDeposits([user1.address, user2.address])
+
+      // Round 3
+      await vault.connect(vaultController).startRound()
+      await vault.connect(user3).deposit(user3Amount, user3.address)
+
+      const avaiableCapBeforeRefund = await vault.availableCap()
+      await vault.connect(user3).refund()
+
+      const avaiableCapAfterRefund = await vault.availableCap()
+      const diffRefund = avaiableCapAfterRefund.sub(avaiableCapBeforeRefund)
+
+      await vault.connect(user3).deposit(user3Amount, user3.address)
+      await investor.buyOptionsWithYield()
+      await vault.connect(vaultController).endRound()
+      await vault.connect(vaultController).processQueuedDeposits([user3.address])
+      await vault.connect(vaultController).startRound()
+
+      const user3Shares = await vault.balanceOf(user3.address)
+      expect(user3Shares).to.be.eq(diffRefund)
     })
   })
 
@@ -618,6 +748,67 @@ describe('STETHVault', () => {
     expect(await vault.balanceOf(user0.address)).to.be.equal(0)
     expect(await vault.balanceOf(user1.address)).to.be.equal(0)
     expect(await vault.totalIdleAssets()).to.be.equal(0)
+  })
+
+  it('should emit shares amount in Deposit Event accordingly', async () => {
+    // This test will only work if InvestRatio = 50%
+    const user0Amount = ethers.utils.parseEther('10')
+    const user1Amount = ethers.utils.parseEther('3')
+    const user2Amount = ethers.utils.parseEther('0.2')
+    const user3Amount = ethers.utils.parseEther('1')
+
+    // Round 0
+    const tx0 = await vault.connect(user0).deposit(user0Amount, user0.address)
+
+    // Get Emitted Shares
+    const filter0 = await vault.filters.Deposit(user0.address)
+    const events0 = await vault.queryFilter(filter0, tx0.blockNumber, tx0.blockNumber)
+    const emittedSharesBN1 = events0[0].args.shares
+
+    await vault.connect(vaultController).endRound()
+    await vault.connect(vaultController).processQueuedDeposits([user0.address])
+
+    // Round 1
+    await vault.connect(vaultController).startRound()
+    const amountOfSharesUser1After = await vault.balanceOf(user0.address)
+
+    expect(emittedSharesBN1).to.be.eq(amountOfSharesUser1After)
+
+    await asset.connect(yieldGenerator).transfer(vault.address, ethers.utils.parseEther('20'))
+    await vault.connect(vaultController).endRound()
+
+    // Round 2
+    await vault.connect(vaultController).startRound()
+    await vault.connect(user1).deposit(user1Amount, user1.address)
+    await vault.connect(user2).deposit(user2Amount, user2.address)
+    await asset.connect(yieldGenerator).transfer(vault.address, ethers.utils.parseEther('20'))
+    await asset.connect(yieldGenerator).transfer(investor.address, ethers.utils.parseEther('1300'))
+    await vault.connect(vaultController).endRound()
+    await vault.connect(vaultController).processQueuedDeposits([user1.address, user2.address])
+
+    // Round 3
+    await vault.connect(vaultController).startRound()
+    const tx1 = await vault.connect(user3).deposit(user3Amount, user3.address)
+
+    // Get Emitted Shares
+    const filter1 = await vault.filters.Deposit(user3.address)
+    const events1 = await vault.queryFilter(filter1, tx1.blockNumber, tx1.blockNumber)
+    const emittedSharesBN = events1[0].args.shares
+
+    const amountOfSharesUser3Before = await vault.balanceOf(user3.address)
+    expect(amountOfSharesUser3Before).to.be.eq(0)
+
+    await investor.buyOptionsWithYield()
+    const investorBalanceBeforeEndRound = await asset.balanceOf(await vault.investor())
+    expect(investorBalanceBeforeEndRound).to.be.closeTo(0, 1)
+
+    await vault.connect(vaultController).endRound()
+    await vault.connect(vaultController).processQueuedDeposits([user3.address])
+    await vault.connect(vaultController).startRound()
+
+    const amountOfSharesUser3After = await vault.balanceOf(user3.address)
+
+    expect(emittedSharesBN).to.be.eq(amountOfSharesUser3After)
   })
 
   it('sanity check + startRound forgetting the process the queue case', async () => {

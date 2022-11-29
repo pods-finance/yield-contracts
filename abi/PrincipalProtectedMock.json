@@ -149,9 +149,9 @@
       },
       {
         "indexed": true,
-        "internalType": "uint256",
+        "internalType": "uint32",
         "name": "roundId",
-        "type": "uint256"
+        "type": "uint32"
       },
       {
         "indexed": false,
@@ -180,9 +180,9 @@
       },
       {
         "indexed": true,
-        "internalType": "uint256",
+        "internalType": "uint32",
         "name": "roundId",
-        "type": "uint256"
+        "type": "uint32"
       },
       {
         "indexed": false,
@@ -280,9 +280,9 @@
     "inputs": [
       {
         "indexed": true,
-        "internalType": "uint256",
+        "internalType": "uint32",
         "name": "roundId",
-        "type": "uint256"
+        "type": "uint32"
       }
     ],
     "name": "RoundEnded",
@@ -293,9 +293,9 @@
     "inputs": [
       {
         "indexed": true,
-        "internalType": "uint256",
+        "internalType": "uint32",
         "name": "roundId",
-        "type": "uint256"
+        "type": "uint32"
       },
       {
         "indexed": false,
@@ -1012,13 +1012,7 @@
     "type": "function"
   },
   {
-    "inputs": [
-      {
-        "internalType": "contract IVault",
-        "name": "newVault",
-        "type": "address"
-      }
-    ],
+    "inputs": [],
     "name": "migrate",
     "outputs": [],
     "stateMutability": "nonpayable",

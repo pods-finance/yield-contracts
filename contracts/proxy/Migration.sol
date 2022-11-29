@@ -8,6 +8,12 @@ import { SafeERC20 } from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.s
 import { IConfigurationManager } from "../interfaces/IConfigurationManager.sol";
 import { IVault } from "../interfaces/IVault.sol";
 
+/**
+ * @title Migration
+ * @notice Migration contract that migrates an address position
+ * @dev It will withdraw from the old vault and deposit into the new vault
+ * @author Pods Finance
+ */
 contract Migration {
     using SafeERC20 for IERC20;
 
@@ -19,12 +25,18 @@ contract Migration {
         configuration = _configuration;
     }
 
-    function migrate(
-        IVault from,
-        IVault to,
-        uint256 shares
-    ) external returns (uint256) {
-        if (!configuration.isVaultMigrationAllowed(address(from), address(to))) {
+    /**
+     * @notice migrate liquidity from an old vault to a new vault
+     * It will withdraw from the old vault and it will deposit into the new vault
+     * @dev The new shares only will be available after the process deposit of the new vault
+     * @param from origin vault (old Vault) from the liquidity will be migrated
+     * @param shares amount of shares to withdraw from the origin vault (from)
+     * @return uint256 shares' amount returned by the new vault contract
+     */
+    function migrate(IVault from, uint256 shares) external returns (uint256) {
+        IVault to = IVault(configuration.getVaultMigration(address(from)));
+
+        if (to == IVault(address(0))) {
             revert Migration__MigrationNotAllowed();
         }
 
@@ -32,20 +44,32 @@ contract Migration {
 
         IERC20 asset = IERC20(from.asset());
         uint256 balance = asset.balanceOf(address(this));
-        asset.safeApprove(address(to), balance);
+        asset.safeIncreaseAllowance(address(to), balance);
         return to.deposit(balance, msg.sender);
     }
 
+    /**
+     * @notice migrateWithPermit liquidity from an old vault to a new vault
+     * * It will withdraw from the old vault and it will deposit into the new vault
+     * @param from origin vault (old Vault) from where the liquidity will be migrated
+     * @param shares amount of shares to withdraw from the origin vault (from)
+     * @param deadline deadline that this transaction will be valid
+     * @param v recovery id
+     * @param r ECDSA signature output
+     * @param s ECDSA signature output
+     * @return uint256 shares' amount returned by the new vault contract
+     */
     function migrateWithPermit(
         IVault from,
-        IVault to,
         uint256 shares,
         uint256 deadline,
         uint8 v,
         bytes32 r,
         bytes32 s
     ) external returns (uint256) {
-        if (!configuration.isVaultMigrationAllowed(address(from), address(to))) {
+        IVault to = IVault(configuration.getVaultMigration(address(from)));
+
+        if (to == IVault(address(0))) {
             revert Migration__MigrationNotAllowed();
         }
 
@@ -54,7 +78,7 @@ contract Migration {
 
         IERC20 asset = IERC20(from.asset());
         uint256 balance = asset.balanceOf(address(this));
-        asset.safeApprove(address(to), balance);
+        asset.safeIncreaseAllowance(address(to), balance);
         return to.deposit(balance, msg.sender);
     }
 }

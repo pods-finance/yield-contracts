@@ -60,7 +60,7 @@ abstract contract BaseVault is IVault, ERC20Permit, ERC4626, Capped {
 
         // Vault starts in `start` state
         emit RoundStarted(vaultState.currentRoundId, 0);
-        vaultState.lastEndRoundTimestamp = uint32(block.timestamp);
+        vaultState.lastEndRoundTimestamp = uint40(block.timestamp);
 
         MIN_INITIAL_ASSETS = 10**uint256(asset_.decimals());
     }
@@ -135,7 +135,7 @@ abstract contract BaseVault is IVault, ERC20Permit, ERC4626, Capped {
         uint8 v,
         bytes32 r,
         bytes32 s
-    ) external override whenNotProcessingDeposits returns (uint256) {
+    ) external virtual override whenNotProcessingDeposits returns (uint256) {
         IERC20Permit(asset()).permit(msg.sender, address(this), assets, deadline, v, r, s);
         return super.deposit(assets, receiver);
     }
@@ -163,7 +163,7 @@ abstract contract BaseVault is IVault, ERC20Permit, ERC4626, Capped {
         uint8 v,
         bytes32 r,
         bytes32 s
-    ) external override whenNotProcessingDeposits returns (uint256) {
+    ) external virtual override whenNotProcessingDeposits returns (uint256) {
         uint256 assets = previewMint(shares);
         IERC20Permit(asset()).permit(msg.sender, address(this), assets, deadline, v, r, s);
         return super.mint(shares, receiver);
@@ -219,7 +219,7 @@ abstract contract BaseVault is IVault, ERC20Permit, ERC4626, Capped {
     /**
      * @inheritdoc IERC4626
      */
-    function maxDeposit(address) public view override(ERC4626, IERC4626) returns (uint256) {
+    function maxDeposit(address) public view virtual override(ERC4626, IERC4626) returns (uint256) {
         uint256 _availableCap = availableCap();
         if (_availableCap != type(uint256).max) {
             return previewMint(_availableCap);
@@ -256,6 +256,13 @@ abstract contract BaseVault is IVault, ERC20Permit, ERC4626, Capped {
     function idleAssetsOf(address owner) public view virtual returns (uint256) {
         (, uint256 assets) = depositQueue.tryGet(owner);
         return assets;
+    }
+
+    /**
+     * @inheritdoc IERC4626
+     */
+    function totalAssets() public view virtual override(ERC4626, IERC4626) returns (uint256) {
+        return IERC20Metadata(asset()).balanceOf(address(this)) - totalIdleAssets();
     }
 
     /**
@@ -314,7 +321,7 @@ abstract contract BaseVault is IVault, ERC20Permit, ERC4626, Capped {
 
         vaultState.isProcessingDeposits = true;
         _afterRoundEnd();
-        vaultState.lastEndRoundTimestamp = uint32(block.timestamp);
+        vaultState.lastEndRoundTimestamp = uint40(block.timestamp);
 
         emit RoundEnded(vaultState.currentRoundId);
 
@@ -329,8 +336,8 @@ abstract contract BaseVault is IVault, ERC20Permit, ERC4626, Capped {
         if (assets == 0) revert IVault__ZeroAssets();
 
         if (depositQueue.remove(msg.sender)) {
-            vaultState.totalIdleAssets -= assets;
             _restoreCap(convertToShares(assets));
+            vaultState.totalIdleAssets -= assets;
         }
 
         emit DepositRefunded(msg.sender, vaultState.currentRoundId, assets);
@@ -340,8 +347,10 @@ abstract contract BaseVault is IVault, ERC20Permit, ERC4626, Capped {
     /**
      * @inheritdoc IVault
      */
-    function migrate(IVault newVault) external override {
-        if (!configuration.isVaultMigrationAllowed(address(this), address(newVault))) {
+    function migrate() external override {
+        IVault newVault = IVault(configuration.getVaultMigration(address(this)));
+
+        if (newVault == IVault(address(0))) {
             revert IVault__MigrationNotAllowed();
         }
 
@@ -350,7 +359,7 @@ abstract contract BaseVault is IVault, ERC20Permit, ERC4626, Capped {
         uint256 assets = redeem(shares, address(this), msg.sender);
 
         // Deposit assets to `newVault`
-        IERC20Metadata(asset()).safeApprove(address(newVault), assets);
+        IERC20Metadata(asset()).safeIncreaseAllowance(address(newVault), assets);
         newVault.handleMigration(assets, msg.sender);
 
         emit Migrated(msg.sender, address(this), address(newVault), assets, shares);
@@ -360,7 +369,9 @@ abstract contract BaseVault is IVault, ERC20Permit, ERC4626, Capped {
      * @inheritdoc IVault
      */
     function handleMigration(uint256 assets, address receiver) external override returns (uint256) {
-        if (!configuration.isVaultMigrationAllowed(msg.sender, address(this))) {
+        IVault newVault = IVault(configuration.getVaultMigration(msg.sender));
+
+        if (address(newVault) != address(this)) {
             revert IVault__MigrationNotAllowed();
         }
 

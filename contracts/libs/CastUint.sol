@@ -2,6 +2,11 @@
 
 pragma solidity 0.8.17;
 
+/**
+ * @title CastUint
+ * @notice library to convert uint256 to address
+ * @author Pods Finance
+ */
 library CastUint {
     /**
      * @dev Strips and converts a `uint256` to `address`
