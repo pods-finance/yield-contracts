@@ -55,4 +55,9 @@ describe('ConfigurationManager', () => {
 
     expect(await configuration.getCap(ethers.constants.AddressZero)).to.be.equal(0)
   })
+
+  it('should not assign a migrations with zero address as newVault', async () => {
+    await expect(configuration.setVaultMigration(capTargetAddress, ethers.constants.AddressZero))
+      .to.be.revertedWithCustomError(configuration, 'ConfigurationManager__NewVaultCannotBeTheZeroAddress')
+  })
 })

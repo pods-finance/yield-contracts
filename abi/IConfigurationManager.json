@@ -1,6 +1,11 @@
 [
   {
     "inputs": [],
+    "name": "ConfigurationManager__NewVaultCannotBeTheZeroAddress",
+    "type": "error"
+  },
+  {
+    "inputs": [],
     "name": "ConfigurationManager__TargetCannotBeTheZeroAddress",
     "type": "error"
   },
