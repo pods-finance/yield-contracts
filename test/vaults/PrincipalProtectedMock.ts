@@ -517,21 +517,23 @@ describe('PrincipalProtectedMock', () => {
     // console.log('----------------')
 
     await vault.connect(vaultController).endRound()
+    await vault.connect(vaultController).startRound()
 
     const user0Moment4maxWithdraw = await vault.maxWithdraw(user0.address)
     const user1Moment4maxWithdraw = await vault.maxWithdraw(user1.address)
     const user2Moment4maxWithdraw = await vault.maxWithdraw(user2.address)
 
-    // console.log('MOMENT 4 - Should have less amount than 3 -> transferred some funds to investor')
-    expect(user0Moment4maxWithdraw).to.be.lte(user0Moment3maxWithdraw)
-    expect(user1Moment4maxWithdraw).to.be.lte(user1Moment3maxWithdraw)
-    expect(user2Moment4maxWithdraw).to.be.lte(user2Moment3maxWithdraw)
+    // console.log('MOMENT 4 - Should have the lower amount as MOMENT 3')
+    expect(user0Moment4maxWithdraw).to.be.lt(user0Moment3maxWithdraw)
+    expect(user1Moment4maxWithdraw).to.be.lt(user1Moment3maxWithdraw)
+    expect(user2Moment4maxWithdraw).to.be.lt(user2Moment3maxWithdraw)
+
     // console.log((await vault.maxWithdraw(user0.address)).toString())
     // console.log((await vault.maxWithdraw(user1.address)).toString())
     // console.log((await vault.maxWithdraw(user2.address)).toString())
     // console.log('----------------')
 
-    await vault.connect(vaultController).startRound()
+    await investor.buyOptionsWithYield()
 
     const user0Moment5maxWithdraw = await vault.maxWithdraw(user0.address)
     const user1Moment5maxWithdraw = await vault.maxWithdraw(user1.address)
@@ -541,19 +543,18 @@ describe('PrincipalProtectedMock', () => {
     expect(user0Moment5maxWithdraw).to.be.eq(user0Moment4maxWithdraw)
     expect(user1Moment5maxWithdraw).to.be.eq(user1Moment4maxWithdraw)
     expect(user2Moment5maxWithdraw).to.be.eq(user2Moment4maxWithdraw)
-
     // console.log((await vault.maxWithdraw(user0.address)).toString())
     // console.log((await vault.maxWithdraw(user1.address)).toString())
     // console.log((await vault.maxWithdraw(user2.address)).toString())
     // console.log('----------------')
 
-    await investor.buyOptionsWithYield()
+    await investor.generatePremium(ethers.utils.parseEther('600'))
 
     const user0Moment6maxWithdraw = await vault.maxWithdraw(user0.address)
     const user1Moment6maxWithdraw = await vault.maxWithdraw(user1.address)
     const user2Moment6maxWithdraw = await vault.maxWithdraw(user2.address)
 
-    // console.log('MOMENT 6 - Should have the same amount as MOMENT 5 and 4')
+    // console.log('MOMENT 6 - Should have same amount as MOMENTS 5 and 4')
     expect(user0Moment6maxWithdraw).to.be.eq(user0Moment5maxWithdraw)
     expect(user1Moment6maxWithdraw).to.be.eq(user1Moment5maxWithdraw)
     expect(user2Moment6maxWithdraw).to.be.eq(user2Moment5maxWithdraw)
@@ -562,50 +563,21 @@ describe('PrincipalProtectedMock', () => {
     // console.log((await vault.maxWithdraw(user2.address)).toString())
     // console.log('----------------')
 
-    await investor.generatePremium(ethers.utils.parseEther('600'))
+    await vault.connect(vaultController).endRound()
+    await vault.connect(vaultController).startRound()
 
     const user0Moment7maxWithdraw = await vault.maxWithdraw(user0.address)
     const user1Moment7maxWithdraw = await vault.maxWithdraw(user1.address)
     const user2Moment7maxWithdraw = await vault.maxWithdraw(user2.address)
-
-    // console.log('MOMENT 7 - Should have same amount as MOMENTS 6, 5 and 4')
-    expect(user0Moment7maxWithdraw).to.be.eq(user0Moment6maxWithdraw)
-    expect(user1Moment7maxWithdraw).to.be.eq(user1Moment6maxWithdraw)
-    expect(user2Moment7maxWithdraw).to.be.eq(user2Moment6maxWithdraw)
+    // console.log('MOMENT 7 - Should have the bigger amount as MOMENT 8 because of the new premium')
     // console.log((await vault.maxWithdraw(user0.address)).toString())
     // console.log((await vault.maxWithdraw(user1.address)).toString())
     // console.log((await vault.maxWithdraw(user2.address)).toString())
     // console.log('----------------')
 
-    await vault.connect(vaultController).endRound()
-
-    const user0Moment8maxWithdraw = await vault.maxWithdraw(user0.address)
-    const user1Moment8maxWithdraw = await vault.maxWithdraw(user1.address)
-    const user2Moment8maxWithdraw = await vault.maxWithdraw(user2.address)
-
-    // console.log('MOMENT 8 - Should have more amount than MOMENT 7')
-    expect(user0Moment8maxWithdraw).to.be.gt(user0Moment7maxWithdraw)
-    expect(user1Moment8maxWithdraw).to.be.gt(user1Moment7maxWithdraw)
-    expect(user2Moment8maxWithdraw).to.be.gt(user2Moment7maxWithdraw)
-    // console.log((await vault.maxWithdraw(user0.address)).toString())
-    // console.log((await vault.maxWithdraw(user1.address)).toString())
-    // console.log((await vault.maxWithdraw(user2.address)).toString())
-    // console.log('----------------')
-
-    await vault.connect(vaultController).startRound()
-
-    const user0Moment9maxWithdraw = await vault.maxWithdraw(user0.address)
-    const user1Moment9maxWithdraw = await vault.maxWithdraw(user1.address)
-    const user2Moment9maxWithdraw = await vault.maxWithdraw(user2.address)
-    // console.log('MOMENT 9 - Should have the same amount as MOMENT 8')
-    // console.log((await vault.maxWithdraw(user0.address)).toString())
-    // console.log((await vault.maxWithdraw(user1.address)).toString())
-    // console.log((await vault.maxWithdraw(user2.address)).toString())
-    // console.log('----------------')
-
-    expect(user0Moment9maxWithdraw).to.be.eq(user0Moment8maxWithdraw)
-    expect(user1Moment9maxWithdraw).to.be.eq(user1Moment8maxWithdraw)
-    expect(user2Moment9maxWithdraw).to.be.eq(user2Moment8maxWithdraw)
+    expect(user0Moment7maxWithdraw).to.be.gt(user0Moment6maxWithdraw)
+    expect(user1Moment7maxWithdraw).to.be.gt(user1Moment6maxWithdraw)
+    expect(user2Moment7maxWithdraw).to.be.gt(user2Moment6maxWithdraw)
 
     const sharesAmount0 = await vault.balanceOf(user0.address)
     const sharesAmount1 = await vault.balanceOf(user1.address)
@@ -615,14 +587,14 @@ describe('PrincipalProtectedMock', () => {
     await vault.connect(user1).redeem(sharesAmount1, user1.address, user1.address)
     await vault.connect(user2).redeem(sharesAmount2, user2.address, user2.address)
 
-    const user0Moment10Balance = await asset.balanceOf(user0.address)
-    const user1Moment10Balance = await asset.balanceOf(user1.address)
-    const user2Moment10Balance = await asset.balanceOf(user2.address)
+    const user0Moment8Balance = await asset.balanceOf(user0.address)
+    const user1Moment8Balance = await asset.balanceOf(user1.address)
+    const user2Moment8Balance = await asset.balanceOf(user2.address)
 
-    // console.log('MOMENT 10 - Should have the same amount as 8 and 9 minus fees')
-    expect(user0Moment10Balance).to.be.lte(user0Moment9maxWithdraw)
-    expect(user1Moment10Balance).to.be.lte(user1Moment9maxWithdraw)
-    expect(user2Moment10Balance.sub(1)).to.be.lte(user2Moment9maxWithdraw)
+    // console.log('MOMENT 8 - Should have the same amount as 7 and 6 minus fees')
+    expect(user0Moment8Balance).to.be.lte(user0Moment7maxWithdraw)
+    expect(user1Moment8Balance).to.be.lte(user1Moment7maxWithdraw)
+    expect(user2Moment8Balance.sub(1)).to.be.lte(user2Moment7maxWithdraw)
 
     // console.log((await asset.balanceOf(user0.address)).toString())
     // console.log((await asset.balanceOf(user1.address)).toString())

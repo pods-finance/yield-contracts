@@ -130,8 +130,9 @@ describe('ETHAdapter', () => {
       expect(await vault.maxWithdraw(user0.address)).to.be.closeTo(feeExcluded(actualAssets), 1)
 
       await vault.connect(user0).approve(adapter.address, actualShares)
-      const expectedAssets = await vault.maxRedeem(user0.address)
-      const expectedETH = await adapter.convertToETH(feeExcluded(expectedAssets.sub(1)))
+
+      const expectedAssets = await vault.maxWithdraw(user0.address)
+      const expectedETH = await adapter.convertToETH(expectedAssets.sub(1))
       const withdrawTx = adapter.connect(user0).withdraw(
         vault.address,
         expectedAssets,
@@ -170,8 +171,8 @@ describe('ETHAdapter', () => {
       expect(await vault.balanceOf(userPermit.address)).to.be.equal(actualShares)
       expect(await vault.maxWithdraw(userPermit.address)).to.be.closeTo(feeExcluded(actualAssets), 1)
 
-      const expectedAssets = await vault.maxRedeem(userPermit.address)
-      const expectedETH = await adapter.convertToETH(feeExcluded(expectedAssets.sub(1)))
+      const expectedAssets = await vault.maxWithdraw(userPermit.address)
+      const expectedETH = await adapter.convertToETH(expectedAssets.sub(1))
 
       const permit = await signERC2612Permit(
         userPermit,

@@ -962,9 +962,16 @@ describe('BaseVault', () => {
 
     // burn shares
     const balanceBefore = await vault.balanceOf(user0.address)
+    const balanceAssetsBefore = await asset.balanceOf(user0.address)
+
     await vault.connect(user0).withdraw(assets, user0.address, user0.address)
     const balanceAfter = await vault.balanceOf(user0.address)
+    const balanceAssetsAfter = await asset.balanceOf(user0.address)
+
     const balanceRemoved = balanceBefore.sub(balanceAfter)
+    const balanceAssetRemoved = balanceAssetsAfter.sub(balanceAssetsBefore)
+    expect(assets).to.be.closeTo(balanceAssetRemoved, 2)
+
     expect(balanceRemoved).to.be.eq(sharesToBeBurned)
 
     // User0 withdraws
@@ -974,13 +981,13 @@ describe('BaseVault', () => {
 
     const user1Shares = await vault.balanceOf(user1.address)
 
-    const assetsToBeWithdrawnUser1 = assets
+    const assetsToBeWithdrawnUser1 = await vault.previewRedeem(user1Shares)
     const sharesToBeBurnedUser1 = await vault.previewWithdraw(assetsToBeWithdrawnUser1)
 
     expect(sharesToBeBurnedUser1).to.be.equal(user1Shares)
 
     await vault.connect(user1).redeem(user1Shares, user1.address, user1.address)
-    expect(await asset.balanceOf(user1.address)).to.be.equal(feeExcluded(assets))
+    expect(await asset.balanceOf(user1.address)).to.be.closeTo(feeExcluded(assets), 0)
     expect(await vault.balanceOf(user1.address)).to.be.equal(0)
     expect(await vault.idleAssetsOf(user1.address)).to.be.equal(0)
 
