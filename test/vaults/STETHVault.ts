@@ -245,6 +245,18 @@ describe('STETHVault', () => {
       expect(user1BalanceOf).to.be.equal('0')
     })
 
+    it('should return 0 in maxWithdraw when vault is unable to perform withdraw', async () => {
+      const assets = ethers.utils.parseEther('100')
+      const user0Deposit = assets.mul(2)
+      const user1Deposit = assets
+
+      await vault.connect(user0).deposit(user0Deposit, user0.address)
+      await vault.connect(user1).deposit(user1Deposit, user1.address)
+      await vault.connect(vaultController).endRound()
+
+      expect(await vault.maxWithdraw(user0.address)).to.be.eq(0)
+    })
+
     it('maxRedeem and withdraw should match', async () => {
       const assets = ethers.utils.parseEther('100')
       const user0Deposit = assets.mul(2)
@@ -266,6 +278,42 @@ describe('STETHVault', () => {
 
       expect(user0maxRedeem).to.be.equal(user0maxShares)
       expect(user1maxRedeem).to.be.equal(user1maxShares)
+    })
+
+    it('should return 0 in maxRedeem when vault is unable to perform redeem', async () => {
+      const assets = ethers.utils.parseEther('100')
+      const user0Deposit = assets.mul(2)
+      const user1Deposit = assets
+
+      await vault.connect(user0).deposit(user0Deposit, user0.address)
+      await vault.connect(user1).deposit(user1Deposit, user1.address)
+      await vault.connect(vaultController).endRound()
+
+      expect(await vault.maxRedeem(user0.address)).to.be.eq(0)
+    })
+
+    it('should return 0 in maxMint when vault is unable to perform mint', async () => {
+      const assets = ethers.utils.parseEther('100')
+      const user0Deposit = assets.mul(2)
+      const user1Deposit = assets
+
+      await vault.connect(user0).deposit(user0Deposit, user0.address)
+      await vault.connect(user1).deposit(user1Deposit, user1.address)
+      await vault.connect(vaultController).endRound()
+
+      expect(await vault.maxMint(user0.address)).to.be.eq(0)
+    })
+
+    it('should return 0 in maxDeposit when vault is unable to perform deposit', async () => {
+      const assets = ethers.utils.parseEther('100')
+      const user0Deposit = assets.mul(2)
+      const user1Deposit = assets
+
+      await vault.connect(user0).deposit(user0Deposit, user0.address)
+      await vault.connect(user1).deposit(user1Deposit, user1.address)
+      await vault.connect(vaultController).endRound()
+
+      expect(await vault.maxDeposit(user0.address)).to.be.eq(0)
     })
 
     it('assetsOf should match in a mixed case', async () => {
@@ -297,7 +345,7 @@ describe('STETHVault', () => {
       expect(await vault.assetsOf(user0.address)).to.be.equal(assets.mul(3).sub(3))
     })
 
-    it.only('previewWithdraw and withdrawn shares should match', async () => {
+    it('previewWithdraw and withdrawn shares should match', async () => {
       const assets = ethers.utils.parseEther('100')
       const user0Deposit = assets.mul(2)
       const user1Deposit = assets
