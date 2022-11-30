@@ -220,25 +220,49 @@ abstract contract BaseVault is IVault, ERC20Permit, ERC4626, Capped {
      * @inheritdoc IERC4626
      */
     function maxDeposit(address) public view virtual override(ERC4626, IERC4626) returns (uint256) {
-        uint256 _availableCap = availableCap();
-        if (_availableCap != type(uint256).max) {
-            return previewMint(_availableCap);
+        if (vaultState.isProcessingDeposits) {
+            return 0;
+        } else {
+            uint256 _availableCap = availableCap();
+
+            if (_availableCap != type(uint256).max) {
+                return previewMint(_availableCap);
+            }
+            return _availableCap;
         }
-        return _availableCap;
     }
 
     /**
      * @inheritdoc IERC4626
      */
     function maxMint(address) public view override(ERC4626, IERC4626) returns (uint256) {
-        return availableCap();
+        if (vaultState.isProcessingDeposits) {
+            return 0;
+        } else {
+            return availableCap();
+        }
     }
 
     /**
      * @inheritdoc IERC4626
      */
     function maxWithdraw(address owner) public view override(ERC4626, IERC4626) returns (uint256) {
-        return previewRedeem(balanceOf(owner));
+        if (vaultState.isProcessingDeposits) {
+            return 0;
+        } else {
+            return previewRedeem(balanceOf(owner));
+        }
+    }
+
+    /**
+     * @inheritdoc IERC4626
+     */
+    function maxRedeem(address owner) public view override(ERC4626, IERC4626) returns (uint256) {
+        if (vaultState.isProcessingDeposits) {
+            return 0;
+        } else {
+            return balanceOf(owner);
+        }
     }
 
     /**
