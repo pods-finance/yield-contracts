@@ -13,6 +13,7 @@ interface IConfigurationManager {
     event VaultAllowanceSet(address indexed oldVault, address indexed newVault);
 
     error ConfigurationManager__TargetCannotBeTheZeroAddress();
+    error ConfigurationManager__NewVaultCannotBeTheZeroAddress();
 
     /**
      * @notice Set specific parameters to a contract or globally across multiple contracts.

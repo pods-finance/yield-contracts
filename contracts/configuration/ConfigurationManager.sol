@@ -62,6 +62,7 @@ contract ConfigurationManager is IConfigurationManager, Ownable {
      * @inheritdoc IConfigurationManager
      */
     function setVaultMigration(address oldVault, address newVault) external override onlyOwner {
+        if (newVault == address(0)) revert ConfigurationManager__NewVaultCannotBeTheZeroAddress();
         _allowedVaults[oldVault] = newVault;
         emit VaultAllowanceSet(oldVault, newVault);
     }
