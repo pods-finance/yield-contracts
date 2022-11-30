@@ -245,6 +245,18 @@ describe('STETHVault', () => {
       expect(user1BalanceOf).to.be.equal('0')
     })
 
+    it('should return 0 in maxWithdraw when vault is unable to perform withdraw', async () => {
+      const assets = ethers.utils.parseEther('100')
+      const user0Deposit = assets.mul(2)
+      const user1Deposit = assets
+
+      await vault.connect(user0).deposit(user0Deposit, user0.address)
+      await vault.connect(user1).deposit(user1Deposit, user1.address)
+      await vault.connect(vaultController).endRound()
+
+      expect(await vault.maxWithdraw(user0.address)).to.be.eq(0)
+    })
+
     it('maxRedeem and withdraw should match', async () => {
       const assets = ethers.utils.parseEther('100')
       const user0Deposit = assets.mul(2)
@@ -266,6 +278,42 @@ describe('STETHVault', () => {
 
       expect(user0maxRedeem).to.be.equal(user0maxShares)
       expect(user1maxRedeem).to.be.equal(user1maxShares)
+    })
+
+    it('should return 0 in maxRedeem when vault is unable to perform redeem', async () => {
+      const assets = ethers.utils.parseEther('100')
+      const user0Deposit = assets.mul(2)
+      const user1Deposit = assets
+
+      await vault.connect(user0).deposit(user0Deposit, user0.address)
+      await vault.connect(user1).deposit(user1Deposit, user1.address)
+      await vault.connect(vaultController).endRound()
+
+      expect(await vault.maxRedeem(user0.address)).to.be.eq(0)
+    })
+
+    it('should return 0 in maxMint when vault is unable to perform mint', async () => {
+      const assets = ethers.utils.parseEther('100')
+      const user0Deposit = assets.mul(2)
+      const user1Deposit = assets
+
+      await vault.connect(user0).deposit(user0Deposit, user0.address)
+      await vault.connect(user1).deposit(user1Deposit, user1.address)
+      await vault.connect(vaultController).endRound()
+
+      expect(await vault.maxMint(user0.address)).to.be.eq(0)
+    })
+
+    it('should return 0 in maxDeposit when vault is unable to perform deposit', async () => {
+      const assets = ethers.utils.parseEther('100')
+      const user0Deposit = assets.mul(2)
+      const user1Deposit = assets
+
+      await vault.connect(user0).deposit(user0Deposit, user0.address)
+      await vault.connect(user1).deposit(user1Deposit, user1.address)
+      await vault.connect(vaultController).endRound()
+
+      expect(await vault.maxDeposit(user0.address)).to.be.eq(0)
     })
 
     it('assetsOf should match in a mixed case', async () => {
@@ -831,9 +879,9 @@ describe('STETHVault', () => {
     const user2Moment4maxWithdraw = await vault.maxWithdraw(user2.address)
 
     // console.log(‘MOMENT 4 - Should have less amount than 3 -> transferred some funds to investor’)
-    expect(user0Moment4maxWithdraw).to.be.lte(user0Moment3maxWithdraw)
-    expect(user1Moment4maxWithdraw).to.be.lte(user1Moment3maxWithdraw)
-    expect(user2Moment4maxWithdraw).to.be.lte(user2Moment3maxWithdraw)
+    expect(user0Moment4maxWithdraw).to.be.eq(0)
+    expect(user1Moment4maxWithdraw).to.be.eq(0)
+    expect(user2Moment4maxWithdraw).to.be.eq(0)
 
     await vault.connect(vaultController).startRound()
 
@@ -841,10 +889,10 @@ describe('STETHVault', () => {
     const user1Moment5maxWithdraw = await vault.maxWithdraw(user1.address)
     const user2Moment5maxWithdraw = await vault.maxWithdraw(user2.address)
 
-    // console.log(‘MOMENT 5 - Should have the same amount as MOMENT 4’)
-    expect(user0Moment5maxWithdraw).to.be.closeTo(user0Moment4maxWithdraw, 1)
-    expect(user1Moment5maxWithdraw).to.be.closeTo(user1Moment4maxWithdraw, 1)
-    expect(user2Moment5maxWithdraw).to.be.closeTo(user2Moment4maxWithdraw, 1)
+    // console.log(‘MOMENT 5 - Should have less amount than 3 -> transferred some funds to investor’)
+    expect(user0Moment5maxWithdraw).to.be.lt(user0Moment3maxWithdraw)
+    expect(user1Moment5maxWithdraw).to.be.lt(user1Moment3maxWithdraw)
+    expect(user2Moment5maxWithdraw).to.be.lt(user2Moment3maxWithdraw)
 
     await investor.buyOptionsWithYield()
 
@@ -875,10 +923,10 @@ describe('STETHVault', () => {
     const user1Moment8maxWithdraw = await vault.maxWithdraw(user1.address)
     const user2Moment8maxWithdraw = await vault.maxWithdraw(user2.address)
 
-    // console.log(‘MOMENT 8 - Should have more amount than MOMENT 7’)
-    expect(user0Moment8maxWithdraw).to.be.gte(user0Moment7maxWithdraw)
-    expect(user1Moment8maxWithdraw).to.be.gte(user1Moment7maxWithdraw)
-    expect(user2Moment8maxWithdraw).to.be.gte(user2Moment7maxWithdraw)
+    // console.log(‘MOMENT 8 - Should be equal to 0 -> Compliant to ERC4626’)
+    expect(user0Moment8maxWithdraw).to.be.eq(0)
+    expect(user1Moment8maxWithdraw).to.be.eq(0)
+    expect(user2Moment8maxWithdraw).to.be.eq(0)
 
     await vault.connect(vaultController).startRound()
 
@@ -886,10 +934,10 @@ describe('STETHVault', () => {
     const user1Moment9maxWithdraw = await vault.maxWithdraw(user1.address)
     const user2Moment9maxWithdraw = await vault.maxWithdraw(user2.address)
 
-    // console.log(‘MOMENT 9 - Should have the same amount as MOMENT 8’)
-    expect(user0Moment9maxWithdraw).to.be.closeTo(user0Moment8maxWithdraw, 1)
-    expect(user1Moment9maxWithdraw).to.be.closeTo(user1Moment8maxWithdraw, 1)
-    expect(user2Moment9maxWithdraw).to.be.closeTo(user2Moment8maxWithdraw, 1)
+    // console.log(‘MOMENT 9 - Should have the larger amount as MOMENT 7 -> due the premium collected in the EndRound’)
+    expect(user0Moment9maxWithdraw).to.be.gt(user0Moment7maxWithdraw)
+    expect(user1Moment9maxWithdraw).to.be.gt(user1Moment7maxWithdraw)
+    expect(user2Moment9maxWithdraw).to.be.gt(user2Moment7maxWithdraw)
 
     const sharesAmount0 = await vault.balanceOf(user0.address)
     const sharesAmount1 = await vault.balanceOf(user1.address)
