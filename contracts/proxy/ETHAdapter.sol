@@ -178,7 +178,7 @@ contract ETHAdapter {
         bytes32 r,
         bytes32 s
     ) external returns (uint256 shares) {
-        shares = vault.convertToShares(assets);
+        shares = vault.previewWithdraw(assets);
         vault.permit(msg.sender, address(this), shares, deadline, v, r, s);
         shares = vault.withdraw(assets, address(this), msg.sender);
         _returnETH(vault, receiver, minOutput);
