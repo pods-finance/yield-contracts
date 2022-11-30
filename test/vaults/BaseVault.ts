@@ -97,20 +97,6 @@ describe('BaseVault', () => {
       expect(user1maxWithdraw).to.be.closeTo(user1AfterBalance, 1)
     })
 
-    it('should return 0 in maxWithdraw when vault is unable to perform withdraw', async () => {
-      const assets = ethers.utils.parseEther('100')
-      const user0Deposit = assets.mul(2)
-      const user1Deposit = assets
-
-      await asset.connect(user0).mint(user0Deposit)
-      await asset.connect(user1).mint(user1Deposit)
-      // Round 0
-      await vault.connect(user0).deposit(user0Deposit, user0.address)
-      await vault.connect(user1).deposit(user1Deposit, user1.address)
-      await vault.connect(vaultController).endRound()
-      expect(await vault.maxWithdraw(user0.address)).to.be.eq(0)
-    })
-
     it('maxRedeem and withdraw should match', async () => {
       const assets = ethers.utils.parseEther('100')
       const user0Deposit = assets.mul(2)
@@ -135,48 +121,6 @@ describe('BaseVault', () => {
 
       expect(user0maxRedeem).to.be.equal(user0maxShares)
       expect(user1maxRedeem).to.be.equal(user1maxShares)
-    })
-
-    it('should return 0 in maxRedeem when vault is unable to perform redeem', async () => {
-      const assets = ethers.utils.parseEther('100')
-      const user0Deposit = assets.mul(2)
-      const user1Deposit = assets
-
-      await asset.connect(user0).mint(user0Deposit)
-      await asset.connect(user1).mint(user1Deposit)
-      // Round 0
-      await vault.connect(user0).deposit(user0Deposit, user0.address)
-      await vault.connect(user1).deposit(user1Deposit, user1.address)
-      await vault.connect(vaultController).endRound()
-      expect(await vault.maxRedeem(user0.address)).to.be.eq(0)
-    })
-
-    it('should return 0 in maxMint when vault is unable to perform mint', async () => {
-      const assets = ethers.utils.parseEther('100')
-      const user0Deposit = assets.mul(2)
-      const user1Deposit = assets
-
-      await asset.connect(user0).mint(user0Deposit)
-      await asset.connect(user1).mint(user1Deposit)
-      // Round 0
-      await vault.connect(user0).deposit(user0Deposit, user0.address)
-      await vault.connect(user1).deposit(user1Deposit, user1.address)
-      await vault.connect(vaultController).endRound()
-      expect(await vault.maxMint(user0.address)).to.be.eq(0)
-    })
-
-    it('should return 0 in maxDeposit when vault is unable to perform deposit', async () => {
-      const assets = ethers.utils.parseEther('100')
-      const user0Deposit = assets.mul(2)
-      const user1Deposit = assets
-
-      await asset.connect(user0).mint(user0Deposit)
-      await asset.connect(user1).mint(user1Deposit)
-      // Round 0
-      await vault.connect(user0).deposit(user0Deposit, user0.address)
-      await vault.connect(user1).deposit(user1Deposit, user1.address)
-      await vault.connect(vaultController).endRound()
-      expect(await vault.maxDeposit(user0.address)).to.be.eq(0)
     })
 
     it('both maxDeposit and maxMint should be MAX_UINT', async () => {
@@ -209,7 +153,6 @@ describe('BaseVault', () => {
 
       expect(withdrawnBalance).to.be.equal(user0previewShares)
     })
-
     it('previewRedeem and withdraw should match', async () => {
       const assets = ethers.utils.parseEther('100')
       const user0Deposit = assets.mul(2)
@@ -962,16 +905,9 @@ describe('BaseVault', () => {
 
     // burn shares
     const balanceBefore = await vault.balanceOf(user0.address)
-    const balanceAssetsBefore = await asset.balanceOf(user0.address)
-
     await vault.connect(user0).withdraw(assets, user0.address, user0.address)
     const balanceAfter = await vault.balanceOf(user0.address)
-    const balanceAssetsAfter = await asset.balanceOf(user0.address)
-
     const balanceRemoved = balanceBefore.sub(balanceAfter)
-    const balanceAssetRemoved = balanceAssetsAfter.sub(balanceAssetsBefore)
-    expect(assets).to.be.closeTo(balanceAssetRemoved, 2)
-
     expect(balanceRemoved).to.be.eq(sharesToBeBurned)
 
     // User0 withdraws
@@ -981,13 +917,13 @@ describe('BaseVault', () => {
 
     const user1Shares = await vault.balanceOf(user1.address)
 
-    const assetsToBeWithdrawnUser1 = await vault.previewRedeem(user1Shares)
+    const assetsToBeWithdrawnUser1 = assets
     const sharesToBeBurnedUser1 = await vault.previewWithdraw(assetsToBeWithdrawnUser1)
 
     expect(sharesToBeBurnedUser1).to.be.equal(user1Shares)
 
     await vault.connect(user1).redeem(user1Shares, user1.address, user1.address)
-    expect(await asset.balanceOf(user1.address)).to.be.closeTo(feeExcluded(assets), 0)
+    expect(await asset.balanceOf(user1.address)).to.be.equal(feeExcluded(assets))
     expect(await vault.balanceOf(user1.address)).to.be.equal(0)
     expect(await vault.idleAssetsOf(user1.address)).to.be.equal(0)
 

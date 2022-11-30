@@ -185,36 +185,21 @@ abstract contract BaseVault is IVault, ERC20Permit, ERC4626, Capped {
 
     /**
      * @inheritdoc IERC4626
-     * @dev Because of rounding issues, this function may withdraw fewer amount of asked assets instead of
-     * the exact amount. This is not 100% compliant to ERC4626 specification.
-     * https://ethereum-magicians.org/t/eip-4626-yield-bearing-vault-standard/7900/104
-     * We recommend using the redeem function for full withdraw amounts.
      */
     function withdraw(
         uint256 assets,
         address receiver,
         address owner
     ) public virtual override(ERC4626, IERC4626) whenNotProcessingDeposits returns (uint256 shares) {
-        uint256 invertedFee = DENOMINATOR - getWithdrawFeeRatio();
-        uint256 assetsIncludingFee = assets.mulDiv(DENOMINATOR, invertedFee, Math.Rounding.Down);
-
-        shares = _convertToShares(assetsIncludingFee, Math.Rounding.Down);
-        (, shares) = _withdrawWithFees(msg.sender, receiver, owner, assetsIncludingFee, shares);
-        return shares;
+        shares = _convertToShares(assets, Math.Rounding.Up);
+        (, shares) = _withdrawWithFees(msg.sender, receiver, owner, assets, shares);
     }
 
     /**
      * @inheritdoc IERC4626
-     * @dev This function is supposed to return the exactly number of shares that will be used to
-     * claim assets. Because of rounding issues, this function can underestimate the number of shares
-     * in unit, and because of that, it can ended up not withdrawing the exact amount of assets.
-     * You can check more about that discussion here: https://ethereum-magicians.org/t/eip-4626-yield-bearing-vault-standard/7900/104
      */
     function previewWithdraw(uint256 assets) public view override(ERC4626, IERC4626) returns (uint256) {
-        uint256 invertedFee = DENOMINATOR - getWithdrawFeeRatio();
-        uint256 assetsIncludingFee = assets.mulDiv(DENOMINATOR, invertedFee, Math.Rounding.Down);
-
-        return _convertToShares(assetsIncludingFee, Math.Rounding.Down);
+        return _convertToShares(assets, Math.Rounding.Up);
     }
 
     /**
@@ -229,49 +214,25 @@ abstract contract BaseVault is IVault, ERC20Permit, ERC4626, Capped {
      * @inheritdoc IERC4626
      */
     function maxDeposit(address) public view virtual override(ERC4626, IERC4626) returns (uint256) {
-        if (vaultState.isProcessingDeposits) {
-            return 0;
-        } else {
-            uint256 _availableCap = availableCap();
-
-            if (_availableCap != type(uint256).max) {
-                return previewMint(_availableCap);
-            }
-            return _availableCap;
+        uint256 _availableCap = availableCap();
+        if (_availableCap != type(uint256).max) {
+            return previewMint(_availableCap);
         }
+        return _availableCap;
     }
 
     /**
      * @inheritdoc IERC4626
      */
     function maxMint(address) public view override(ERC4626, IERC4626) returns (uint256) {
-        if (vaultState.isProcessingDeposits) {
-            return 0;
-        } else {
-            return availableCap();
-        }
+        return availableCap();
     }
 
     /**
      * @inheritdoc IERC4626
      */
     function maxWithdraw(address owner) public view override(ERC4626, IERC4626) returns (uint256) {
-        if (vaultState.isProcessingDeposits) {
-            return 0;
-        } else {
-            return previewRedeem(balanceOf(owner));
-        }
-    }
-
-    /**
-     * @inheritdoc IERC4626
-     */
-    function maxRedeem(address owner) public view override(ERC4626, IERC4626) returns (uint256) {
-        if (vaultState.isProcessingDeposits) {
-            return 0;
-        } else {
-            return balanceOf(owner);
-        }
+        return previewRedeem(balanceOf(owner));
     }
 
     /**
