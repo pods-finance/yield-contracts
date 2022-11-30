@@ -185,6 +185,11 @@ abstract contract BaseVault is IVault, ERC20Permit, ERC4626, Capped {
 
     /**
      * @inheritdoc IERC4626
+     * @dev Because of rounding issues, we did not find a way to return assets including the fees.
+     * This is not 100% compliant to ERC4626 specification. You can follow the discussion here:
+     * https://ethereum-magicians.org/t/eip-4626-yield-bearing-vault-standard/7900/104
+     * This function will withdraw the number of assets asked, minus the fee.
+     * Example: If the fee is 10% and 100 assets was the input, this function will withdraw 90 assets.
      */
     function withdraw(
         uint256 assets,
@@ -197,6 +202,11 @@ abstract contract BaseVault is IVault, ERC20Permit, ERC4626, Capped {
 
     /**
      * @inheritdoc IERC4626
+     * @dev Because of rounding issues, we did not find a way to return exact shares when including the fees.
+     * This is not 100% compliant to ERC4626 specification. You can follow the discussion here:
+     * https://ethereum-magicians.org/t/eip-4626-yield-bearing-vault-standard/7900/104
+     * This function will return the number of shares necessary to withdraw assets not including fees.
+     * This means that you will need to redeem MORE shares to achieve the net assets.
      */
     function previewWithdraw(uint256 assets) public view override(ERC4626, IERC4626) returns (uint256) {
         return _convertToShares(assets, Math.Rounding.Up);
