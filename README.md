@@ -41,11 +41,34 @@ By doing so, the depositor won't risk their principal amount and only take risks
 
 ## Access Controls
 
+### TLDR:
+
 - The contracts are not upgradable by any Multisig or Governance
 - The Multisig (VaultController) *can not* withdraw on behalf 
 - The Multisig (VaultController) *can not* pause the system for more than 7 days
 - The Multisig only have access to 50% of the weekly yield generated on the yield source. This represents less than 1% of the TVL
 - We *do not have* directly exposure to oracle risks
+
+Below we will deep dive on those roles previleges:
+
+### VaultController
+Multisig 2/3: https://etherscan.io/address/0xe24E8beEBa6219CD2F6FA25D5b04a0e78f19Aa0A
+
+This role is responsible for the functions endRound and startRound.During the endRound phase, other addresses can not perform deposit or withdrawal actions until the startRound function is called. In order to avoid the risk of principal funds getting stuck, after a week (~604800 blocks) any address can call the startRound function, enabling withdrawals again.
+
+### ConfigurationManager Owner
+Multisig 2/3: https://etherscan.io/address/0xe24E8beEBa6219CD2F6FA25D5b04a0e78f19Aa0A
+
+This role is responsible for setting the:
+- VaultController of a certain vault
+- Withdraw fee ratio of a certain vault (cap at 10%)
+- Migration contract of a certain vault (in case of migration)
+- Cap of a certain vault
+
+### Investor
+Multisig 2/3: https://etherscan.io/address/0x448C7875633EA285996870BF56bcE7C64Ee94A70
+
+This role is the one responsible for using 50% of the weekly yield to buy options in the best risky-price venue. This could be an off-chain exchange, L2 trade, or OTC.
 
 Although we wished to build a strategy fully on-chain, for some reasons it's not possible right now. On the part B) (Buying weekly options) we don't have yet mature option protocols in the market with enough liquidity and low slippage. 
 So, under the hood, on the part B) of the process, we transfer part of the yield to an **Investor** contract(Multisig) that will have the freedom to find the best place to buy those options (Ribbon auction / Pods AMM / OTC with Market Makers).
