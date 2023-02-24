@@ -17,19 +17,31 @@
 
 # Index
 
-- [Context](#context)
-- [Access Controls](#access-controls)
-- [Operation Flowchart](#operation-flowchart)
-- [System Actors](#system-actors)
-- [Steps](#steps)
-- [Tests](#tests)
-- [Fuzzy Test](#fuzzy-test)
-- [Contracts Addresses](#contracts-addresses)
-- [Bug Bounty Program (BBP)](#bug-bounty-program)
-- [Coverage Results](#coverage-results)
-- [Team Contact](#team-contact)
+- [Index](#index)
+  - [Context](#context)
+  - [Whitepaper](#whitepaper)
+  - [Access Controls](#access-controls)
+    - [TLDR:](#tldr)
+    - [VaultController](#vaultcontroller)
+    - [ConfigurationManager Owner](#configurationmanager-owner)
+    - [Investor](#investor)
+  - [Operation Flowchart](#operation-flowchart)
+  - [System Actors](#system-actors)
+    - [User](#user)
+    - [Investor](#investor-1)
+    - [Vault Controller](#vault-controller)
+  - [Steps](#steps)
+    - [End Round](#end-round)
+    - [Start Round](#start-round)
+  - [Tests](#tests)
+  - [Fuzzy Test](#fuzzy-test)
+  - [Deploy and config](#deploy-and-config)
+  - [Contracts Addresses](#contracts-addresses)
+  - [Bug Bounty Program](#bug-bounty-program)
+  - [Coverage Results](#coverage-results)
+  - [Team Contact](#team-contact)
 
-# Context
+## Context
 
 In this new project, Pods team is launching a 1-click exposure to strategy. The strategy consists in:
 
@@ -38,6 +50,10 @@ A) Allocate users deposits to a Yield Source (Lido, AAVE, AMM Pools). At the mom
 B) Each week, invest part of the yield generated weekly to buy weekly Call Options on ETH 10-20% _out-of-the-money_
 
 By doing so, the depositor won't risk their principal amount and only take risks with the yield. This type of strategy is called Principal Protected.
+
+## Whitepaper
+
+You can find the whitepaper here:  https://github.com/pods-finance/yield-contracts/blob/main/stethvv-whitepaper.pdf
 
 ## Access Controls
 
@@ -125,7 +141,7 @@ a) Re-enable deposits and withdraws by setting the `isProcessingDeposits` to fal
 
 b) Store the initial round balance and initial round share price.
 
-# Tests
+## Tests
 
 ```shell
 npx hardhat test
@@ -133,7 +149,7 @@ npx hardhat test
 
 You can find the system coverage below or a detailed version here : https://coveralls.io/github/pods-finance/yield-contracts?branch=main
 
-# Fuzzy Test
+## Fuzzy Test
 
 You will need to install [echidna](https://github.com/crytic/echidna) separately and checkout to the `fuzzing` branch. In that branch you can run:
 
