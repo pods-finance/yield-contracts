@@ -1,5 +1,5 @@
 coverage: true
-testMode: "assertion"
+testMode: "property"
 testLimit: 100000
 seqLen: 1000
 codeSize: 0x12000

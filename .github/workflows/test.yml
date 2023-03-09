@@ -47,10 +47,21 @@ jobs:
           github-token: ${{ secrets.GITHUB_TOKEN }}
           path-to-lcov: "./coverage/lcov.info"
 
+  fuzzy:
+    name: fuzzy
+    runs-on: ubuntu-latest
+    strategy:
+        matrix:
+          test: [ {contract: Invariants, config: assertion}, {contract: Invariants, config: property}, {contract: Crytic, config: crytic} ]
+
+    steps:
+      - name: checkout
+        uses: actions/checkout@v2
+
       - name: echidna
         uses: crytic/echidna-action@v2
         with:
           solc-version: 0.8.17
-          files: test/invariants/STETHVaultInvariants.sol
-          contract: STETHVaultInvariants
-          config: test/invariants/config.yaml
+          files: test/invariants/STETHVault${{ matrix.test.contract }}.sol
+          contract: STETHVault${{ matrix.test.contract }}
+          config: test/invariants/config-${{ matrix.test.config }}.yaml
