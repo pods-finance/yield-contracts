@@ -46,3 +46,11 @@ jobs:
         with:
           github-token: ${{ secrets.GITHUB_TOKEN }}
           path-to-lcov: "./coverage/lcov.info"
+
+      - name: echidna
+        uses: crytic/echidna-action@v2
+        with:
+          solc-version: 0.8.17
+          files: test/invariants/STETHVaultInvariants.sol
+          contract: STETHVaultInvariants
+          config: test/invariants/config.yaml
