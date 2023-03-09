@@ -21,10 +21,9 @@ contract STETHVault is BaseVault {
     using Math for uint256;
 
     /**
-     * @dev INVESTOR_RATIO is the proportion that the weekly yield will be split
-     * The precision of this number is set by the variable DENOMINATOR. 5000 is equivalent to 50%
+     * @dev INVESTOR_RATIO is the proportion that the weekly yield will be split.
      */
-    uint256 public constant INVESTOR_RATIO = 5000;
+    uint256 public immutable INVESTOR_RATIO;
     address public immutable investor;
     uint8 public immutable sharePriceDecimals;
     uint256 public lastRoundAssets;
@@ -53,6 +52,9 @@ contract STETHVault is BaseVault {
             string(abi.encodePacked(_asset.symbol(), "vv"))
         )
     {
+        // The precision of this number is set by the variable DENOMINATOR. 5000 is equivalent to 50%
+        INVESTOR_RATIO = 5000;
+
         investor = _investor;
         sharePriceDecimals = _asset.decimals();
     }
