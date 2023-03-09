@@ -34,6 +34,7 @@ sender: ["0x10000", "0x20000", "0x30000"]
 # balanceAddr: 0xffffffff
 # #balanceContract overrides balanceAddr for the contract address
 # balanceContract: 0
+codeSize: 0x12000
 # #solcArgs allows special args to solc
 # solcArgs: ""
 # #solcLibs is solc libraries
