@@ -75,8 +75,6 @@ contract User {
 }
 
 contract STETHVaultInvariants is FuzzyAddresses {
-    using EnumerableSet for EnumerableSet.UintSet;
-
     ConfigurationManager private $configuration = new ConfigurationManager();
     STETH private $asset = new STETH();
     InvestorActorMock private $investor = new InvestorActorMock(address($asset));
