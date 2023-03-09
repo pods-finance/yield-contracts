@@ -43,7 +43,8 @@ contract STETHVault is BaseVault {
     constructor(
         IConfigurationManager _configuration,
         IERC20Metadata _asset,
-        address _investor
+        address _investor,
+        uint256 _investorRatio
     )
         BaseVault(
             _configuration,
@@ -53,7 +54,7 @@ contract STETHVault is BaseVault {
         )
     {
         // The precision of this number is set by the variable DENOMINATOR. 5000 is equivalent to 50%
-        INVESTOR_RATIO = 5000;
+        INVESTOR_RATIO = _investorRatio;
 
         investor = _investor;
         sharePriceDecimals = _asset.decimals();
