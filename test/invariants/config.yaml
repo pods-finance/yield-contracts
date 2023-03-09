@@ -70,7 +70,7 @@ cryticArgs:
 # # by default, blacklist methods in filterFunctions
 # filterBlacklist: true
 # #directory to save the corpus; by default is disabled
-corpusDir: "/echidna/corpus"
+corpusDir: "echidna/corpus"
 # # constants for corpus mutations (for experimentation only)
 # mutConsts: [100, 1, 1]
 # # maximum value to send to payable functions
