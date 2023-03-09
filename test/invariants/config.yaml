@@ -42,7 +42,7 @@ codeSize: 0x12000
 # #cryticArgs allows special args to crytic
 cryticArgs:
   [
-    "--solc-remaps", "@openzeppelin/contracts/=node_modules/@openzeppelin/contracts/ hardhat=node_modules/hardhat/"
+    "--solc-remaps", "@openzeppelin/contracts/=node_modules/@openzeppelin/contracts/ hardhat=node_modules/hardhat/ @crytic/=node_modules/@crytic/"
 #    "--solc-libraries", "DepositQueueLib=0xf378794d7e6062ee64e53c8be33e9b16d5a034dc"
   ]
 # #quiet produces (much) less verbose output
