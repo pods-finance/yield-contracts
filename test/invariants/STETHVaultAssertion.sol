@@ -13,7 +13,7 @@ import "../../contracts/mocks/InvestorActorMock.sol";
 import "../../contracts/mocks/YieldSourceMock.sol";
 import "./libraries/String.sol";
 
-contract STETHVaultInvariants is PropertiesConstants, PropertiesAsserts {
+contract STETHVaultAssertion is PropertiesConstants, PropertiesAsserts {
     ConfigurationManager private $configuration = new ConfigurationManager();
     STETH private $asset = new STETH();
     InvestorActorMock private $investor = new InvestorActorMock(address($asset));
