@@ -9,8 +9,6 @@ import "../../contracts/mocks/InvestorActorMock.sol";
 import "../../contracts/mocks/YieldSourceMock.sol";
 
 contract STETH is Asset {
-    event Log(int256);
-
     constructor() Asset("Liquid staked Ether 2.0", "stETH") {}
 
     function transferFrom(
@@ -88,13 +86,6 @@ contract STETHVaultInvariants is FuzzyAddresses {
     uint256 private constant MAX_ERROR_WITHDRAWAL = 100; // max accepted withdrawal loss due to rounding is 1% of deposited amount
     uint256 private constant MAX_REBASE = 2; // 5% APR from Lido is approximately 0.02% daily
     uint256 private constant MAX_INVESTOR_GENERATED_PREMIUM = 100; // expected max investor premium generated is 1% of the Vault's TVL
-
-    event LogBytes(bytes);
-    event LogString(string);
-    event LogUint(uint256);
-    event LogUint2(uint256, uint256);
-    event D(address, uint256);
-    event W(address, uint256);
 
     mapping(address => uint256) private deposits;
     mapping(address => uint256) private withdraws;
