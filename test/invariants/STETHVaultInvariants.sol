@@ -2,39 +2,12 @@
 
 pragma solidity 0.8.17;
 
-import "../../contracts/mocks/Asset.sol";
+import "../../contracts/mocks/STETH.sol";
 import "../../contracts/vaults/STETHVault.sol";
 import "../../contracts/configuration/ConfigurationManager.sol";
 import "../../contracts/mocks/InvestorActorMock.sol";
 import "../../contracts/mocks/YieldSourceMock.sol";
-
-contract STETH is Asset {
-    constructor() Asset("Liquid staked Ether 2.0", "stETH") {}
-
-    function transferFrom(
-        address from,
-        address to,
-        uint256 amount
-    ) public override returns (bool) {
-        _mint(from, amount);
-        _transfer(from, to, amount);
-        return true;
-    }
-
-    function rebase(address to, int256 interest) public {
-        if (interest > 0) {
-            _mint(to, uint256(interest));
-        } else {
-            _burn(to, uint256(-interest));
-        }
-    }
-}
-
-library String {
-    function equal(string memory a, string memory b) internal pure returns (bool) {
-        return keccak256(bytes(a)) == keccak256(bytes(b));
-    }
-}
+import "./libraries/String.sol";
 
 contract FuzzyAddresses {
     address internal constant user0 = address(0x10000);
