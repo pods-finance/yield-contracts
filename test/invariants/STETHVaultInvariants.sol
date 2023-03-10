@@ -13,7 +13,7 @@ import "../../contracts/mocks/InvestorActorMock.sol";
 import "../../contracts/mocks/YieldSourceMock.sol";
 import "./libraries/String.sol";
 
-contract STETHVaultAssertion is PropertiesConstants, PropertiesAsserts {
+contract STETHVaultInvariants is PropertiesConstants, PropertiesAsserts {
     ConfigurationManager private $configuration = new ConfigurationManager();
     STETH private $asset = new STETH();
     InvestorActorMock private $investor = new InvestorActorMock(address($asset));
@@ -29,7 +29,6 @@ contract STETHVaultAssertion is PropertiesConstants, PropertiesAsserts {
 
     constructor() {
         $configuration.setParameter(address(vault), "VAULT_CONTROLLER", uint256(uint160(address(this))));
-        // $configuration.setParameter(address(vault), "WITHDRAW_FEE_RATIO", vault.MAX_WITHDRAW_FEE());
         $investor.approveVaultToPull(address(vault));
         users[USER1] = new User(vault, $asset);
         users[USER2] = new User(vault, $asset);

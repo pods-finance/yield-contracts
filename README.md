@@ -151,7 +151,7 @@ You can find the system coverage below or a detailed version here : https://cove
 
 ## Fuzzy Test
 
-You will need to install [echidna](https://github.com/crytic/echidna) separately and checkout to the `fuzzing` branch. In that branch you can run:
+You will need to install [echidna](https://github.com/crytic/echidna) separately and run:
 
 ```shell
 echidna-test test/invariants/ --contract STETHVaultInvariants --config test/invariants/config.yaml
