@@ -53,6 +53,7 @@ contract STETHVault is BaseVault {
             string(abi.encodePacked(_asset.symbol(), "vv"))
         )
     {
+        require(_investorRatio <= DENOMINATOR, "Investor ratio exceeds DENOMINATOR");
         // The precision of this number is set by the variable DENOMINATOR. 5000 is equivalent to 50%
         INVESTOR_RATIO = _investorRatio;
 

@@ -1037,4 +1037,18 @@ describe('STETHVault', () => {
     const attackerAssetBalanceDiff = (await asset.balanceOf(attacker.address)).sub(attackerAssetBalanceBefore)
     expect(attackerAssetBalanceDiff).to.be.lte(1)
   })
+
+  it('should not allow investorRatio to exceed DENOMINATOR', async () => {
+    const investorRatio = ethers.BigNumber.from('10001')
+
+    const STETHVault = await ethers.getContractFactory('STETHVault')
+    const deployTransaction = STETHVault.deploy(
+      configuration.address,
+      asset.address,
+      investor.address,
+      investorRatio
+    )
+
+    await expect(deployTransaction).to.be.revertedWith('Investor ratio exceeds DENOMINATOR')
+  })
 })
