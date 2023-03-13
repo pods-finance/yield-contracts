@@ -6,7 +6,7 @@ on:
       branch:
         description: 'Branch to run remote-echidna'
         default: ''
-        required: false
+        required: true
 
 jobs:
   remote-echidna:
