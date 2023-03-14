@@ -2,79 +2,18 @@
 
 pragma solidity 0.8.17;
 
-import "../../contracts/mocks/Asset.sol";
+import "@crytic/properties/contracts/util/PropertiesHelper.sol";
+import "@crytic/properties/contracts/util/PropertiesConstants.sol";
+
+import "../../contracts/mocks/STETH.sol";
+import "../../contracts/mocks/User.sol";
 import "../../contracts/vaults/STETHVault.sol";
 import "../../contracts/configuration/ConfigurationManager.sol";
 import "../../contracts/mocks/InvestorActorMock.sol";
 import "../../contracts/mocks/YieldSourceMock.sol";
+import "./libraries/String.sol";
 
-contract STETH is Asset {
-    constructor() Asset("Liquid staked Ether 2.0", "stETH") {}
-
-    function transferFrom(
-        address from,
-        address to,
-        uint256 amount
-    ) public override returns (bool) {
-        _mint(from, amount);
-        _transfer(from, to, amount);
-        return true;
-    }
-
-    function rebase(address to, int256 interest) public {
-        if (interest > 0) {
-            _mint(to, uint256(interest));
-        } else {
-            _burn(to, uint256(-interest));
-        }
-    }
-}
-
-library String {
-    function equal(string memory a, string memory b) internal pure returns (bool) {
-        return keccak256(bytes(a)) == keccak256(bytes(b));
-    }
-}
-
-contract FuzzyAddresses {
-    address internal constant user0 = address(0x10000);
-    address internal constant user1 = address(0x20000);
-    address internal constant user2 = address(0x30000);
-
-    function _addressIsAllowed(address to) internal returns (bool) {
-        return to == user0 || to == user1 || to == user2;
-    }
-}
-
-contract User {
-    STETHVault private immutable vault;
-    STETH private immutable asset;
-
-    constructor(STETHVault _vault, STETH _asset) {
-        vault = _vault;
-        asset = _asset;
-
-        asset.approve(address(vault), type(uint256).max);
-    }
-
-    function deposit(uint256 assets) external returns (uint256) {
-        return vault.deposit(assets, address(this));
-    }
-
-    function mint(uint256 shares) external returns (uint256) {
-        return vault.mint(shares, address(this));
-    }
-
-    function withdraw(uint256 assets) external returns (uint256) {
-        return vault.withdraw(assets, address(this), address(this));
-    }
-
-    function redeem(uint256 shares) external returns (uint256) {
-        return vault.redeem(shares, address(this), address(this));
-    }
-}
-
-contract STETHVaultInvariants is FuzzyAddresses {
+contract STETHVaultInvariants is PropertiesConstants, PropertiesAsserts {
     ConfigurationManager private $configuration = new ConfigurationManager();
     STETH private $asset = new STETH();
     InvestorActorMock private $investor = new InvestorActorMock(address($asset));
@@ -82,7 +21,7 @@ contract STETHVaultInvariants is FuzzyAddresses {
     mapping(address => User) private users;
 
     uint256 private constant MAX_ERROR_WITHDRAWAL = 100; // max accepted withdrawal loss due to rounding is 1% of deposited amount
-    uint256 private constant MAX_REBASE = 2; // 5% APR from Lido is approximately 0.02% daily
+    uint256 private constant MAX_REBASE = 100; // 5% APR from Lido
     uint256 private constant MAX_INVESTOR_GENERATED_PREMIUM = 100; // expected max investor premium generated is 1% of the Vault's TVL
 
     mapping(address => uint256) private deposits;
@@ -90,11 +29,12 @@ contract STETHVaultInvariants is FuzzyAddresses {
 
     constructor() {
         $configuration.setParameter(address(vault), "VAULT_CONTROLLER", uint256(uint160(address(this))));
-        // $configuration.setParameter(address(vault), "WITHDRAW_FEE_RATIO", vault.MAX_WITHDRAW_FEE());
         $investor.approveVaultToPull(address(vault));
-        users[user0] = new User(vault, $asset);
-        users[user1] = new User(vault, $asset);
-        users[user2] = new User(vault, $asset);
+        users[USER1] = new User(vault, $asset);
+        users[USER2] = new User(vault, $asset);
+        users[USER3] = new User(vault, $asset);
+
+        $configuration.setCap(address(vault), uint256(keccak256("cap")));
     }
 
     function echidna_test_name() public view returns (bool) {
@@ -109,18 +49,28 @@ contract STETHVaultInvariants is FuzzyAddresses {
         return vault.decimals() == $asset.decimals();
     }
 
-    function positiveRebase(uint256 amount) public {
-        amount = Math.min(amount, ($asset.totalSupply() * MAX_INVESTOR_GENERATED_PREMIUM) / vault.DENOMINATOR());
-        $asset.rebase(address(vault), int256(amount));
+    event Log(int256, int256);
+
+    function rebase(int256 amount) public {
+        int256 rebasePercent = (int256(amount) * int256(vault.DENOMINATOR())) / int256(type(int256).max);
+        rebasePercent = rebasePercent >= 0
+            ? clampLte(rebasePercent, int256(MAX_REBASE))
+            : clampGte(rebasePercent, -int256(MAX_REBASE));
+
+        $asset.rebase(address(vault), (rebasePercent * int256(vault.totalAssets())) / int256(vault.DENOMINATOR()));
     }
 
-    //  ["0x10000", "0x20000", "0x30000"]
-    function echidna_sum_total_supply() public returns (bool) {
-        uint256 balance0 = vault.balanceOf(address(users[user0]));
-        uint256 balance1 = vault.balanceOf(address(users[user1]));
-        uint256 balance2 = vault.balanceOf(address(users[user2]));
+    function setFee(uint256 fee) public {
+        fee = clampLte(fee, vault.MAX_WITHDRAW_FEE());
+        $configuration.setParameter(address(vault), "WITHDRAW_FEE_RATIO", fee);
+    }
 
-        uint256 sumBalances = balance0 + balance1 + balance2;
+    function echidna_sum_total_supply() public returns (bool) {
+        uint256 balance1 = vault.balanceOf(address(users[USER1]));
+        uint256 balance2 = vault.balanceOf(address(users[USER2]));
+        uint256 balance3 = vault.balanceOf(address(users[USER3]));
+
+        uint256 sumBalances = balance1 + balance2 + balance3;
 
         return sumBalances == vault.totalSupply();
     }
@@ -152,9 +102,16 @@ contract STETHVaultInvariants is FuzzyAddresses {
 
     function withdraw(uint256 assets) public returns (uint256 shares) {
         User user = users[msg.sender];
-        assets = Math.min(assets, vault.maxWithdraw(address(user)));
+        assets = clampLte(assets, vault.maxWithdraw(address(user)));
 
-        shares = user.withdraw(assets);
+        try user.withdraw(assets) returns (uint256 _shares) {
+            shares = _shares;
+        } catch {
+            if (!vault.isProcessingDeposits() && deposits[msg.sender] > 0 && assets > 0) {
+                assert(false);
+            }
+        }
+
         withdraws[msg.sender] += assets;
 
         _assertFullWithdrawlAfterProcessedQueueIsAtLeastDepositedWithinError();
@@ -162,10 +119,14 @@ contract STETHVaultInvariants is FuzzyAddresses {
 
     function redeem(uint256 shares) public returns (uint256 assets) {
         User user = users[msg.sender];
-        shares = Math.min(shares, vault.maxRedeem(address(user)));
+        shares = clampLte(shares, vault.maxRedeem(address(user)));
 
         assets = vault.convertToAssets(shares);
-        user.redeem(shares);
+        try user.redeem(shares) {} catch {
+            if (!vault.isProcessingDeposits() && deposits[msg.sender] > 0 && shares > 0) {
+                assert(false);
+            }
+        }
 
         withdraws[msg.sender] += assets;
 
@@ -181,7 +142,7 @@ contract STETHVaultInvariants is FuzzyAddresses {
     }
 
     function generatePremium(uint256 amount) public {
-        amount = Math.min(amount, (vault.totalAssets() * MAX_INVESTOR_GENERATED_PREMIUM) / vault.DENOMINATOR());
+        amount = clampLte(amount, (vault.totalAssets() * MAX_INVESTOR_GENERATED_PREMIUM) / vault.DENOMINATOR());
         $investor.generatePremium(amount);
     }
 
@@ -195,7 +156,11 @@ contract STETHVaultInvariants is FuzzyAddresses {
             uint256 withdrawalMin = (deposits[msg.sender] * (vault.DENOMINATOR() - MAX_ERROR_WITHDRAWAL)) /
                 vault.DENOMINATOR();
 
-            assert(withdraws[msg.sender] >= withdrawalMin);
+            assertGte(
+                withdraws[msg.sender],
+                withdrawalMin,
+                "Full withdrawal should be at least deposited amount minus rounding errors"
+            );
         }
     }
 }
