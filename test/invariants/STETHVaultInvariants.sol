@@ -21,7 +21,7 @@ contract STETHVaultInvariants is PropertiesConstants, PropertiesAsserts {
     mapping(address => User) private users;
 
     uint256 private constant MAX_ERROR_WITHDRAWAL = 100; // max accepted withdrawal loss due to rounding is 1% of deposited amount
-    uint256 private constant MAX_REBASE = 2; // 5% APR from Lido is approximately 0.02% daily
+    uint256 private constant MAX_REBASE = 100; // 5% APR from Lido
     uint256 private constant MAX_INVESTOR_GENERATED_PREMIUM = 100; // expected max investor premium generated is 1% of the Vault's TVL
 
     mapping(address => uint256) private deposits;
@@ -33,6 +33,8 @@ contract STETHVaultInvariants is PropertiesConstants, PropertiesAsserts {
         users[USER1] = new User(vault, $asset);
         users[USER2] = new User(vault, $asset);
         users[USER3] = new User(vault, $asset);
+
+        $configuration.setCap(address(vault), uint256(keccak256("cap")));
     }
 
     function echidna_test_name() public view returns (bool) {
@@ -47,9 +49,20 @@ contract STETHVaultInvariants is PropertiesConstants, PropertiesAsserts {
         return vault.decimals() == $asset.decimals();
     }
 
-    function positiveRebase(uint256 amount) public {
-        amount = clampLte(amount, ($asset.totalSupply() * MAX_INVESTOR_GENERATED_PREMIUM) / vault.DENOMINATOR());
-        $asset.rebase(address(vault), int256(amount));
+    event Log(int256, int256);
+
+    function rebase(int256 amount) public {
+        int256 rebasePercent = (int256(amount) * int256(vault.DENOMINATOR())) / int256(type(int256).max);
+        rebasePercent = rebasePercent >= 0
+            ? clampLte(rebasePercent, int256(MAX_REBASE))
+            : clampGte(rebasePercent, -int256(MAX_REBASE));
+
+        $asset.rebase(address(vault), (rebasePercent * int256(vault.totalAssets())) / int256(vault.DENOMINATOR()));
+    }
+
+    function setFee(uint256 fee) public {
+        fee = clampLte(fee, vault.MAX_WITHDRAW_FEE());
+        $configuration.setParameter(address(vault), "WITHDRAW_FEE_RATIO", fee);
     }
 
     function echidna_sum_total_supply() public returns (bool) {
@@ -91,7 +104,14 @@ contract STETHVaultInvariants is PropertiesConstants, PropertiesAsserts {
         User user = users[msg.sender];
         assets = clampLte(assets, vault.maxWithdraw(address(user)));
 
-        shares = user.withdraw(assets);
+        try user.withdraw(assets) returns (uint256 _shares) {
+            shares = _shares;
+        } catch {
+            if (!vault.isProcessingDeposits() && deposits[msg.sender] > 0 && assets > 0) {
+                assert(false);
+            }
+        }
+
         withdraws[msg.sender] += assets;
 
         _assertFullWithdrawlAfterProcessedQueueIsAtLeastDepositedWithinError();
@@ -102,7 +122,11 @@ contract STETHVaultInvariants is PropertiesConstants, PropertiesAsserts {
         shares = clampLte(shares, vault.maxRedeem(address(user)));
 
         assets = vault.convertToAssets(shares);
-        user.redeem(shares);
+        try user.redeem(shares) {} catch {
+            if (!vault.isProcessingDeposits() && deposits[msg.sender] > 0 && shares > 0) {
+                assert(false);
+            }
+        }
 
         withdraws[msg.sender] += assets;
 
