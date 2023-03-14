@@ -33,6 +33,8 @@ contract STETHVaultInvariants is PropertiesConstants, PropertiesAsserts {
         users[USER1] = new User(vault, $asset);
         users[USER2] = new User(vault, $asset);
         users[USER3] = new User(vault, $asset);
+
+        $configuration.setCap(address(vault), uint256(keccak256("cap")));
     }
 
     function echidna_test_name() public view returns (bool) {
@@ -47,9 +49,18 @@ contract STETHVaultInvariants is PropertiesConstants, PropertiesAsserts {
         return vault.decimals() == $asset.decimals();
     }
 
-    function positiveRebase(uint256 amount) public {
-        amount = clampLte(amount, ($asset.totalSupply() * MAX_INVESTOR_GENERATED_PREMIUM) / vault.DENOMINATOR());
-        $asset.rebase(address(vault), int256(amount));
+    function rebase(int256 amount) public {
+        amount = clampBetween(
+            amount,
+            -int256(($asset.totalSupply() * MAX_INVESTOR_GENERATED_PREMIUM) / vault.DENOMINATOR()),
+            int256(($asset.totalSupply() * MAX_INVESTOR_GENERATED_PREMIUM) / vault.DENOMINATOR())
+        );
+        $asset.rebase(address(vault), amount);
+    }
+
+    function setFee(uint256 fee) public {
+        fee = clampLte(fee, vault.MAX_WITHDRAW_FEE());
+        $configuration.setParameter(address(vault), "WITHDRAW_FEE_RATIO", fee);
     }
 
     function echidna_sum_total_supply() public returns (bool) {
@@ -91,7 +102,14 @@ contract STETHVaultInvariants is PropertiesConstants, PropertiesAsserts {
         User user = users[msg.sender];
         assets = clampLte(assets, vault.maxWithdraw(address(user)));
 
-        shares = user.withdraw(assets);
+        try user.withdraw(assets) returns (uint256 _shares) {
+            shares = _shares;
+        } catch {
+            if (!vault.isProcessingDeposits() && deposits[msg.sender] > 0 && assets > 0) {
+                assert(false);
+            }
+        }
+
         withdraws[msg.sender] += assets;
 
         _assertFullWithdrawlAfterProcessedQueueIsAtLeastDepositedWithinError();
@@ -102,7 +120,11 @@ contract STETHVaultInvariants is PropertiesConstants, PropertiesAsserts {
         shares = clampLte(shares, vault.maxRedeem(address(user)));
 
         assets = vault.convertToAssets(shares);
-        user.redeem(shares);
+        try user.redeem(shares) {} catch {
+            if (!vault.isProcessingDeposits() && deposits[msg.sender] > 0 && shares > 0) {
+                assert(false);
+            }
+        }
 
         withdraws[msg.sender] += assets;
 
