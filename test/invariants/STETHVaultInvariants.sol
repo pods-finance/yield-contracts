@@ -21,7 +21,7 @@ contract STETHVaultInvariants is PropertiesConstants, PropertiesAsserts {
     mapping(address => User) private users;
 
     uint256 private constant MAX_ERROR_WITHDRAWAL = 100; // max accepted withdrawal loss due to rounding is 1% of deposited amount
-    uint256 private constant MAX_REBASE = 2; // 5% APR from Lido is approximately 0.02% daily
+    uint256 private constant MAX_REBASE = 100; // 5% APR from Lido
     uint256 private constant MAX_INVESTOR_GENERATED_PREMIUM = 100; // expected max investor premium generated is 1% of the Vault's TVL
 
     mapping(address => uint256) private deposits;
@@ -49,13 +49,15 @@ contract STETHVaultInvariants is PropertiesConstants, PropertiesAsserts {
         return vault.decimals() == $asset.decimals();
     }
 
+    event Log(int256, int256);
+
     function rebase(int256 amount) public {
-        amount = clampBetween(
-            amount,
-            -int256(($asset.totalSupply() * MAX_INVESTOR_GENERATED_PREMIUM) / vault.DENOMINATOR()),
-            int256(($asset.totalSupply() * MAX_INVESTOR_GENERATED_PREMIUM) / vault.DENOMINATOR())
-        );
-        $asset.rebase(address(vault), amount);
+        int256 rebasePercent = (int256(amount) * int256(vault.DENOMINATOR())) / int256(type(int256).max);
+        rebasePercent = rebasePercent >= 0
+            ? clampLte(rebasePercent, int256(MAX_REBASE))
+            : clampGte(rebasePercent, -int256(MAX_REBASE));
+
+        $asset.rebase(address(vault), (rebasePercent * int256(vault.totalAssets())) / int256(vault.DENOMINATOR()));
     }
 
     function setFee(uint256 fee) public {

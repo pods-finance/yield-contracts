@@ -1,12 +1,7 @@
 name: Remote Echidna
 
 on:
-  workflow_dispatch:
-    inputs:
-      branch:
-        description: 'Branch to run remote-echidna'
-        default: ''
-        required: true
+  pull_request:
 
 jobs:
   remote-echidna:
