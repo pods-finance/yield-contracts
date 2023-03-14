@@ -3,7 +3,7 @@
 pragma solidity 0.8.17;
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 
-interface STETH is IERC20 {
+interface ISTETH is IERC20 {
     function getTotalPooledEther() external view returns (uint256);
 
     function decimals() external view returns (uint8);

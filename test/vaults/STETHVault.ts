@@ -6,10 +6,10 @@ import minus from '../utils/minus'
 import { startMainnetFork, stopMainnetFork } from '../utils/mainnetFork'
 import createConfigurationManager from '../utils/createConfigurationManager'
 import { feeExcluded } from '../utils/feeExcluded'
-import { ConfigurationManager, STETH, InvestorActorMock, STETHVault } from '../../typechain'
+import { ConfigurationManager, ISTETH, InvestorActorMock, STETHVault } from '../../typechain'
 
 describe('STETHVault', () => {
-  let asset: STETH, vault: STETHVault, investor: InvestorActorMock,
+  let asset: ISTETH, vault: STETHVault, investor: InvestorActorMock,
     configuration: ConfigurationManager
 
   let user0: SignerWithAddress, user1: SignerWithAddress, user2: SignerWithAddress, user3: SignerWithAddress, user4: SignerWithAddress,
