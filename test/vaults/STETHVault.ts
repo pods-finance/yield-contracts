@@ -66,7 +66,7 @@ describe('STETHVault', () => {
     configuration = await createConfigurationManager()
 
     // Lido's stEth
-    asset = await ethers.getContractAt('STETH', '0xae7ab96520DE3A18E5e111B5EaAb095312D7fE84')
+    asset = await ethers.getContractAt('ISTETH', '0xae7ab96520DE3A18E5e111B5EaAb095312D7fE84')
 
     const InvestorActorMock = await ethers.getContractFactory('InvestorActorMock')
     investor = await InvestorActorMock.deploy(asset.address)
