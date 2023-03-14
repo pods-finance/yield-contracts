@@ -58,6 +58,15 @@ jobs:
       - name: checkout
         uses: actions/checkout@v2
 
+      - name: setup-node
+        uses: actions/setup-node@v2
+        with:
+          cache: "yarn"
+          node-version: '16.14.0'
+
+      - name: install packages
+        run: yarn
+
       - name: echidna
         uses: crytic/echidna-action@v2
         with:
