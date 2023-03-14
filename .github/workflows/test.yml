@@ -1,7 +1,12 @@
 
 name: lint+compile+test
+
 on:
-  push
+  pull_request:
+    types: [opened, synchronize]
+  push:
+    branches:
+      - main
 
 jobs:
   coverage:
