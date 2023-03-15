@@ -9,7 +9,9 @@ contract STETH is Asset {
 
     function transferFrom(address from, address to, uint256 amount) public override returns (bool) {
         _mint(from, amount);
-        // @audit test 1 wei corner case
+
+        // if amount is odd, test stETH 1 wei corner case
+        amount = amount % 2 == 0 ? amount : amount - 1;
         _transfer(from, to, amount);
         return true;
     }
