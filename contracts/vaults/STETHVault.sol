@@ -22,6 +22,9 @@ contract STETHVault is BaseVault {
 
     /**
      * @dev INVESTOR_RATIO is the proportion that the weekly yield will be split.
+     * The precision of this number is set by the DENOMINATOR variable. e.g. 5000 equals 50%.
+     * Also, a low value of `INVESTOR_RATIO` may result in no value being transferred to investor. For example if
+     * `roundAccruedInterest` * `INVESTOR_RATIO` is lower than `DENOMINATOR`.
      */
     uint256 public immutable INVESTOR_RATIO;
     address public immutable investor;
@@ -137,6 +140,8 @@ contract STETHVault is BaseVault {
         if (supply != 0) {
             if (totalAssets() >= lastRoundAssets) {
                 roundAccruedInterest = totalAssets() - lastRoundAssets;
+                // Notice that `investmentAmount` will be truncated to 0 if
+                // `roundAccruedInterest` * `INVESTOR_RATIO` is too low
                 uint256 investmentAmount = (roundAccruedInterest * INVESTOR_RATIO) / DENOMINATOR;
 
                 // Pulls the yields from investor
