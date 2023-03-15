@@ -27,14 +27,17 @@ contract STETHVaultInvariants is PropertiesConstants, PropertiesAsserts {
     mapping(address => uint256) private deposits;
     mapping(address => uint256) private withdraws;
 
+    bool private hadNegativeRebase;
+    bool private hadWithdralsCurrentRound;
+
     constructor() {
-        $configuration.setParameter(address(vault), "VAULT_CONTROLLER", uint256(uint160(address(this))));
         $investor.approveVaultToPull(address(vault));
         users[USER1] = new User(vault, $asset);
         users[USER2] = new User(vault, $asset);
         users[USER3] = new User(vault, $asset);
 
-        $configuration.setCap(address(vault), uint256(keccak256("cap")));
+        $configuration.setParameter(address(vault), "VAULT_CONTROLLER", uint256(uint160(address(users[USER3]))));
+        $configuration.setCap(address(vault), clampBetween(uint256(keccak256("cap")), 10 ether, 1000 ether));
     }
 
     function echidna_test_name() public view returns (bool) {
@@ -49,22 +52,6 @@ contract STETHVaultInvariants is PropertiesConstants, PropertiesAsserts {
         return vault.decimals() == $asset.decimals();
     }
 
-    event Log(int256, int256);
-
-    function rebase(int256 amount) public {
-        int256 rebasePercent = (int256(amount) * int256(vault.DENOMINATOR())) / int256(type(int256).max);
-        rebasePercent = rebasePercent >= 0
-            ? clampLte(rebasePercent, int256(MAX_REBASE))
-            : clampGte(rebasePercent, -int256(MAX_REBASE));
-
-        $asset.rebase(address(vault), (rebasePercent * int256(vault.totalAssets())) / int256(vault.DENOMINATOR()));
-    }
-
-    function setFee(uint256 fee) public {
-        fee = clampLte(fee, vault.MAX_WITHDRAW_FEE());
-        $configuration.setParameter(address(vault), "WITHDRAW_FEE_RATIO", fee);
-    }
-
     function echidna_sum_total_supply() public returns (bool) {
         uint256 balance1 = vault.balanceOf(address(users[USER1]));
         uint256 balance2 = vault.balanceOf(address(users[USER2]));
@@ -75,70 +62,101 @@ contract STETHVaultInvariants is PropertiesConstants, PropertiesAsserts {
         return sumBalances == vault.totalSupply();
     }
 
-    function echidna_lastRoundAssets_always_greater_than_totalAssets() public returns (bool) {
-        return vault.totalAssets() >= vault.lastRoundAssets();
+    function echidna_totalAssets_always_greater_than_lastRoundAssets_unless_withdrawls_or_negative_rebase()
+        public
+        returns (bool)
+    {
+        return hadWithdralsCurrentRound || hadNegativeRebase ? true : vault.totalAssets() >= vault.lastRoundAssets();
+    }
+
+    function rebase(int128 _amount) public {
+        int256 amount = clampBetween(
+            int256(_amount),
+            (-int256(vault.totalAssets()) * int256(MAX_REBASE)) / int256(vault.DENOMINATOR()),
+            (int256(vault.totalAssets()) * int256(MAX_REBASE)) / int256(vault.DENOMINATOR())
+        );
+        if (amount < 0) {
+            hadNegativeRebase = true;
+        }
+        $asset.rebase(address(vault), amount);
+    }
+
+    function setFee(uint256 fee) public {
+        fee = clampLte(fee, vault.MAX_WITHDRAW_FEE());
+        $configuration.setParameter(address(vault), "WITHDRAW_FEE_RATIO", fee);
     }
 
     function processQueuedDeposits() public {
-        vault.processQueuedDeposits(vault.queuedDeposits());
+        try vault.processQueuedDeposits(vault.queuedDeposits()) {} catch {
+            _assertProcessQueuedDepositsRevertConditions();
+        }
     }
 
     function deposit(uint256 assets) public returns (uint256 shares) {
         User user = users[msg.sender];
+        assets = clampLte(assets, vault.maxDeposit(address(user)));
 
         deposits[msg.sender] += assets;
 
-        return user.deposit(assets);
+        try user.deposit(assets) returns (uint256 _shares) {
+            shares = _shares;
+        } catch {
+            _assertDepositRevertConditions(assets);
+        }
     }
 
     function mint(uint256 shares) public returns (uint256 assets) {
         User user = users[msg.sender];
+        shares = clampLte(shares, vault.maxMint(address(user)));
 
         assets = vault.convertToAssets(shares);
         deposits[msg.sender] += assets;
 
-        return user.mint(shares);
+        try user.mint(shares) {} catch {
+            _assertDepositRevertConditions(assets);
+        }
     }
 
     function withdraw(uint256 assets) public returns (uint256 shares) {
         User user = users[msg.sender];
-        assets = clampLte(assets, vault.maxWithdraw(address(user)));
+        assets = clampBetween(assets, 1, vault.maxWithdraw(address(user)));
 
         try user.withdraw(assets) returns (uint256 _shares) {
             shares = _shares;
         } catch {
-            if (!vault.isProcessingDeposits() && deposits[msg.sender] > 0 && assets > 0) {
-                assert(false);
-            }
+            _assertWithdrawlRevertConditions(assets);
         }
 
         withdraws[msg.sender] += assets;
+        hadWithdralsCurrentRound = true;
 
         _assertFullWithdrawlAfterProcessedQueueIsAtLeastDepositedWithinError();
     }
 
     function redeem(uint256 shares) public returns (uint256 assets) {
         User user = users[msg.sender];
-        shares = clampLte(shares, vault.maxRedeem(address(user)));
+        shares = clampBetween(shares, 1, vault.maxRedeem(address(user)));
 
         assets = vault.convertToAssets(shares);
         try user.redeem(shares) {} catch {
-            if (!vault.isProcessingDeposits() && deposits[msg.sender] > 0 && shares > 0) {
-                assert(false);
-            }
+            _assertWithdrawlRevertConditions(assets);
         }
 
         withdraws[msg.sender] += assets;
+        hadWithdralsCurrentRound = true;
 
         _assertFullWithdrawlAfterProcessedQueueIsAtLeastDepositedWithinError();
     }
 
     function startRound() public returns (uint32) {
-        vault.startRound();
+        User user = users[msg.sender];
+        hadWithdralsCurrentRound = false;
+        return user.startRound();
     }
 
     function endRound() public {
-        vault.endRound();
+        User user = users[msg.sender];
+        user.endRound();
     }
 
     function generatePremium(uint256 amount) public {
@@ -162,5 +180,20 @@ contract STETHVaultInvariants is PropertiesConstants, PropertiesAsserts {
                 "Full withdrawal should be at least deposited amount minus rounding errors"
             );
         }
+    }
+
+    function _assertWithdrawlRevertConditions(uint256 assets) private {
+        assertWithMsg(vault.isProcessingDeposits(), "withdrawl can only revert if vault is processing deposits");
+    }
+
+    function _assertDepositRevertConditions(uint256 assets) private {
+        assertWithMsg(vault.isProcessingDeposits(), "deposit can only revert if vault is processing deposits");
+    }
+
+    function _assertProcessQueuedDepositsRevertConditions() private {
+        assertWithMsg(
+            !vault.isProcessingDeposits(),
+            "processQueuedDeposits can only revert if vault is processing deposits"
+        );
     }
 }

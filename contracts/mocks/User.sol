@@ -16,6 +16,14 @@ contract User {
         asset.approve(address(vault), type(uint256).max);
     }
 
+    function startRound() public returns (uint32) {
+        return vault.startRound();
+    }
+
+    function endRound() external {
+        vault.endRound();
+    }
+
     function deposit(uint256 assets) external returns (uint256) {
         return vault.deposit(assets, address(this));
     }
