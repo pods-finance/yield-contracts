@@ -29,6 +29,7 @@ contract STETHVaultInvariants is PropertiesConstants, PropertiesAsserts {
 
     bool private hadNegativeRebase;
     bool private hadWithdralsCurrentRound;
+    bool private hadPreviousCapGreaterThanCurrentCap;
 
     constructor() {
         $investor.approveVaultToPull(address(vault));
@@ -37,7 +38,6 @@ contract STETHVaultInvariants is PropertiesConstants, PropertiesAsserts {
         users[USER3] = new User(vault, $asset);
 
         $configuration.setParameter(address(vault), "VAULT_CONTROLLER", uint256(uint160(address(users[USER3]))));
-        $configuration.setCap(address(vault), clampBetween(uint256(keccak256("cap")), 10 ether, 1000 ether));
     }
 
     function echidna_test_name() public view returns (bool) {
@@ -67,6 +67,12 @@ contract STETHVaultInvariants is PropertiesConstants, PropertiesAsserts {
         returns (bool)
     {
         return hadWithdralsCurrentRound || hadNegativeRebase ? true : vault.totalAssets() >= vault.lastRoundAssets();
+    }
+
+    function setCap(uint256 amount) public {
+        uint256 previousCap = $configuration.getCap(address(vault));
+        $configuration.setCap(address(vault), amount);
+        hadPreviousCapGreaterThanCurrentCap = previousCap == 0 ? true : previousCap > amount;
     }
 
     function rebase(int128 _amount) public {
@@ -100,8 +106,10 @@ contract STETHVaultInvariants is PropertiesConstants, PropertiesAsserts {
 
         try user.deposit(assets) returns (uint256 _shares) {
             shares = _shares;
-        } catch {
+        } catch Error(string memory) {
             _assertDepositRevertConditions(assets);
+        } catch (bytes memory) {
+            // overflow
         }
     }
 
@@ -112,8 +120,10 @@ contract STETHVaultInvariants is PropertiesConstants, PropertiesAsserts {
         assets = vault.convertToAssets(shares);
         deposits[msg.sender] += assets;
 
-        try user.mint(shares) {} catch {
+        try user.mint(shares) {} catch Error(string memory) {
             _assertDepositRevertConditions(assets);
+        } catch (bytes memory) {
+            // overflow
         }
     }
 
