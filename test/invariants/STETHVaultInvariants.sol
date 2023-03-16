@@ -92,8 +92,15 @@ contract STETHVaultInvariants is PropertiesConstants, PropertiesAsserts {
         $configuration.setParameter(address(vault), "WITHDRAW_FEE_RATIO", fee);
     }
 
-    function processQueuedDeposits() public {
-        try vault.processQueuedDeposits(vault.queuedDeposits()) {} catch {
+    function processQueuedDeposits(uint256 size) public {
+        size = clampBetween(size, 0, 3); // echidna has 3 users
+        address[] memory depositors = vault.queuedDeposits();
+        address[] memory array = new address[](size);
+        for (uint256 i = 0; i < size; ++i) {
+            array[i] = depositors[i];
+        }
+
+        try vault.processQueuedDeposits(array) {} catch {
             _assertProcessQueuedDepositsRevertConditions();
         }
     }
