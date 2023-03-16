@@ -32,9 +32,14 @@ contract STETHVaultInvariants is PropertiesConstants, PropertiesAsserts {
 
     constructor() {
         $investor.approveVaultToPull(address(vault));
-        users[USER1] = new User(vault, $asset);
-        users[USER2] = new User(vault, $asset);
-        users[USER3] = new User(vault, $asset);
+        users[USER1] = new User();
+        users[USER1].initialize(vault, $asset);
+
+        users[USER2] = new User();
+        users[USER2].initialize(vault, $asset);
+
+        users[USER3] = new User();
+        users[USER3].initialize(vault, $asset);
 
         $configuration.setParameter(address(vault), "VAULT_CONTROLLER", uint256(uint160(address(users[USER3]))));
     }
@@ -69,7 +74,7 @@ contract STETHVaultInvariants is PropertiesConstants, PropertiesAsserts {
     }
 
     function setCap(uint256 amount) public {
-        amount = clampLte(amount, vault.totalSupply());
+        amount = clampGte(amount, vault.totalSupply() + vault.previewDeposit(vault.totalIdleAssets()));
         $configuration.setCap(address(vault), amount);
     }
 
@@ -198,10 +203,7 @@ contract STETHVaultInvariants is PropertiesConstants, PropertiesAsserts {
     }
 
     function _assertWithdrawlRevertConditions(uint256 assets) private {
-        assertWithMsg(
-            vault.isProcessingDeposits(),
-            "withdrawl can only revert if vault is processing deposits or if cap decreased"
-        );
+        assertWithMsg(vault.isProcessingDeposits(), "withdrawl can only revert if vault is processing deposits");
     }
 
     function _assertDepositRevertConditions(uint256 assets) private {

@@ -6,10 +6,16 @@ import { STETHVault } from "../vaults/STETHVault.sol";
 import { STETH } from "./STETH.sol";
 
 contract User {
-    STETHVault private immutable vault;
-    STETH private immutable asset;
+    STETHVault private vault;
+    STETH private asset;
+    bool private initialized;
 
-    constructor(STETHVault _vault, STETH _asset) {
+    constructor() {}
+
+    function initialize(STETHVault _vault, STETH _asset) public {
+        require(!initialized, "Can only initialize once");
+        initialized = true;
+
         vault = _vault;
         asset = _asset;
 
