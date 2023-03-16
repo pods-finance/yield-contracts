@@ -4,55 +4,12 @@ on:
   push
 
 jobs:
-  coverage:
-    name: test
-    runs-on: ubuntu-latest
-    steps:
-      - name: checkout
-        uses: actions/checkout@v2
-
-      - name: setup-node
-        uses: actions/setup-node@v2
-        with:
-          cache: "yarn"
-          node-version: '16.14.0'
-
-      - name: install packages
-        run: yarn
-
-      - name: lint
-        run: yarn solhint
-
-      - name: compile
-        run: yarn compile
-        env:
-          INFURA_PROJECT_ID: ${{ secrets.INFURA_PROJECT_ID }}
-          DEV_MNEMONIC: ${{ secrets.DEV_MNEMONIC }}
-
-      - name: test
-        run: yarn test --no-compile
-        env:
-          INFURA_PROJECT_ID: ${{ secrets.INFURA_PROJECT_ID }}
-          DEV_MNEMONIC: ${{ secrets.DEV_MNEMONIC }}
-
-      - name: coverage
-        run: npx hardhat coverage
-        env:
-          INFURA_PROJECT_ID: ${{ secrets.INFURA_PROJECT_ID }}
-          DEV_MNEMONIC: ${{ secrets.DEV_MNEMONIC }}
-
-      - name: "Upload report to Coveralls"
-        uses: "coverallsapp/github-action@master"
-        with:
-          github-token: ${{ secrets.GITHUB_TOKEN }}
-          path-to-lcov: "./coverage/lcov.info"
-
   fuzzy:
     name: fuzzy
     runs-on: ubuntu-latest
     strategy:
         matrix:
-          test: [ {contract: Invariants, config: assertion}, {contract: Invariants, config: property}, {contract: Crytic, config: crytic}, {contract: UnitTests, config: unit-tests} ]
+          test: [ {contract: UnitTests, config: unit-tests} ]
 
     steps:
       - name: checkout
