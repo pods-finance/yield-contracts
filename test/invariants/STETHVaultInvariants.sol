@@ -72,7 +72,7 @@ contract STETHVaultInvariants is PropertiesConstants, PropertiesAsserts {
     function setCap(uint256 amount) public {
         uint256 previousCap = $configuration.getCap(address(vault));
         $configuration.setCap(address(vault), amount);
-        hadPreviousCapGreaterThanCurrentCap = previousCap == 0 ? true : previousCap > amount;
+        hadPreviousCapGreaterThanCurrentCap = true; // cap starts at type(uint256).max
     }
 
     function rebase(int128 _amount) public {
@@ -93,8 +93,8 @@ contract STETHVaultInvariants is PropertiesConstants, PropertiesAsserts {
     }
 
     function processQueuedDeposits(uint256 size) public {
-        size = clampBetween(size, 0, 3); // echidna has 3 users
         address[] memory depositors = vault.queuedDeposits();
+        size = clampBetween(size, 1, depositors.length);
         address[] memory array = new address[](size);
         for (uint256 i = 0; i < size; ++i) {
             array[i] = depositors[i];
@@ -200,7 +200,10 @@ contract STETHVaultInvariants is PropertiesConstants, PropertiesAsserts {
     }
 
     function _assertWithdrawlRevertConditions(uint256 assets) private {
-        assertWithMsg(vault.isProcessingDeposits(), "withdrawl can only revert if vault is processing deposits");
+        assertWithMsg(
+            vault.isProcessingDeposits() || hadPreviousCapGreaterThanCurrentCap,
+            "withdrawl can only revert if vault is processing deposits or if cap decreased"
+        );
     }
 
     function _assertDepositRevertConditions(uint256 assets) private {
@@ -209,8 +212,8 @@ contract STETHVaultInvariants is PropertiesConstants, PropertiesAsserts {
 
     function _assertProcessQueuedDepositsRevertConditions() private {
         assertWithMsg(
-            !vault.isProcessingDeposits(),
-            "processQueuedDeposits can only revert if vault is processing deposits"
+            !vault.isProcessingDeposits() || vault.totalSupply() == 0,
+            "processQueuedDeposits can only revert if vault is not processing deposits or is first deposit"
         );
     }
 }
