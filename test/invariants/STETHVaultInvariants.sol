@@ -29,7 +29,6 @@ contract STETHVaultInvariants is PropertiesConstants, PropertiesAsserts {
 
     bool private hadNegativeRebase;
     bool private hadWithdralsCurrentRound;
-    bool private hadPreviousCapGreaterThanCurrentCap;
 
     constructor() {
         $investor.approveVaultToPull(address(vault));
@@ -70,9 +69,8 @@ contract STETHVaultInvariants is PropertiesConstants, PropertiesAsserts {
     }
 
     function setCap(uint256 amount) public {
-        uint256 previousCap = $configuration.getCap(address(vault));
+        amount = clampLte(amount, vault.totalSupply());
         $configuration.setCap(address(vault), amount);
-        hadPreviousCapGreaterThanCurrentCap = true; // cap starts at type(uint256).max
     }
 
     function rebase(int128 _amount) public {
@@ -201,7 +199,7 @@ contract STETHVaultInvariants is PropertiesConstants, PropertiesAsserts {
 
     function _assertWithdrawlRevertConditions(uint256 assets) private {
         assertWithMsg(
-            vault.isProcessingDeposits() || hadPreviousCapGreaterThanCurrentCap,
+            vault.isProcessingDeposits(),
             "withdrawl can only revert if vault is processing deposits or if cap decreased"
         );
     }
