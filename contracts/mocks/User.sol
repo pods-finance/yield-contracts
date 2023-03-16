@@ -8,14 +8,10 @@ import { STETH } from "./STETH.sol";
 contract User {
     STETHVault private vault;
     STETH private asset;
-    bool private initialized;
 
     constructor() {}
 
     function initialize(STETHVault _vault, STETH _asset) public {
-        require(!initialized, "Can only initialize once");
-        initialized = true;
-
         vault = _vault;
         asset = _asset;
 

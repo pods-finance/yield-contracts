@@ -14,61 +14,68 @@ contract STETHVaultUnitTests is PropertiesAsserts {
     STETH private asset = new STETH();
     ConfigurationManager configuration = new ConfigurationManager();
     InvestorActorMock investor = new InvestorActorMock(address(asset));
-    mapping(address => uint256) private shares;
+    STETHVault vault1 = new STETHVault(configuration, asset, address(investor));
+    STETHVault vault2 = new STETHVault(configuration, asset, address(investor));
 
-    constructor() {}
+    uint256 private constant NUMBER_OF_USERS = 5;
+
+    address[] private users = new address[](NUMBER_OF_USERS);
+    mapping(address => uint256) shares;
+    mapping(address => uint256) assets;
+
+    constructor() {
+        for (uint256 i = 0; i < NUMBER_OF_USERS; ++i) {
+            users[i] = address(new User());
+            assets[users[i]] = uint256(keccak256(abi.encodePacked(i))) / (NUMBER_OF_USERS + 1); // total sum will not overflow
+        }
+
+        investor.approveVaultToPull(address(vault1));
+        investor.approveVaultToPull(address(vault2));
+
+        configuration.setParameter(address(vault1), "VAULT_CONTROLLER", uint256(uint160(address(this))));
+        configuration.setParameter(address(vault2), "VAULT_CONTROLLER", uint256(uint160(address(this))));
+    }
 
     function testProcessQueueIsOrderInvariant(bytes32 seed) public {
-        uint8 shuffleTimes = 2;
-        uint8 numberOfUsers = 5;
-        address[] memory users = new address[](numberOfUsers);
-        uint256[] memory assets = new uint256[](numberOfUsers);
-        for (uint256 i = 0; i < numberOfUsers; ++i) {
-            users[i] = address(new User());
-            assets[i] = uint256(keccak256(abi.encodePacked(uint256(seed) - i)));
+        // vault 1
+        for (uint256 i = 0; i < NUMBER_OF_USERS; ++i) {
+            User(users[i]).initialize(vault1, asset);
+            User(users[i]).deposit(assets[users[i]]);
         }
 
-        for (uint256 t = 0; t < shuffleTimes; ++t) {
-            STETHVault vault = new STETHVault(configuration, asset, address(investor));
-            investor.approveVaultToPull(address(vault));
-            configuration.setParameter(address(vault), "VAULT_CONTROLLER", uint256(uint160(address(this))));
+        vault1.endRound();
+        _shuffle(users, seed);
+        vault1.processQueuedDeposits(users);
+        vault1.startRound();
+        assertGt(vault1.totalSupply(), 0, "vault must have shares");
 
-            for (uint256 i = 0; i < numberOfUsers; ++i) {
-                User(users[i]).initialize(vault, asset);
-                User(users[i]).deposit(assets[i]);
-            }
-
-            assertGt(vault.totalSupply(), 0, "vault must receive deposits");
-
-            vault.endRound();
-            _shuffle(users, assets, seed);
-            vault.processQueuedDeposits(users);
-            vault.startRound();
-
-            for (uint256 i = 0; i < numberOfUsers; ++i) {
-                uint256 previousShares = shares[users[i]];
-                if (t > 0) {
-                    assertEq(previousShares, vault.balanceOf(users[i]), "Process deposits must be order invariant");
-                }
-                shares[users[i]] = vault.balanceOf(users[i]) + i;
-            }
+        for (uint256 i = 0; i < NUMBER_OF_USERS; ++i) {
+            shares[users[i]] = vault1.balanceOf(users[i]);
         }
 
-        for (uint256 i = 0; i < numberOfUsers; ++i) {
-            shares[users[i]] = 0;
+        // vault 2
+        for (uint256 i = 0; i < NUMBER_OF_USERS; ++i) {
+            User(users[i]).initialize(vault2, asset);
+            User(users[i]).deposit(assets[users[i]]);
+        }
+
+        vault2.endRound();
+        _shuffle(users, seed);
+        vault2.processQueuedDeposits(users);
+        vault2.startRound();
+        assertGt(vault2.totalSupply(), 0, "vault must have shares");
+
+        for (uint256 i = 0; i < NUMBER_OF_USERS; ++i) {
+            assertEq(shares[users[i]], vault2.balanceOf(users[i]), "Process deposits must be order invariant");
         }
     }
 
-    function _shuffle(address[] memory addresses, uint256[] memory values, bytes32 seed) internal pure {
-        for (uint256 i = 0; i < addresses.length; ++i) {
+    function _shuffle(address[] storage addresses, bytes32 seed) internal {
+        for (uint256 i = 0; i < addresses.length; i++) {
             uint256 j = i + (uint256(keccak256(abi.encodePacked(seed))) % (addresses.length - i));
-            address tempAddress = addresses[j];
+            address temp = addresses[j];
             addresses[j] = addresses[i];
-            addresses[j] = tempAddress;
-
-            uint256 tempValue = values[j];
-            values[j] = values[i];
-            values[j] = tempValue;
+            addresses[i] = temp;
         }
     }
 }
