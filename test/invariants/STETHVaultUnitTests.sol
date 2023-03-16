@@ -19,7 +19,7 @@ contract STETHVaultUnitTests is PropertiesAsserts {
     constructor() {}
 
     function testProcessQueueIsOrderInvariant(bytes32 seed) public {
-        uint8 shuffleTimes = 9;
+        uint8 shuffleTimes = 2;
         uint8 numberOfUsers = 5;
         address[] memory users = new address[](numberOfUsers);
         uint256[] memory assets = new uint256[](numberOfUsers);

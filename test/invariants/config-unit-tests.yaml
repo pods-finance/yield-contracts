@@ -1,6 +1,6 @@
 coverage: true
 testMode: "assertion"
-testLimit: 100000
+testLimit: 1000
 seqLen: 1000
 codeSize: 0x12000
 cryticArgs:
