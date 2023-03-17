@@ -43,6 +43,7 @@
     "typescript": "^4.4.4"
   },
   "dependencies": {
+    "@crytic/properties": "https://github.com/crytic/properties.git",
     "@openzeppelin/contracts": "4.8.0"
   },
   "engines": {

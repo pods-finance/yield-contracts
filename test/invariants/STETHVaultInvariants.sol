@@ -2,189 +2,165 @@
 
 pragma solidity 0.8.17;
 
-import "../../contracts/mocks/Asset.sol";
+import "@crytic/properties/contracts/util/PropertiesHelper.sol";
+import "@crytic/properties/contracts/util/PropertiesConstants.sol";
+
+import "../../contracts/mocks/STETH.sol";
+import "../../contracts/mocks/User.sol";
 import "../../contracts/vaults/STETHVault.sol";
 import "../../contracts/configuration/ConfigurationManager.sol";
 import "../../contracts/mocks/InvestorActorMock.sol";
 import "../../contracts/mocks/YieldSourceMock.sol";
-import { IERC20 } from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
+import "./libraries/String.sol";
 
-contract STETH is Asset {
-    constructor() Asset("Liquid staked Ether 2.0", "stETH") {}
+contract STETHVaultInvariants is PropertiesConstants, PropertiesAsserts {
+    ConfigurationManager private $configuration = new ConfigurationManager();
+    STETH private $asset = new STETH();
+    InvestorActorMock private $investor = new InvestorActorMock(address($asset));
+    STETHVault private vault = new STETHVault($configuration, $asset, address($investor));
+    mapping(address => User) private users;
 
-    function transferFrom(
-        address from,
-        address to,
-        uint256 amount
-    ) public override returns (bool) {
-        _mint(from, amount);
-        _transfer(from, to, amount);
-        return true;
-    }
+    uint256 private constant MAX_ERROR_WITHDRAWAL = 100; // max accepted withdrawal loss due to rounding is 1% of deposited amount
+    uint256 private constant MAX_REBASE = 100; // 5% APR from Lido
+    uint256 private constant MAX_INVESTOR_GENERATED_PREMIUM = 100; // expected max investor premium generated is 1% of the Vault's TVL
 
-    function generateInterest(uint256 interest) public {
-        _mint(msg.sender, interest);
-    }
-}
+    mapping(address => uint256) private deposits;
+    mapping(address => uint256) private withdraws;
 
-library String {
-    function equal(string memory a, string memory b) internal pure returns (bool) {
-        return keccak256(bytes(a)) == keccak256(bytes(b));
-    }
-}
+    constructor() {
+        $configuration.setParameter(address(vault), "VAULT_CONTROLLER", uint256(uint160(address(this))));
+        $investor.approveVaultToPull(address(vault));
+        users[USER1] = new User(vault, $asset);
+        users[USER2] = new User(vault, $asset);
+        users[USER3] = new User(vault, $asset);
 
-contract FuzzyAddresses {
-    address public constant user0 = address(0x10000);
-    address public constant user1 = address(0x20000);
-    address public constant vaultController = address(0x30000);
-
-    function _addressIsAllowed(address to) internal returns (bool) {
-        return to == user0 || to == user1 || to == vaultController;
-    }
-}
-
-contract STETHVaultInvariants is STETHVault, FuzzyAddresses {
-    ConfigurationManager public $configuration = new ConfigurationManager();
-    STETH public $asset = new STETH();
-    InvestorActorMock public $investor = new InvestorActorMock(address($asset));
-    event AssertionFailed(bool);
-
-    struct LastDeposit {
-        uint256 amount;
-        uint256 roundId;
-        uint256 shares;
-    }
-
-    mapping(address => LastDeposit) public lastDeposits;
-
-    constructor() STETHVault($configuration, $asset, address($investor)) {
-        $configuration.setParameter(address(this), "VAULT_CONTROLLER", 0x30000);
+        $configuration.setCap(address(vault), uint256(keccak256("cap")));
     }
 
     function echidna_test_name() public view returns (bool) {
-        return String.equal(name(), "stETH Volatility Vault");
+        return String.equal(vault.name(), "stETH Volatility Vault");
     }
 
     function echidna_test_symbol() public returns (bool) {
-        return String.equal(symbol(), "stETHvv");
+        return String.equal(vault.symbol(), "stETHvv");
     }
 
     function echidna_test_decimals() public returns (bool) {
-        return decimals() == $asset.decimals();
+        return vault.decimals() == $asset.decimals();
     }
 
-    function generateInterest(uint256 a) public {
-        if (a == 0) return;
-        uint256 addInterest = (totalAssets() / a);
-        $asset.generateInterest(addInterest);
+    event Log(int256, int256);
+
+    function rebase(int256 amount) public {
+        int256 rebasePercent = (int256(amount) * int256(vault.DENOMINATOR())) / int256(type(int256).max);
+        rebasePercent = rebasePercent >= 0
+            ? clampLte(rebasePercent, int256(MAX_REBASE))
+            : clampGte(rebasePercent, -int256(MAX_REBASE));
+
+        $asset.rebase(address(vault), (rebasePercent * int256(vault.totalAssets())) / int256(vault.DENOMINATOR()));
     }
 
-    //  ["0x10000", "0x20000", "0x30000"]
+    function setFee(uint256 fee) public {
+        fee = clampLte(fee, vault.MAX_WITHDRAW_FEE());
+        $configuration.setParameter(address(vault), "WITHDRAW_FEE_RATIO", fee);
+    }
+
     function echidna_sum_total_supply() public returns (bool) {
-        uint256 balanceA = balanceOf(user0);
-        uint256 balanceB = balanceOf(user1);
-        uint256 balanceC = balanceOf(vaultController);
+        uint256 balance1 = vault.balanceOf(address(users[USER1]));
+        uint256 balance2 = vault.balanceOf(address(users[USER2]));
+        uint256 balance3 = vault.balanceOf(address(users[USER3]));
 
-        uint256 sumBalances = balanceA + balanceB + balanceC;
+        uint256 sumBalances = balance1 + balance2 + balance3;
 
-        return sumBalances == totalSupply();
+        return sumBalances == vault.totalSupply();
     }
 
     function echidna_lastRoundAssets_always_greater_than_totalAssets() public returns (bool) {
-        return totalAssets() >= lastRoundAssets;
+        return vault.totalAssets() >= vault.lastRoundAssets();
     }
 
-    /**
-     * @dev This function helps the fuzzer to quickly processDeposits in the right way.
-    The variable endIndex its just a random factor to enable process in chunks instead of processing
-    only the entire queue size.
-     */
-    //
-    function helpProcessQueue() public {
-        this.processQueuedDeposits(this.queuedDeposits());
+    function processQueuedDeposits() public {
+        vault.processQueuedDeposits(vault.queuedDeposits());
     }
 
-    function deposit(uint256 assets, address) public override returns (uint256 shares) {
-        uint256 createdShares = convertToShares(assets);
-        LastDeposit memory newDeposit = LastDeposit({
-            amount: assets,
-            roundId: vaultState.currentRoundId,
-            shares: createdShares
-        });
-        lastDeposits[msg.sender] = newDeposit;
-        return this.deposit(assets, msg.sender);
+    function deposit(uint256 assets) public returns (uint256 shares) {
+        User user = users[msg.sender];
+
+        deposits[msg.sender] += assets;
+
+        return user.deposit(assets);
     }
 
-    function mint(uint256 shares, address) public override returns (uint256 assets) {
-        uint256 assets2 = convertToAssets(shares);
-        LastDeposit memory newDeposit = LastDeposit({
-            amount: assets2,
-            roundId: vaultState.currentRoundId,
-            shares: shares
-        });
-        lastDeposits[msg.sender] = newDeposit;
-        return this.mint(shares, msg.sender);
+    function mint(uint256 shares) public returns (uint256 assets) {
+        User user = users[msg.sender];
+
+        assets = vault.convertToAssets(shares);
+        deposits[msg.sender] += assets;
+
+        return user.mint(shares);
     }
 
-    function withdraw(
-        uint256 assets,
-        address,
-        address
-    ) public override returns (uint256 shares) {
-        bool isNextRound = vaultState.currentRoundId == lastDeposits[msg.sender].roundId + 1;
-        uint256 burnShares = _convertToShares(assets, Math.Rounding.Up);
+    function withdraw(uint256 assets) public returns (uint256 shares) {
+        User user = users[msg.sender];
+        assets = clampLte(assets, vault.maxWithdraw(address(user)));
 
-        this.withdraw(assets, msg.sender, msg.sender);
-        uint256 userSharesAfterWithdraw = this.balanceOf(msg.sender);
-
-        if (isNextRound && assets > 0) {
-            if (burnShares < lastDeposits[msg.sender].shares) {
-                lastDeposits[msg.sender].shares -= burnShares;
-                lastDeposits[msg.sender].amount -= assets;
-            }
-            if (burnShares == lastDeposits[msg.sender].shares || userSharesAfterWithdraw == 0) {
-                bool isWithdrawLowerThanInitial = assets < lastDeposits[msg.sender].amount;
-                if (isWithdrawLowerThanInitial) {
-                    emit AssertionFailed(isWithdrawLowerThanInitial);
-                }
+        try user.withdraw(assets) returns (uint256 _shares) {
+            shares = _shares;
+        } catch {
+            if (!vault.isProcessingDeposits() && deposits[msg.sender] > 0 && assets > 0) {
+                assert(false);
             }
         }
+
+        withdraws[msg.sender] += assets;
+
+        _assertFullWithdrawlAfterProcessedQueueIsAtLeastDepositedWithinError();
     }
 
-    function redeem(
-        uint256 shares,
-        address,
-        address
-    ) public override returns (uint256 assets) {
-        bool isNextRound = vaultState.currentRoundId == lastDeposits[msg.sender].roundId + 1;
-        uint256 assetsToWithdraw = convertToAssets(shares);
-        uint256 balanceOfShares = this.balanceOf(msg.sender);
-        this.redeem(shares, msg.sender, msg.sender);
-        if (isNextRound && shares > 0) {
-            if (shares < lastDeposits[msg.sender].shares) {
-                lastDeposits[msg.sender].shares -= shares;
-                lastDeposits[msg.sender].amount -= assetsToWithdraw;
-            }
-            if (shares == lastDeposits[msg.sender].shares || shares == balanceOfShares) {
-                bool isWithdrawLowerThanInitial = assetsToWithdraw < lastDeposits[msg.sender].amount;
-                if (isWithdrawLowerThanInitial) {
-                    emit AssertionFailed(isWithdrawLowerThanInitial);
-                }
+    function redeem(uint256 shares) public returns (uint256 assets) {
+        User user = users[msg.sender];
+        shares = clampLte(shares, vault.maxRedeem(address(user)));
+
+        assets = vault.convertToAssets(shares);
+        try user.redeem(shares) {} catch {
+            if (!vault.isProcessingDeposits() && deposits[msg.sender] > 0 && shares > 0) {
+                assert(false);
             }
         }
+
+        withdraws[msg.sender] += assets;
+
+        _assertFullWithdrawlAfterProcessedQueueIsAtLeastDepositedWithinError();
     }
 
-    function transfer(address to, uint256 amount) public override(ERC20, IERC20) returns (bool) {
-        if (!_addressIsAllowed(to)) return false;
-        return super.transfer(to, amount);
+    function startRound() public returns (uint32) {
+        vault.startRound();
     }
 
-    function transferFrom(
-        address from,
-        address to,
-        uint256 amount
-    ) public override(ERC20, IERC20) returns (bool) {
-        if (!_addressIsAllowed(to)) return false;
-        return super.transferFrom(from, to, amount);
+    function endRound() public {
+        vault.endRound();
+    }
+
+    function generatePremium(uint256 amount) public {
+        amount = clampLte(amount, (vault.totalAssets() * MAX_INVESTOR_GENERATED_PREMIUM) / vault.DENOMINATOR());
+        $investor.generatePremium(amount);
+    }
+
+    function buyOptionsWithYield() public {
+        $investor.buyOptionsWithYield();
+    }
+
+    function _assertFullWithdrawlAfterProcessedQueueIsAtLeastDepositedWithinError() private {
+        User user = users[msg.sender];
+        if (vault.balanceOf(address(user)) == 0 && vault.totalIdleAssets() == 0) {
+            uint256 withdrawalMin = (deposits[msg.sender] * (vault.DENOMINATOR() - MAX_ERROR_WITHDRAWAL)) /
+                vault.DENOMINATOR();
+
+            assertGte(
+                withdraws[msg.sender],
+                withdrawalMin,
+                "Full withdrawal should be at least deposited amount minus rounding errors"
+            );
+        }
     }
 }
