@@ -26,7 +26,7 @@ contract STETHVaultUnitTests is PropertiesAsserts {
     constructor() {
         for (uint256 i = 0; i < NUMBER_OF_USERS; ++i) {
             users[i] = address(new User());
-            assets[users[i]] = uint256(keccak256(abi.encodePacked(i))) / (NUMBER_OF_USERS + 1); // total sum will not overflow
+            assets[users[i]] = uint256(keccak256(abi.encodePacked(i + block.timestamp))) / (NUMBER_OF_USERS + 1); // total sum will not overflow
         }
 
         investor.approveVaultToPull(address(vault1));
