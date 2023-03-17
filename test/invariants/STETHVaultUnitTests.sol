@@ -50,7 +50,7 @@ contract STETHVaultUnitTests is PropertiesAsserts {
         assertGt(vault1.totalSupply(), 0, "vault must have shares");
 
         for (uint256 i = 0; i < NUMBER_OF_USERS; ++i) {
-            shares[users[i]] = vault1.balanceOf(users[i]);
+            shares[users[i]] = vault1.balanceOf(users[i]) - 1;
         }
 
         // vault 2
@@ -61,7 +61,19 @@ contract STETHVaultUnitTests is PropertiesAsserts {
 
         vault2.endRound();
         _shuffle(users, seed);
-        vault2.processQueuedDeposits(users);
+        uint256 numberOfUsersFirstBatch = NUMBER_OF_USERS / 2 + (uint256(seed) % 2);
+        uint256 numberOfUsersSecondBatch = NUMBER_OF_USERS - numberOfUsersFirstBatch;
+        address[] memory firstBatch = new address[](numberOfUsersFirstBatch);
+        address[] memory secondBatch = new address[](numberOfUsersSecondBatch);
+        for (uint256 i = 0; i < numberOfUsersFirstBatch; ++i) {
+            firstBatch[i] = users[i];
+        }
+        for (uint256 i = 0; i < numberOfUsersSecondBatch; ++i) {
+            secondBatch[i] = users[numberOfUsersFirstBatch + i];
+        }
+
+        vault2.processQueuedDeposits(firstBatch);
+        vault2.processQueuedDeposits(secondBatch);
         vault2.startRound();
         assertGt(vault2.totalSupply(), 0, "vault must have shares");
 
