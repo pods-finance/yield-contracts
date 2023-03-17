@@ -27,6 +27,9 @@ contract STETHVaultInvariants is PropertiesConstants, PropertiesAsserts {
     mapping(address => uint256) private deposits;
     mapping(address => uint256) private withdraws;
 
+    bool private hadWithdralsCurrentRound;
+    bool private hadNegativeRebase;
+
     constructor() {
         $configuration.setParameter(address(vault), "VAULT_CONTROLLER", uint256(uint160(address(this))));
         $investor.approveVaultToPull(address(vault));
@@ -51,13 +54,16 @@ contract STETHVaultInvariants is PropertiesConstants, PropertiesAsserts {
 
     event Log(int256, int256);
 
-    function rebase(int256 amount) public {
-        int256 rebasePercent = (int256(amount) * int256(vault.DENOMINATOR())) / int256(type(int256).max);
-        rebasePercent = rebasePercent >= 0
-            ? clampLte(rebasePercent, int256(MAX_REBASE))
-            : clampGte(rebasePercent, -int256(MAX_REBASE));
-
-        $asset.rebase(address(vault), (rebasePercent * int256(vault.totalAssets())) / int256(vault.DENOMINATOR()));
+    function rebase(int128 _amount) public {
+        int256 amount = clampBetween(
+            int256(_amount),
+            (-int256(vault.totalAssets()) * int256(MAX_REBASE)) / int256(vault.DENOMINATOR()),
+            (int256(vault.totalAssets()) * int256(MAX_REBASE)) / int256(vault.DENOMINATOR())
+        );
+        if (amount < 0) {
+            hadNegativeRebase = true;
+        }
+        $asset.rebase(address(vault), amount);
     }
 
     function setFee(uint256 fee) public {
@@ -75,8 +81,11 @@ contract STETHVaultInvariants is PropertiesConstants, PropertiesAsserts {
         return sumBalances == vault.totalSupply();
     }
 
-    function echidna_lastRoundAssets_always_greater_than_totalAssets() public returns (bool) {
-        return vault.totalAssets() >= vault.lastRoundAssets();
+    function echidna_totalAssets_always_greater_than_lastRoundAssets_unless_withdrawls_or_negative_rebase()
+        public
+        returns (bool)
+    {
+        return hadWithdralsCurrentRound || hadNegativeRebase ? true : vault.totalAssets() >= vault.lastRoundAssets();
     }
 
     function processQueuedDeposits() public {
@@ -106,6 +115,7 @@ contract STETHVaultInvariants is PropertiesConstants, PropertiesAsserts {
 
         try user.withdraw(assets) returns (uint256 _shares) {
             shares = _shares;
+            hadWithdralsCurrentRound = true;
         } catch {
             if (!vault.isProcessingDeposits() && deposits[msg.sender] > 0 && assets > 0) {
                 assert(false);
@@ -122,7 +132,9 @@ contract STETHVaultInvariants is PropertiesConstants, PropertiesAsserts {
         shares = clampLte(shares, vault.maxRedeem(address(user)));
 
         assets = vault.convertToAssets(shares);
-        try user.redeem(shares) {} catch {
+        try user.redeem(shares) {
+            hadWithdralsCurrentRound = true;
+        } catch {
             if (!vault.isProcessingDeposits() && deposits[msg.sender] > 0 && shares > 0) {
                 assert(false);
             }
@@ -134,7 +146,8 @@ contract STETHVaultInvariants is PropertiesConstants, PropertiesAsserts {
     }
 
     function startRound() public returns (uint32) {
-        vault.startRound();
+        hadWithdralsCurrentRound = false;
+        return vault.startRound();
     }
 
     function endRound() public {
