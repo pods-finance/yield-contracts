@@ -50,7 +50,7 @@ contract STETHVaultUnitTests is PropertiesAsserts {
         assertGt(vault1.totalSupply(), 0, "vault must have shares");
 
         for (uint256 i = 0; i < NUMBER_OF_USERS; ++i) {
-            shares[users[i]] = vault1.balanceOf(users[i]) - 1;
+            shares[users[i]] = vault1.balanceOf(users[i]);
         }
 
         // vault 2
