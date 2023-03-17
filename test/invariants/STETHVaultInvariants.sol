@@ -77,7 +77,7 @@ contract STETHVaultInvariants is PropertiesConstants, PropertiesAsserts {
     function setCap(uint256 amount) public {
         amount = clampGt(amount, vault.spentCap() + vault.previewDeposit(vault.totalIdleAssets()));
         $configuration.setCap(address(vault), amount);
-        hadPreviousCapGreaterThanCurrentCap = true; // cap starts at 0 which means type(uint256).max
+        hadPreviousCapGreaterThanCurrentCap = true; // cap starts at infinity
     }
 
     function rebase(int128 _amount) public {
@@ -197,7 +197,7 @@ contract STETHVaultInvariants is PropertiesConstants, PropertiesAsserts {
 
     function _assertWithdrawlRevertConditions(uint256 assets) private {
         assertWithMsg(
-            assets == 0 || vault.isProcessingDeposits(),
+            assets == 0 || vault.isProcessingDeposits() || hadPreviousCapGreaterThanCurrentCap,
             "withdrawl can only revert if assets is zero or vault is processing deposits or cap decreased"
         );
     }
