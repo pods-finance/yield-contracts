@@ -6,14 +6,24 @@ import { STETHVault } from "../vaults/STETHVault.sol";
 import { STETH } from "./STETH.sol";
 
 contract User {
-    STETHVault private immutable vault;
-    STETH private immutable asset;
+    STETHVault private vault;
+    STETH private asset;
 
-    constructor(STETHVault _vault, STETH _asset) {
+    constructor() {}
+
+    function initialize(STETHVault _vault, STETH _asset) public {
         vault = _vault;
         asset = _asset;
 
         asset.approve(address(vault), type(uint256).max);
+    }
+
+    function startRound() public returns (uint32) {
+        return vault.startRound();
+    }
+
+    function endRound() external {
+        vault.endRound();
     }
 
     function deposit(uint256 assets) external returns (uint256) {

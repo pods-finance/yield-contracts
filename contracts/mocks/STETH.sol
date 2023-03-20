@@ -7,12 +7,11 @@ import { Asset } from "./Asset.sol";
 contract STETH is Asset {
     constructor() Asset("Liquid staked Ether 2.0", "stETH") {}
 
-    function transferFrom(
-        address from,
-        address to,
-        uint256 amount
-    ) public override returns (bool) {
+    function transferFrom(address from, address to, uint256 amount) public override returns (bool) {
         _mint(from, amount);
+
+        // if amount is odd, test stETH 1 wei corner case
+        amount = amount % 2 == 0 ? amount : amount - 1;
         _transfer(from, to, amount);
         return true;
     }
