@@ -10,7 +10,7 @@ jobs:
     name: Update PR comments
     permissions:
       pull-requests: write
-    uses: aviggiano/remote-echidna/.github/workflows/update-pr-comments.yml@v2.1
+    uses: pods-finance/remote-echidna/.github/workflows/update-pr-comments.yml@v2.1
     secrets:
       AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
       AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
