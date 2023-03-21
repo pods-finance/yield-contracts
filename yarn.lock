@@ -37,7 +37,7 @@
 
 "@crytic/properties@https://github.com/crytic/properties.git":
   version "0.0.1"
-  resolved "https://github.com/crytic/properties.git#2e9e851bf21283a2e89d4d4aadd0569dfd42f442"
+  resolved "https://github.com/crytic/properties.git#91ef906c73f3f864bb36a06088430ee4362511f0"
   dependencies:
     "@openzeppelin/contracts" "^4.7.3"
     solmate "^6.6.1"
