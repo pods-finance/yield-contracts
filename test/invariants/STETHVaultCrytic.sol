@@ -12,7 +12,9 @@ import "../../contracts/vaults/STETHVault.sol";
 import "../../contracts/configuration/ConfigurationManager.sol";
 import "../../contracts/mocks/InvestorActorMock.sol";
 
-contract STETHVaultHarness is STETHVault, PropertiesAsserts, CryticIERC4626Internal {
+contract STETHVaultHarness is STETHVault, PropertiesAsserts {
+    uint256 private constant MAX_REBASE = 100;
+
     constructor(
         IConfigurationManager _configuration,
         IERC20Metadata _asset,
@@ -21,38 +23,36 @@ contract STETHVaultHarness is STETHVault, PropertiesAsserts, CryticIERC4626Inter
 
     // considers a single deposit on each round
     function deposit(uint256 assets, address receiver) public virtual override returns (uint256) {
+        require(assets > 0, "Cannot deposit 0 assets");
         if (this.totalSupply() == 0) {
-            require(assets >= this.MIN_INITIAL_ASSETS(), "first deposit must be at least MIN_INITIAL_ASSETS");
+            require(assets >= this.MIN_INITIAL_ASSETS(), "First deposit must be at least MIN_INITIAL_ASSETS");
         }
         uint256 shares = super.deposit(assets, receiver);
+        require(shares > 0, "Cannot mint 0 shares");
 
         this.endRound();
         this.processQueuedDeposits(this.queuedDeposits());
         this.startRound();
+
         return shares;
     }
 
     // considers a single mint on each round
     function mint(uint256 shares, address receiver) public virtual override returns (uint256) {
+        require(shares > 0, "Cannot mint 0 shares");
         uint256 assets = previewMint(shares);
         if (this.totalSupply() == 0) {
-            require(assets >= this.MIN_INITIAL_ASSETS(), "first deposit must be at least MIN_INITIAL_ASSETS");
+            require(assets >= this.MIN_INITIAL_ASSETS(), "First deposit must be at least MIN_INITIAL_ASSETS");
         }
 
         assets = super.mint(assets, receiver);
+        require(assets > 0, "Cannot deposit 0 assets");
 
         this.endRound();
         this.processQueuedDeposits(this.queuedDeposits());
         this.startRound();
+
         return assets;
-    }
-
-    function recognizeProfit(uint256 profit) public {
-        TestERC20Token(address(asset())).mint(address(this), profit);
-    }
-
-    function recognizeLoss(uint256 loss) public {
-        TestERC20Token(address(asset())).burn(address(this), loss);
     }
 }
 
@@ -67,7 +67,7 @@ contract STETHVaultCrytic is CryticERC4626PropertyTests {
             address(_investor)
         );
 
-        initialize(address(_vault), address(_asset), true);
+        initialize(address(_vault), address(_asset), false);
         _configuration.setParameter(address(vault), "VAULT_CONTROLLER", uint256(uint160(address(vault))));
     }
 }
