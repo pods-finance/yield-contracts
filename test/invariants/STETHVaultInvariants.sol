@@ -17,7 +17,7 @@ contract STETHVaultInvariants is PropertiesConstants, PropertiesAsserts {
     ConfigurationManager private $configuration = new ConfigurationManager();
     STETH private $asset = new STETH();
     InvestorActorMock private $investor = new InvestorActorMock(address($asset));
-    STETHVault private vault = new STETHVault($configuration, $asset, address($investor));
+    STETHVault private vault = new STETHVault($configuration, $asset, address($investor), 5000);
     mapping(address => User) private users;
 
     uint256 private constant MAX_ERROR_WITHDRAWAL = 100; // max accepted withdrawal loss due to rounding is 1% of deposited amount

@@ -14,8 +14,8 @@ contract STETHVaultUnitTests is PropertiesAsserts {
     STETH private asset = new STETH();
     ConfigurationManager configuration = new ConfigurationManager();
     InvestorActorMock investor = new InvestorActorMock(address(asset));
-    STETHVault vault1 = new STETHVault(configuration, asset, address(investor));
-    STETHVault vault2 = new STETHVault(configuration, asset, address(investor));
+    STETHVault vault1 = new STETHVault(configuration, asset, address(investor), 5000);
+    STETHVault vault2 = new STETHVault(configuration, asset, address(investor), 5000);
 
     uint256 private constant NUMBER_OF_USERS = 5;
 
