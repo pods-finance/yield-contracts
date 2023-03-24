@@ -71,11 +71,15 @@ describe('STETHVault', () => {
     const InvestorActorMock = await ethers.getContractFactory('InvestorActorMock')
     investor = await InvestorActorMock.deploy(asset.address)
 
+    // The precision of this number is set by the variable DENOMINATOR. 5000 is equivalent to 50%
+    const investorRatio = ethers.BigNumber.from('5000')
+
     const STETHVault = await ethers.getContractFactory('STETHVault')
     vault = await STETHVault.deploy(
       configuration.address,
       asset.address,
-      investor.address
+      investor.address,
+      investorRatio
     )
 
     // Give approval upfront that the vault can pull money from the investor contract
@@ -980,7 +984,8 @@ describe('STETHVault', () => {
     const vault = await STETHVault.deploy(
       configuration.address,
       asset.address,
-      investor.address
+      investor.address,
+      5000
     )
 
     await investor.approveVaultToPull(vault.address)
@@ -1031,5 +1036,19 @@ describe('STETHVault', () => {
 
     const attackerAssetBalanceDiff = (await asset.balanceOf(attacker.address)).sub(attackerAssetBalanceBefore)
     expect(attackerAssetBalanceDiff).to.be.lte(1)
+  })
+
+  it('should not allow investorRatio to exceed DENOMINATOR', async () => {
+    const investorRatio = ethers.BigNumber.from('10001')
+
+    const STETHVault = await ethers.getContractFactory('STETHVault')
+    const deployTransaction = STETHVault.deploy(
+      configuration.address,
+      asset.address,
+      investor.address,
+      investorRatio
+    )
+
+    await expect(deployTransaction).to.be.revertedWith('Investor ratio exceeds DENOMINATOR')
   })
 })

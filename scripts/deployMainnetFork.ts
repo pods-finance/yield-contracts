@@ -19,7 +19,8 @@ async function main (): Promise<void> {
   const vaultConstructorArguments = [
     configurationManager.address,
     stETHAddress,
-    investor.address
+    investor.address,
+    5000
   ] as const
 
   const vault = await Vault.deploy(...vaultConstructorArguments)

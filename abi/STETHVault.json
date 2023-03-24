@@ -15,6 +15,11 @@
         "internalType": "address",
         "name": "_investor",
         "type": "address"
+      },
+      {
+        "internalType": "uint256",
+        "name": "_investorRatio",
+        "type": "uint256"
       }
     ],
     "stateMutability": "nonpayable",

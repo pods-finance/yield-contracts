@@ -19,7 +19,7 @@ contract STETHVaultHarness is STETHVault, PropertiesAsserts {
         IConfigurationManager _configuration,
         IERC20Metadata _asset,
         address _investor
-    ) STETHVault(_configuration, _asset, _investor) {}
+    ) STETHVault(_configuration, _asset, _investor, uint256(5000)) {}
 
     // considers a single deposit on each round
     function deposit(uint256 assets, address receiver) public virtual override returns (uint256) {

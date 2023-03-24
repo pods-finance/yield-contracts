@@ -36,11 +36,15 @@ describe('ETHAdapter', () => {
     const InvestorActorMock = await ethers.getContractFactory('InvestorActorMock')
     investor = await InvestorActorMock.deploy(asset.address)
 
+    // The precision of this number is set by the variable DENOMINATOR. 5000 is equivalent to 50%
+    const investorRatio = ethers.BigNumber.from('5000')
+
     const STETHVault = await ethers.getContractFactory('STETHVault')
     vault = await STETHVault.deploy(
       configuration.address,
       asset.address,
-      investor.address
+      investor.address,
+      investorRatio
     )
 
     pool = await ethers.getContractAt('ICurvePool', '0xdc24316b9ae028f1497c275eb9192a3ea0f67022')

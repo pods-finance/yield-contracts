@@ -21,10 +21,12 @@ contract STETHVault is BaseVault {
     using Math for uint256;
 
     /**
-     * @dev INVESTOR_RATIO is the proportion that the weekly yield will be split
-     * The precision of this number is set by the variable DENOMINATOR. 5000 is equivalent to 50%
+     * @dev INVESTOR_RATIO is the proportion that the weekly yield will be split.
+     * The precision of this number is set by the DENOMINATOR variable. e.g. 5000 equals 50%.
+     * Also, a low value of `INVESTOR_RATIO` may result in no value being transferred to investor. For example if
+     * `roundAccruedInterest` * `INVESTOR_RATIO` is lower than `DENOMINATOR`.
      */
-    uint256 public constant INVESTOR_RATIO = 5000;
+    uint256 public immutable INVESTOR_RATIO;
     address public immutable investor;
     uint8 public immutable sharePriceDecimals;
     uint256 public lastRoundAssets;
@@ -44,7 +46,8 @@ contract STETHVault is BaseVault {
     constructor(
         IConfigurationManager _configuration,
         IERC20Metadata _asset,
-        address _investor
+        address _investor,
+        uint256 _investorRatio
     )
         BaseVault(
             _configuration,
@@ -53,6 +56,10 @@ contract STETHVault is BaseVault {
             string(abi.encodePacked(_asset.symbol(), "vv"))
         )
     {
+        require(_investorRatio <= DENOMINATOR, "Investor ratio exceeds DENOMINATOR");
+        // The precision of this number is set by the variable DENOMINATOR. 5000 is equivalent to 50%
+        INVESTOR_RATIO = _investorRatio;
+
         investor = _investor;
         sharePriceDecimals = _asset.decimals();
     }
@@ -133,6 +140,8 @@ contract STETHVault is BaseVault {
         if (supply != 0) {
             if (totalAssets() >= lastRoundAssets) {
                 roundAccruedInterest = totalAssets() - lastRoundAssets;
+                // Notice that `investmentAmount` will be truncated to 0 if
+                // `roundAccruedInterest` * `INVESTOR_RATIO` is too low
                 uint256 investmentAmount = (roundAccruedInterest * INVESTOR_RATIO) / DENOMINATOR;
 
                 // Pulls the yields from investor
