@@ -1,0 +1,10 @@
+coverage: true
+testMode: "assertion"
+testLimit: 10000
+seqLen: 1000
+codeSize: 0x12000
+cryticArgs:
+  [
+    "--solc-remaps", "@openzeppelin/contracts/=node_modules/@openzeppelin/contracts/ hardhat=node_modules/hardhat/ @crytic/=node_modules/@crytic/"
+  ]
+corpusDir: "echidna/corpus-assertion"
