@@ -13,6 +13,8 @@
   <a href="http://gplv3.fsf.org/">
     <img src="https://img.shields.io/badge/license-AGPL--3-blue" alt="License AGPL-3">
   </a>
+  
+  <img src='https://app.fuzzy.fyi/api/badge.svg?projectId=31c8ee04-572b-4078-b41c-bde877319351&ref=main' alt='fuzzy' />
 
 
 # Index
