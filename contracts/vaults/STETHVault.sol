@@ -136,7 +136,6 @@ contract STETHVault is BaseVault {
         uint256 roundAccruedInterest = 0;
         uint256 investmentYield = IERC20Metadata(asset()).balanceOf(investor);
         uint256 supply = totalSupply();
-
         if (supply != 0) {
             if (totalAssets() >= lastRoundAssets) {
                 roundAccruedInterest = totalAssets() - lastRoundAssets;
