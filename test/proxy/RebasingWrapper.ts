@@ -12,12 +12,14 @@ import { signERC2612Permit } from 'eth-permit'
 describe('RebasingWrapper', () => {
   let rebasingToken: RebasingWrapper, exchangeRateToken: IwstETH, stEthContract: ISTETH;
 
-  let user0: SignerWithAddress, elRewardsDistributor: SignerWithAddress, userPermit: SignerWithAddress
+  let user0: SignerWithAddress, elRewardsDistributor: SignerWithAddress, user1: SignerWithAddress, user2: SignerWithAddress
 
   let snapshotId: BigNumber
 
   before(async () => {
     await startMainnetFork()
+
+    ;[user1, user2] = await ethers.getSigners()
 
     const wstEthWhale = '0x59cEE32F3FFAeABC0d4991ac7569ebaD09E1a7d4'
     await hre.network.provider.request({
@@ -161,6 +163,89 @@ describe('RebasingWrapper', () => {
         newBalancePad32
       ])
     }    
+
+    it('test other cases of to/from', async () => {
+      const hundredWstEth = ethers.utils.parseEther('100')
+      await exchangeRateToken.connect(user0).unwrap(hundredWstEth)
+      await rebasingToken.connect(user0).depositFor(user1.address, hundredWstEth)
+      const user1assetsOf = await rebasingToken.assetsOf(user1.address)
+      expect(user1assetsOf).to.be.closeTo(hundredWstEth, 1)
+      const user1balanceOf = await rebasingToken.balanceOf(user1.address)
+      expect(user1balanceOf).to.be.closeTo(await rebasingToken.convertToShares(hundredWstEth), 1)
+
+      const user0wstEthBalanceBefore = await exchangeRateToken.balanceOf(user0.address)
+      await expect(async () => await rebasingToken.connect(user1).withdrawTo(user0.address, user1balanceOf))
+        .to.changeTokenBalances(
+          rebasingToken,
+          [user1],
+          [minus(user1balanceOf.sub(1))]
+        )
+      const user0wstEthBalanceAfter = await exchangeRateToken.balanceOf(user0.address)
+      expect(user0wstEthBalanceAfter.sub(user0wstEthBalanceBefore)).to.be.closeTo(hundredWstEth, 1)
+    })
+
+    it('test allowance corner cases', async () => {
+      const hundredWstEth = ethers.utils.parseEther('100')
+      const fifty = ethers.utils.parseEther('50')
+      await rebasingToken.connect(user0).depositFor(user0.address, hundredWstEth)
+      await rebasingToken.connect(user0).approve(user1.address, fifty)
+      await expect(rebasingToken.connect(user1).transferFrom(user0.address, user1.address, fifty.add(1))).to.be.revertedWith('ERC20: insufficient allowance')
+      await rebasingToken.connect(user0).increaseAllowance(user1.address, fifty)
+      await expect(rebasingToken.connect(user1).transferFrom(user0.address, user1.address, fifty.add(fifty))).to.not.be.reverted
+    })
+
+    it('test allowance shall pass', async () => {
+      const hundredWstEth = ethers.utils.parseEther('100')
+      const fifty = ethers.utils.parseEther('50')
+      await rebasingToken.connect(user0).depositFor(user0.address, hundredWstEth)
+      await rebasingToken.connect(user0).approve(user1.address, fifty)
+      await expect(rebasingToken.connect(user1).transferFrom(user0.address, user1.address, fifty)).to.not.be.reverted;
+    })
+
+    it('basic ERC20 funcionality', async () => {
+      /**
+       * Setup: just declaring a handy variables and unwrapping some wstETH
+       * to stETH so user0 has some stETH to be used as base for comparison.
+       * user0 deposits 100 wstETH to the rebasingToken and sends 50 wwstETH to user1.
+       */
+      const hundredWstEth = ethers.utils.parseEther('100')
+      const fifty = ethers.utils.parseEther('50')
+      const user0stETHBalanceBefore = await stEthContract.balanceOf(user0.address)
+      await exchangeRateToken.connect(user0).unwrap(hundredWstEth)
+      const user0stETHBalanceAfter = await stEthContract.balanceOf(user0.address)
+      await rebasingToken.connect(user0).depositFor(user0.address, hundredWstEth)
+
+      const expectedTotalSupply = user0stETHBalanceAfter.sub(user0stETHBalanceBefore).add(1)
+      expect(await rebasingToken.totalSupply()).to.be.equal(expectedTotalSupply)
+
+      /**
+       * Test: just a sanity check to see if the balance of user0 is correct.
+       * assetsOf should return the inputed amount of wstETH.
+       * Also using the opportunity to check if the totalSupply is the same.
+       */
+      const expectedUser0Balance = await rebasingToken.convertToShares(hundredWstEth)
+      expect(await rebasingToken.balanceOf(user0.address)).to.be.equal(expectedUser0Balance)
+      expect(await rebasingToken.assetsOf(user0.address)).to.be.equal(hundredWstEth)
+      expect(await rebasingToken.totalSupply()).to.be.equal(expectedTotalSupply)
+
+      /**
+       * Test: just a sanity check to see if the balance of user1 is correct.
+       * transfer and balanceOf both work with "shares". So both should be close
+       * to fifty.
+       */
+      await expect(async () => await rebasingToken.connect(user0).transfer(user1.address, fifty))
+        .to.changeTokenBalances(
+          rebasingToken,
+          [user0, user1],
+          [minus(fifty.sub(1)), fifty.sub(1)]
+        )
+      expect(await rebasingToken.totalSupply()).to.be.equal(expectedTotalSupply)
+
+      /**
+       * Test: just checking if the expected amount of wstETH was deposited
+       * in the wrapper to the right user.
+       */
+    })
 
     it('basic rebasing event', async () => {
       /**

@@ -138,21 +138,8 @@ contract RebasingWrapper is ERC20, ERC20Permit, ERC20Wrapper {
   /**
    * @notice We just convert shares to assets before calling the standart implementation. 
    */
-  function allowance(address owner, address spender) public view virtual override returns (uint256) {
-    // users may send uint256.max here. The convertToAssets function will break due to overflow
-    // how to handle this? I'm using this if, but maybe there's a better way
-    if(super.allowance(owner, spender) == type(uint256).max) {
-      return type(uint256).max;
-    }
-    return convertToShares(super.allowance(owner, spender));
-  }
-
-  /**
-   * @notice We just convert shares to assets before calling the standart implementation. 
-   */
   function approve(address spender, uint256 shares) public virtual override returns (bool) {
     // users may send uint256.max here. The convertToAssets function will break due to overflow
-    // how to handle this? I'm using this if, but maybe there's a better way
     if(shares == type(uint256).max) {
       super.approve(spender, type(uint256).max);
       return true;
