@@ -1,13 +1,10 @@
-import { expect, use } from 'chai'
+import { expect } from 'chai'
 import hre, { ethers } from 'hardhat'
 import { BigNumber } from 'ethers'
 import { SignerWithAddress } from '@nomiclabs/hardhat-ethers/signers'
 import minus from '../utils/minus'
 import { startMainnetFork, stopMainnetFork } from '../utils/mainnetFork'
-import createConfigurationManager from '../utils/createConfigurationManager'
-import { feeExcluded } from '../utils/feeExcluded'
-import { ISTETH, IwstETH, RebasingWrapper } from '../../typechain'
-import { signERC2612Permit } from 'eth-permit'
+import { ISTETH, IwstETH, RebasingWrapper, RebasingWrapperMock } from '../../typechain'
 
 describe('RebasingWrapper', () => {
   let rebasingToken: RebasingWrapper, exchangeRateToken: IwstETH, stEthContract: ISTETH;
@@ -295,6 +292,20 @@ describe('RebasingWrapper', () => {
       await expect(
         rebasingToken.connect(user0).transferShares(rebasingToken.address, ten)
         ).to.be.revertedWith('TRANSFER_TO_CONTRACT')
+
+        
+      const wstETH = '0x7f39C581F595B53c5cb19bD0b3f8dA6c935E2Ca0'
+
+      const rebasingWrapperMockFactory = await ethers.getContractFactory('RebasingWrapperMock')
+      const rebasingTokenMock = await rebasingWrapperMockFactory.deploy(wstETH)
+      
+      await expect(
+        rebasingTokenMock.connect(user0).transferSharesMock(ZERO_ADDRESS, user0.address, ten)
+      ).to.be.revertedWith('TRANSFER_FROM_ZERO_ADDR')
+      
+      await expect(
+        rebasingTokenMock.connect(user0).burnSharesMock(ZERO_ADDRESS, ten)
+      ).to.be.revertedWith('BURN_FROM_ZERO_ADDR')
     })
 
     it('should be equal to totalPooledAssets', async () => {
