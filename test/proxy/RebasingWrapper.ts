@@ -279,6 +279,19 @@ describe('RebasingWrapper', () => {
         rebasingToken.connect(user0).transferShares(ZERO_ADDRESS, ten)
         ).to.be.revertedWith('TRANSFER_TO_ZERO_ADDR')
 
+
+      await expect(
+        rebasingToken.connect(user0).transferShares(user1.address, ten)
+        ).to.be.revertedWith('BALANCE_EXCEEDED')
+    
+      await expect(
+        rebasingToken.connect(user0).withdrawTo(user1.address, ten)
+        ).to.be.revertedWith('BALANCE_EXCEEDED')
+      
+      await expect(
+        rebasingToken.connect(user0).depositFor(ZERO_ADDRESS, ten)
+        ).to.be.revertedWith('MINT_TO_ZERO_ADDR')
+          
       await expect(
         rebasingToken.connect(user0).transferShares(rebasingToken.address, ten)
         ).to.be.revertedWith('TRANSFER_TO_CONTRACT')
