@@ -16,6 +16,8 @@ describe('RebasingWrapper', () => {
 
   let snapshotId: BigNumber
 
+  const ZERO_ADDRESS = '0x0000000000000000000000000000000000000000'
+
   before(async () => {
     await startMainnetFork()
 
@@ -42,6 +44,8 @@ describe('RebasingWrapper', () => {
 
     const RebasingWrapper = await ethers.getContractFactory('RebasingWrapper')
     rebasingToken = await RebasingWrapper.deploy(wstETH)
+    await exchangeRateToken.connect(user0).transfer(rebasingToken.address, ethers.utils.parseEther('0.1'))
+    await rebasingToken.connect(user0).initialize()
     await exchangeRateToken.connect(user0).approve(rebasingToken.address, ethers.constants.MaxUint256)
     await stEthContract.connect(user0).approve(exchangeRateToken.address, ethers.constants.MaxUint256)
     
@@ -60,6 +64,10 @@ describe('RebasingWrapper', () => {
   })
 
   describe('sanity checks', () => {
+    it('cant reinitialize', async () => {
+      await expect(rebasingToken.connect(user0).initialize()).to.be.revertedWith('already initialized')
+    })
+
     it('check read only consistency', async () => {
       /**
        * basic test. Our "rebasingToken" is a wrapper of wstETH, so we can deposit wstETH to it, and the
@@ -67,13 +75,13 @@ describe('RebasingWrapper', () => {
        */
       const wstETHAmount = ethers.utils.parseEther('1')
       const wrapAmount = await exchangeRateToken.getStETHByWstETH(wstETHAmount)
-      const rewrappedAmount = await rebasingToken.convertToShares(wstETHAmount)
+      const rewrappedAmount = await rebasingToken.convertToRebasing(wstETHAmount)
 
       expect(wrapAmount).to.be.equal(rewrappedAmount)
       
       const stEthAmount = ethers.utils.parseEther('1')
       const wrappedAmount = await exchangeRateToken.getWstETHByStETH(stEthAmount)
-      const unrewrappedAmount = await rebasingToken.convertToAssets(stEthAmount)
+      const unrewrappedAmount = await rebasingToken.convertToExchangeRate(stEthAmount)
 
       expect(wrappedAmount).to.be.equal(unrewrappedAmount)
     })
@@ -98,15 +106,17 @@ describe('RebasingWrapper', () => {
       const stETHAmount = ethers.utils.parseEther('0.5')
       const wstEthAmount = await exchangeRateToken.connect(user0).callStatic.wrap(stETHAmount)
       const withdrawTrxn = await (await rebasingToken.connect(user0).withdrawTo(user0.address, stETHAmount)).wait()
-      const withdrawEvent = withdrawTrxn.events?.find((e) => e.event === 'Withdraw')
-      const wwstEthAmount = withdrawEvent?.args?.shares
+      console.log('withdrawTrxn', withdrawTrxn.events)
+      const withdrawEvent = withdrawTrxn.events?.find((e) => e.event === 'SharesBurnt')
+      const sharesAmount = withdrawEvent?.args?.sharesAmount
 
       /**
        * there will be some rounding errors, so we'll just check that they're close enough
        * we'll test if the rounding error is in the right direction in the next test
        */
-      expect(stETHAmount).to.be.closeTo(wwstEthAmount, 1)
+      expect(wstEthAmount).to.be.closeTo(sharesAmount, 1)
     })
+
     it('check deposit/withdraw consistency: deposit first then withdraw - even', async () => {
       const oneWstEth = ethers.utils.parseEther('1')
       const initialWstethBalance = await exchangeRateToken.balanceOf(user0.address)
@@ -138,7 +148,7 @@ describe('RebasingWrapper', () => {
       // test
       const oneWstEth = ethers.utils.parseEther('1')
       const initialWstethBalance = await exchangeRateToken.balanceOf(user0.address)
-      const shares = await rebasingToken.convertToShares(oneWstEth)
+      const shares = await rebasingToken.convertToRebasing(oneWstEth)
       await rebasingToken.connect(user0).withdrawTo(user0.address, shares)
       await rebasingToken.connect(user0).depositFor(user0.address, oneWstEth)
       const finalWstethBalance = await exchangeRateToken.balanceOf(user0.address)
@@ -168,10 +178,10 @@ describe('RebasingWrapper', () => {
       const hundredWstEth = ethers.utils.parseEther('100')
       await exchangeRateToken.connect(user0).unwrap(hundredWstEth)
       await rebasingToken.connect(user0).depositFor(user1.address, hundredWstEth)
-      const user1assetsOf = await rebasingToken.assetsOf(user1.address)
+      const user1assetsOf = await rebasingToken.sharesOf(user1.address)
       expect(user1assetsOf).to.be.closeTo(hundredWstEth, 1)
       const user1balanceOf = await rebasingToken.balanceOf(user1.address)
-      expect(user1balanceOf).to.be.closeTo(await rebasingToken.convertToShares(hundredWstEth), 1)
+      expect(user1balanceOf).to.be.closeTo(await rebasingToken.convertToRebasing(hundredWstEth), 1)
 
       const user0wstEthBalanceBefore = await exchangeRateToken.balanceOf(user0.address)
       await expect(async () => await rebasingToken.connect(user1).withdrawTo(user0.address, user1balanceOf))
@@ -189,7 +199,7 @@ describe('RebasingWrapper', () => {
       const fifty = ethers.utils.parseEther('50')
       await rebasingToken.connect(user0).depositFor(user0.address, hundredWstEth)
       await rebasingToken.connect(user0).approve(user1.address, fifty)
-      await expect(rebasingToken.connect(user1).transferFrom(user0.address, user1.address, fifty.add(1))).to.be.revertedWith('ERC20: insufficient allowance')
+      await expect(rebasingToken.connect(user1).transferFrom(user0.address, user1.address, fifty.add(1))).to.be.revertedWith('ALLOWANCE_EXCEEDED')
       await rebasingToken.connect(user0).increaseAllowance(user1.address, fifty)
       await expect(rebasingToken.connect(user1).transferFrom(user0.address, user1.address, fifty.add(fifty))).to.not.be.reverted
     })
@@ -199,7 +209,96 @@ describe('RebasingWrapper', () => {
       const fifty = ethers.utils.parseEther('50')
       await rebasingToken.connect(user0).depositFor(user0.address, hundredWstEth)
       await rebasingToken.connect(user0).approve(user1.address, fifty)
+      await fakeRebasingLido(110, 100)
       await expect(rebasingToken.connect(user1).transferFrom(user0.address, user1.address, fifty)).to.not.be.reverted;
+      expect(await rebasingToken.allowance(user0.address, user1.address)).to.be.equal(0)
+    })
+
+    it('test increase allowance corner cases', async () => {
+      const hundred = ethers.utils.parseEther('100')
+      const fifty = ethers.utils.parseEther('50')
+      await rebasingToken.connect(user0).depositFor(user0.address, hundred)
+      await rebasingToken.connect(user0).approve(user1.address, fifty)
+      await expect(rebasingToken.connect(user1).transferFrom(user0.address, user1.address, hundred)).to.be.reverted;
+      await rebasingToken.connect(user0).increaseAllowance(user1.address, fifty)
+      await expect(rebasingToken.connect(user1).transferFrom(user0.address, user1.address, hundred.add(1))).to.be.reverted;
+      await expect(rebasingToken.connect(user1).transferFrom(user0.address, user1.address, hundred)).to.not.be.reverted;
+      expect(await rebasingToken.allowance(user0.address, user1.address)).to.be.equal(0)
+    })
+
+    it('test decrease allowance corner cases', async () => {
+      const hundred = ethers.utils.parseEther('100')
+      const fifty = ethers.utils.parseEther('50')
+      const thirty = ethers.utils.parseEther('30')
+      const twenty = ethers.utils.parseEther('20')
+      await rebasingToken.connect(user0).depositFor(user0.address, hundred)
+      await rebasingToken.connect(user0).approve(user1.address, fifty)
+      await expect(rebasingToken.connect(user1).transferFrom(user0.address, user1.address, hundred)).to.be.reverted;
+      await expect(rebasingToken.connect(user0).decreaseAllowance(user1.address, hundred)).to.be.revertedWith('ALLOWANCE_BELOW_ZERO');
+      await rebasingToken.connect(user0).decreaseAllowance(user1.address, thirty)
+
+      await expect(rebasingToken.connect(user1).transferFrom(user0.address, user1.address, twenty.add(1))).to.be.reverted;
+      await expect(rebasingToken.connect(user1).transferFrom(user0.address, user1.address, twenty)).to.not.be.reverted;
+      expect(await rebasingToken.allowance(user0.address, user1.address)).to.be.equal(0)
+    })
+
+    it('test total shares', async () => {
+      const hundredWstEth = ethers.utils.parseEther('100')
+      await rebasingToken.connect(user0).depositFor(user0.address, hundredWstEth)
+      const totalShares = await rebasingToken.getTotalShares()
+      const addressBalanceOf = await exchangeRateToken.balanceOf(rebasingToken.address)
+      expect(totalShares).to.be.equal(addressBalanceOf)
+    })
+
+    it('tests transferShares and transferSharesFrom', async () => {
+      const hundredWstEth = ethers.utils.parseEther('100')
+      const ten = ethers.utils.parseEther('10')
+      await rebasingToken.connect(user0).depositFor(user0.address, hundredWstEth)
+      const sharesOfBefore = await rebasingToken.sharesOf(user0.address)
+      await rebasingToken.connect(user0).transferShares(user1.address, ten)
+      const sharesOfAfter = await rebasingToken.sharesOf(user0.address)
+      expect(sharesOfBefore.sub(sharesOfAfter)).to.be.equal(ten)
+
+      const tenRebasig = await rebasingToken.convertToRebasing(ten)
+      await rebasingToken.connect(user0).approve(user1.address, tenRebasig)
+      await expect(rebasingToken.connect(user1).transferSharesFrom(user0.address, user1.address, ten.add(1))).to.be.reverted
+      await rebasingToken.connect(user1).transferSharesFrom(user0.address, user1.address, ten)
+    })
+
+    it('tests revert statements', async () => {
+      const ten = ethers.utils.parseEther('10')
+      await expect(
+        rebasingToken.connect(user1).transferSharesFrom(ZERO_ADDRESS, user1.address, BigNumber.from(0))
+        ).to.be.revertedWith('APPROVE_FROM_ZERO_ADDR')
+      
+      await expect(
+        rebasingToken.connect(user0).approve(ZERO_ADDRESS, ten)
+        ).to.be.revertedWith('APPROVE_TO_ZERO_ADDR')
+
+      await expect(
+        rebasingToken.connect(user0).transferShares(ZERO_ADDRESS, ten)
+        ).to.be.revertedWith('TRANSFER_TO_ZERO_ADDR')
+
+      await expect(
+        rebasingToken.connect(user0).transferShares(rebasingToken.address, ten)
+        ).to.be.revertedWith('TRANSFER_TO_CONTRACT')
+    })
+
+    it('should be equal to totalPooledAssets', async () => {
+      const hundredWstEth = ethers.utils.parseEther('100')
+      await rebasingToken.connect(user0).depositFor(user0.address, hundredWstEth)
+      const totalPooledAssets = await rebasingToken.getTotalPooledAssets()
+      const totalShares = await rebasingToken.getTotalShares()
+      const addressBalanceOf = await exchangeRateToken.balanceOf(rebasingToken.address)
+      const convertedBalanceOf = await exchangeRateToken.getStETHByWstETH(addressBalanceOf)
+      expect(totalPooledAssets).to.be.equal(convertedBalanceOf)
+      expect(totalShares).to.be.equal(addressBalanceOf)
+    })
+
+
+    it('cant deposit more than you have', async () => {
+      const hundredWstEth = ethers.utils.parseEther('10000')
+      await expect(rebasingToken.connect(user0).depositFor(user0.address, hundredWstEth)).to.be.revertedWith('ERC20: transfer amount exceeds balance')
     })
 
     it('basic ERC20 funcionality', async () => {
@@ -211,22 +310,23 @@ describe('RebasingWrapper', () => {
       const hundredWstEth = ethers.utils.parseEther('100')
       const fifty = ethers.utils.parseEther('50')
       const user0stETHBalanceBefore = await stEthContract.balanceOf(user0.address)
+      const totalSupplyBefore = await rebasingToken.totalSupply()
       await exchangeRateToken.connect(user0).unwrap(hundredWstEth)
       const user0stETHBalanceAfter = await stEthContract.balanceOf(user0.address)
       await rebasingToken.connect(user0).depositFor(user0.address, hundredWstEth)
-
-      const expectedTotalSupply = user0stETHBalanceAfter.sub(user0stETHBalanceBefore).add(1)
-      expect(await rebasingToken.totalSupply()).to.be.equal(expectedTotalSupply)
+      const totalSupplyAfter = await rebasingToken.totalSupply()
+      const totalSupplyDiff = totalSupplyAfter.sub(totalSupplyBefore)
+      const expectedTotalSupplyDiff = user0stETHBalanceAfter.sub(user0stETHBalanceBefore)
+      expect(totalSupplyDiff).to.be.closeTo(expectedTotalSupplyDiff, 2)
 
       /**
        * Test: just a sanity check to see if the balance of user0 is correct.
        * assetsOf should return the inputed amount of wstETH.
        * Also using the opportunity to check if the totalSupply is the same.
        */
-      const expectedUser0Balance = await rebasingToken.convertToShares(hundredWstEth)
+      const expectedUser0Balance = await rebasingToken.convertToRebasing(hundredWstEth)
       expect(await rebasingToken.balanceOf(user0.address)).to.be.equal(expectedUser0Balance)
-      expect(await rebasingToken.assetsOf(user0.address)).to.be.equal(hundredWstEth)
-      expect(await rebasingToken.totalSupply()).to.be.equal(expectedTotalSupply)
+      expect(await rebasingToken.sharesOf(user0.address)).to.be.equal(hundredWstEth)
 
       /**
        * Test: just a sanity check to see if the balance of user1 is correct.
@@ -239,12 +339,6 @@ describe('RebasingWrapper', () => {
           [user0, user1],
           [minus(fifty.sub(1)), fifty.sub(1)]
         )
-      expect(await rebasingToken.totalSupply()).to.be.equal(expectedTotalSupply)
-
-      /**
-       * Test: just checking if the expected amount of wstETH was deposited
-       * in the wrapper to the right user.
-       */
     })
 
     it('basic rebasing event', async () => {
@@ -263,9 +357,9 @@ describe('RebasingWrapper', () => {
        * to the balance of wwStETH. We expect the balance of wwStETH to increase in the same
        * proportion as the balance of stETH.
        */
-      const initialAssets = await rebasingToken.connect(user0).convertToAssets(await rebasingToken.balanceOf(user0.address))
+      const initialAssets = await rebasingToken.connect(user0).convertToExchangeRate(await rebasingToken.balanceOf(user0.address))
       await fakeRebasingLido(101, 100)
-      const finalAssets = await rebasingToken.connect(user0).convertToAssets(await rebasingToken.balanceOf(user0.address))
+      const finalAssets = await rebasingToken.connect(user0).convertToExchangeRate(await rebasingToken.balanceOf(user0.address))
       expect(initialAssets).to.be.greaterThanOrEqual(finalAssets)
       expect(initialAssets).to.be.closeTo(finalAssets, 1)
     })
@@ -286,9 +380,9 @@ describe('RebasingWrapper', () => {
        * to the balance of wwStETH. We expect the balance of wwStETH to decrease in the same
        * proportion as the balance of stETH.
        */
-      const initialAssets = await rebasingToken.connect(user0).convertToAssets(await rebasingToken.balanceOf(user0.address))
+      const initialAssets = await rebasingToken.connect(user0).convertToExchangeRate(await rebasingToken.balanceOf(user0.address))
       await fakeRebasingLido(99, 100)
-      const finalAssets = await rebasingToken.connect(user0).convertToAssets(await rebasingToken.balanceOf(user0.address))
+      const finalAssets = await rebasingToken.connect(user0).convertToExchangeRate(await rebasingToken.balanceOf(user0.address))
       expect(initialAssets).to.be.greaterThanOrEqual(finalAssets)
       expect(initialAssets).to.be.closeTo(finalAssets, 1)
 
