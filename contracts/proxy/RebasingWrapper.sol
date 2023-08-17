@@ -2,6 +2,21 @@
 
 pragma solidity 0.8.17;
 
+/**
+ * @title RebasingWrapper
+ * @author Pods Finance
+ * @notice This is a fork from Lido's stETH code. The idea here is to create a wrapper
+ * that modifies the behavior of exchange rate tokens (think wstETH) to be rebasing tokens
+ * (think stETH). Exchange rate and rebasing tokens are very similar, as both are yield
+ * bearing tokens, and they have subtle differences on how they store and display the yield.
+ * Exchange rate tokens have a static balance for each account, and when they accrue value
+ * they do it by changing the rate in which they are swapped to the underlying asset.
+ * Rebasing tokens, on the other hand, have a static rate in which they are swapped to the
+ * underlying asset, and when they accrue value they do it by changing the balance of each
+ * account.
+ * This wrapper is intended to be used with Exchange Rate tokens as underlying tokens, and
+ * to provide a rebasing behavior to them.
+ */
 
 import { ERC20 } from "@openzeppelin/contracts/token/ERC20/ERC20.sol";
 import { IERC20 } from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
@@ -15,12 +30,19 @@ contract RebasingWrapper is ERC20 {
     address payable public immutable underlyingToken;
     constructor(
       address payable _underlyingToken
-    ) ERC20('Rebasing Wrapper', 'rWSTETH') {
+    ) ERC20("Rebasing Wrapper", "rWSTETH") {
       underlyingToken = _underlyingToken;
     }
     address constant internal INITIAL_TOKEN_HOLDER = 0x000000000000000000000000000000000000dEaD;
     uint256 constant internal INFINITE_ALLOWANCE = ~uint256(0);
 
+    /**
+     * @notice We need an initialization function to be called after the deployent because we need the deployment
+     * address to transfer a small amount of underlying tokens to it. Transfering some underlying tokens to the
+     * wrapper and minting it to the INITIAL_TOKEN_HOLDER allows us to drop the checks for zero shares throughout
+     * the code, as well as to avoid corner cases and potential attacks.
+     * Before calling initialize, it's required that the deployer transfer some underlying tokens to the wrapper.
+     */
     function initialize() public {
       require(!isInitialized, "already initialized");
       isInitialized = true;
@@ -43,6 +65,9 @@ contract RebasingWrapper is ERC20 {
      */
     mapping (address => mapping (address => uint256)) private allowances;
 
+    /**
+     * @dev Summation of all shares.
+     */
     uint256 totalSharesPosition;
 
     /**

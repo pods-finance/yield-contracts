@@ -4,12 +4,12 @@ import { BigNumber } from 'ethers'
 import { SignerWithAddress } from '@nomiclabs/hardhat-ethers/signers'
 import minus from '../utils/minus'
 import { startMainnetFork, stopMainnetFork } from '../utils/mainnetFork'
-import { ISTETH, IwstETH, RebasingWrapper, RebasingWrapperMock } from '../../typechain'
+import { ISTETH, IwstETH, RebasingWrapper } from '../../typechain'
 
 describe('RebasingWrapper', () => {
-  let rebasingToken: RebasingWrapper, exchangeRateToken: IwstETH, stEthContract: ISTETH;
+  let rebasingToken: RebasingWrapper, exchangeRateToken: IwstETH, stEthContract: ISTETH
 
-  let user0: SignerWithAddress, elRewardsDistributor: SignerWithAddress, user1: SignerWithAddress, user2: SignerWithAddress
+  let user0: SignerWithAddress, user1: SignerWithAddress
 
   let snapshotId: BigNumber
 
@@ -18,7 +18,7 @@ describe('RebasingWrapper', () => {
   before(async () => {
     await startMainnetFork()
 
-    ;[user1, user2] = await ethers.getSigners()
+    ;[user1] = await ethers.getSigners()
 
     const wstEthWhale = '0x59cEE32F3FFAeABC0d4991ac7569ebaD09E1a7d4'
     await hre.network.provider.request({
@@ -26,13 +26,6 @@ describe('RebasingWrapper', () => {
       params: [wstEthWhale]
     })
     user0 = await ethers.getSigner(wstEthWhale)
-
-    const elRewardsDistributorAddress = '0x388C818CA8B9251b393131C08a736A67ccB19297' // stETH.getLidoLocator().elRewardsVault()
-    await hre.network.provider.request({
-      method: 'hardhat_impersonateAccount',
-      params: [elRewardsDistributorAddress]
-    })
-    elRewardsDistributor = await ethers.getSigner(elRewardsDistributorAddress)
 
     const wstETH = '0x7f39C581F595B53c5cb19bD0b3f8dA6c935E2Ca0'
     const stETH = '0xae7ab96520de3a18e5e111b5eaab095312d7fe84'
@@ -45,7 +38,6 @@ describe('RebasingWrapper', () => {
     await rebasingToken.connect(user0).initialize()
     await exchangeRateToken.connect(user0).approve(rebasingToken.address, ethers.constants.MaxUint256)
     await stEthContract.connect(user0).approve(exchangeRateToken.address, ethers.constants.MaxUint256)
-    
   })
 
   beforeEach(async () => {
@@ -68,14 +60,14 @@ describe('RebasingWrapper', () => {
     it('check read only consistency', async () => {
       /**
        * basic test. Our "rebasingToken" is a wrapper of wstETH, so we can deposit wstETH to it, and the
-       * rebasingToken will mint the same amount of raw stETH that you'd get from unwrapping the wstETH. 
+       * rebasingToken will mint the same amount of raw stETH that you'd get from unwrapping the wstETH.
        */
       const wstETHAmount = ethers.utils.parseEther('1')
       const wrapAmount = await exchangeRateToken.getStETHByWstETH(wstETHAmount)
       const rewrappedAmount = await rebasingToken.convertToRebasing(wstETHAmount)
 
       expect(wrapAmount).to.be.equal(rewrappedAmount)
-      
+
       const stEthAmount = ethers.utils.parseEther('1')
       const wrappedAmount = await exchangeRateToken.getWstETHByStETH(stEthAmount)
       const unrewrappedAmount = await rebasingToken.convertToExchangeRate(stEthAmount)
@@ -86,7 +78,7 @@ describe('RebasingWrapper', () => {
       /**
        * we know that wstETH unwrapped should give us stEtH.
        * we also know that wrapping wstETH should mimic the behavior of stETH
-       * so depositing wstETH to the rebasingToken should give us the same amount of stETH as unwrapping wstETH 
+       * so depositing wstETH to the rebasingToken should give us the same amount of stETH as unwrapping wstETH
        */
       const oneWstEth = ethers.utils.parseEther('1')
       const unwrapedAmount = await exchangeRateToken.connect(user0).callStatic.unwrap(oneWstEth)
@@ -97,7 +89,7 @@ describe('RebasingWrapper', () => {
       /**
        * we know that wrapping stETH will give us wstETH.
        * we also know that withdrawing our rebasing token will give us wstETH
-       * so withdrawing wstETH from the rebasingToken should give us the same amount of wstETH as wrapping stETH 
+       * so withdrawing wstETH from the rebasingToken should give us the same amount of wstETH as wrapping stETH
        */
       await (await exchangeRateToken.connect(user0).unwrap(oneWstEth)).wait()
       const stETHAmount = ethers.utils.parseEther('0.5')
@@ -155,21 +147,21 @@ describe('RebasingWrapper', () => {
       expect(initialWstethBalance).to.be.closeTo(finalWstethBalance, 1)
     })
 
-    const fakeRebasingLido = async (numerator: number, denominator: number) => {
+    const fakeRebasingLido = async (numerator: number, denominator: number): Promise<void> => {
       // Force reduction of Lidos balance to simulate a slashing event
       // SLOT_STETH_BALANCE is equal to keccak256("lido.Lido.beaconBalance")
-      const SLOT_STETH_BALANCE = '0xa66d35f054e68143c18f32c990ed5cb972bb68a68f500cd2dd3a16bbf3686483' 
-    
+      const SLOT_STETH_BALANCE = '0xa66d35f054e68143c18f32c990ed5cb972bb68a68f500cd2dd3a16bbf3686483'
+
       const balanceSTETHBefore = await stEthContract.getTotalPooledEther()
       const newBalance = balanceSTETHBefore.mul(numerator).div(denominator)
       const newBalancePad32 = ethers.utils.hexZeroPad(ethers.utils.hexValue(newBalance), 32)
-    
+
       await ethers.provider.send('hardhat_setStorageAt', [
         stEthContract.address,
         SLOT_STETH_BALANCE,
         newBalancePad32
       ])
-    }    
+    }
 
     it('test other cases of to/from', async () => {
       const hundredWstEth = ethers.utils.parseEther('100')
@@ -207,7 +199,7 @@ describe('RebasingWrapper', () => {
       await rebasingToken.connect(user0).depositFor(user0.address, hundredWstEth)
       await rebasingToken.connect(user0).approve(user1.address, fifty)
       await fakeRebasingLido(110, 100)
-      await expect(rebasingToken.connect(user1).transferFrom(user0.address, user1.address, fifty)).to.not.be.reverted;
+      await expect(rebasingToken.connect(user1).transferFrom(user0.address, user1.address, fifty)).to.not.be.reverted
       expect(await rebasingToken.allowance(user0.address, user1.address)).to.be.equal(0)
     })
 
@@ -216,10 +208,10 @@ describe('RebasingWrapper', () => {
       const fifty = ethers.utils.parseEther('50')
       await rebasingToken.connect(user0).depositFor(user0.address, hundred)
       await rebasingToken.connect(user0).approve(user1.address, fifty)
-      await expect(rebasingToken.connect(user1).transferFrom(user0.address, user1.address, hundred)).to.be.reverted;
+      await expect(rebasingToken.connect(user1).transferFrom(user0.address, user1.address, hundred)).to.be.reverted
       await rebasingToken.connect(user0).increaseAllowance(user1.address, fifty)
-      await expect(rebasingToken.connect(user1).transferFrom(user0.address, user1.address, hundred.add(1))).to.be.reverted;
-      await expect(rebasingToken.connect(user1).transferFrom(user0.address, user1.address, hundred)).to.not.be.reverted;
+      await expect(rebasingToken.connect(user1).transferFrom(user0.address, user1.address, hundred.add(1))).to.be.reverted
+      await expect(rebasingToken.connect(user1).transferFrom(user0.address, user1.address, hundred)).to.not.be.reverted
       expect(await rebasingToken.allowance(user0.address, user1.address)).to.be.equal(0)
     })
 
@@ -230,12 +222,12 @@ describe('RebasingWrapper', () => {
       const twenty = ethers.utils.parseEther('20')
       await rebasingToken.connect(user0).depositFor(user0.address, hundred)
       await rebasingToken.connect(user0).approve(user1.address, fifty)
-      await expect(rebasingToken.connect(user1).transferFrom(user0.address, user1.address, hundred)).to.be.reverted;
-      await expect(rebasingToken.connect(user0).decreaseAllowance(user1.address, hundred)).to.be.revertedWith('ALLOWANCE_BELOW_ZERO');
+      await expect(rebasingToken.connect(user1).transferFrom(user0.address, user1.address, hundred)).to.be.reverted
+      await expect(rebasingToken.connect(user0).decreaseAllowance(user1.address, hundred)).to.be.revertedWith('ALLOWANCE_BELOW_ZERO')
       await rebasingToken.connect(user0).decreaseAllowance(user1.address, thirty)
 
-      await expect(rebasingToken.connect(user1).transferFrom(user0.address, user1.address, twenty.add(1))).to.be.reverted;
-      await expect(rebasingToken.connect(user1).transferFrom(user0.address, user1.address, twenty)).to.not.be.reverted;
+      await expect(rebasingToken.connect(user1).transferFrom(user0.address, user1.address, twenty.add(1))).to.be.reverted
+      await expect(rebasingToken.connect(user1).transferFrom(user0.address, user1.address, twenty)).to.not.be.reverted
       expect(await rebasingToken.allowance(user0.address, user1.address)).to.be.equal(0)
     })
 
@@ -266,43 +258,41 @@ describe('RebasingWrapper', () => {
       const ten = ethers.utils.parseEther('10')
       await expect(
         rebasingToken.connect(user1).transferSharesFrom(ZERO_ADDRESS, user1.address, BigNumber.from(0))
-        ).to.be.revertedWith('APPROVE_FROM_ZERO_ADDR')
-      
+      ).to.be.revertedWith('APPROVE_FROM_ZERO_ADDR')
+
       await expect(
         rebasingToken.connect(user0).approve(ZERO_ADDRESS, ten)
-        ).to.be.revertedWith('APPROVE_TO_ZERO_ADDR')
+      ).to.be.revertedWith('APPROVE_TO_ZERO_ADDR')
 
       await expect(
         rebasingToken.connect(user0).transferShares(ZERO_ADDRESS, ten)
-        ).to.be.revertedWith('TRANSFER_TO_ZERO_ADDR')
-
+      ).to.be.revertedWith('TRANSFER_TO_ZERO_ADDR')
 
       await expect(
         rebasingToken.connect(user0).transferShares(user1.address, ten)
-        ).to.be.revertedWith('BALANCE_EXCEEDED')
-    
+      ).to.be.revertedWith('BALANCE_EXCEEDED')
+
       await expect(
         rebasingToken.connect(user0).withdrawTo(user1.address, ten)
-        ).to.be.revertedWith('BALANCE_EXCEEDED')
-      
+      ).to.be.revertedWith('BALANCE_EXCEEDED')
+
       await expect(
         rebasingToken.connect(user0).depositFor(ZERO_ADDRESS, ten)
-        ).to.be.revertedWith('MINT_TO_ZERO_ADDR')
-          
+      ).to.be.revertedWith('MINT_TO_ZERO_ADDR')
+
       await expect(
         rebasingToken.connect(user0).transferShares(rebasingToken.address, ten)
-        ).to.be.revertedWith('TRANSFER_TO_CONTRACT')
+      ).to.be.revertedWith('TRANSFER_TO_CONTRACT')
 
-        
       const wstETH = '0x7f39C581F595B53c5cb19bD0b3f8dA6c935E2Ca0'
 
       const rebasingWrapperMockFactory = await ethers.getContractFactory('RebasingWrapperMock')
       const rebasingTokenMock = await rebasingWrapperMockFactory.deploy(wstETH)
-      
+
       await expect(
         rebasingTokenMock.connect(user0).transferSharesMock(ZERO_ADDRESS, user0.address, ten)
       ).to.be.revertedWith('TRANSFER_FROM_ZERO_ADDR')
-      
+
       await expect(
         rebasingTokenMock.connect(user0).burnSharesMock(ZERO_ADDRESS, ten)
       ).to.be.revertedWith('BURN_FROM_ZERO_ADDR')
@@ -318,7 +308,6 @@ describe('RebasingWrapper', () => {
       expect(totalPooledAssets).to.be.equal(convertedBalanceOf)
       expect(totalShares).to.be.equal(addressBalanceOf)
     })
-
 
     it('cant deposit more than you have', async () => {
       const hundredWstEth = ethers.utils.parseEther('10000')

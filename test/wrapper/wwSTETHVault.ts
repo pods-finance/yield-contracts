@@ -73,7 +73,7 @@ describe('STETHVault Wrapper', () => {
     const RebasingWrapperFactory = await ethers.getContractFactory('RebasingWrapper')
     asset = await RebasingWrapperFactory.deploy(wstETH)
 
-    const depositUsersFundsIntoWrapper = async (user: SignerWithAddress) => {
+    const depositUsersFundsIntoWrapper = async (user: SignerWithAddress): Promise<void> => {
       const userFunds = await stEthContract.balanceOf(user.address)
       await stEthContract.connect(user).approve(wstETHContract.address, ethers.constants.MaxUint256)
       await wstETHContract.connect(user).wrap(userFunds)
@@ -583,7 +583,6 @@ describe('STETHVault Wrapper', () => {
     await vault.connect(vaultController).processQueuedDeposits([user0.address, user1.address])
     await vault.connect(vaultController).startRound()
 
-
     await vault.connect(user0).deposit(user0DepositAmount, user0.address)
 
     // Force reduction of Lidos balance to simulate a slashing event
@@ -594,19 +593,16 @@ describe('STETHVault Wrapper', () => {
     const newBalance = balanceSTETHBefore.div(8).mul(7)
     const newBalancePad32 = ethers.utils.hexZeroPad(ethers.utils.hexValue(newBalance), 32)
 
-
     await ethers.provider.send('hardhat_setStorageAt', [
       stEthContract.address,
       SLOT_STETH_BALANCE,
       newBalancePad32
     ])
 
-    
     const balanceSTETHAfter = await asset.totalSupply()
 
     // Check if storage manipulation was successful
     expect(balanceSTETHAfter).to.be.lt(balanceSTETHBefore)
-
 
     await vault.connect(vaultController).endRound()
     await vault.connect(vaultController).processQueuedDeposits([user0.address])
@@ -753,7 +749,6 @@ describe('STETHVault Wrapper', () => {
 
     // Round 1
     await vault.connect(vaultController).startRound()
-    const balanceController = await asset.balanceOf(yieldGenerator.address)
     await asset.connect(yieldGenerator).transfer(vault.address, ethers.utils.parseEther('20'))
     await vault.connect(vaultController).endRound()
 
@@ -793,7 +788,7 @@ describe('STETHVault Wrapper', () => {
     expect(await asset.balanceOf(vault.address)).to.be.closeTo(BigNumber.from(0), 15)
     expect(await vault.balanceOf(user0.address)).to.be.equal(0)
     expect(await vault.balanceOf(user1.address)).to.be.equal(0)
-    expect(await vault.totalIdleAssets()).to.be.equal(0)      
+    expect(await vault.totalIdleAssets()).to.be.equal(0)
   })
 
   it('should emit shares amount in Deposit Event accordingly', async () => {
@@ -1003,7 +998,6 @@ describe('STETHVault Wrapper', () => {
         user2Moment9maxWithdraw
       )
   })
-
 
   it('should not allow first depositor to steal funds from subsequent depositors', async () => {
     const Asset = await ethers.getContractFactory('Asset')
