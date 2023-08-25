@@ -6,11 +6,11 @@ import minus from '../utils/minus'
 import { startMainnetFork, stopMainnetFork } from '../utils/mainnetFork'
 import createConfigurationManager from '../utils/createConfigurationManager'
 import { feeExcluded } from '../utils/feeExcluded'
-import { ConfigurationManager, RebasingWrapper, InvestorActorMock, STETHVault, ISTETH } from '../../typechain'
+import { ConfigurationManager, RebasingWrapper, InvestorActorMock, STETHVault, ISTETH, IwstETH } from '../../typechain'
 
 describe('STETHVault Wrapper', () => {
   let asset: RebasingWrapper, vault: STETHVault, investor: InvestorActorMock,
-    configuration: ConfigurationManager, stEthContract: ISTETH
+    configuration: ConfigurationManager, stEthContract: ISTETH, wstETHContract: IwstETH
 
   let user0: SignerWithAddress, user1: SignerWithAddress, user2: SignerWithAddress, user3: SignerWithAddress, user4: SignerWithAddress,
     yieldGenerator: SignerWithAddress, vaultController: SignerWithAddress
@@ -69,7 +69,7 @@ describe('STETHVault Wrapper', () => {
     stEthContract = await ethers.getContractAt('ISTETH', '0xae7ab96520DE3A18E5e111B5EaAb095312D7fE84')
     // Wrapper of wstETH
     const wstETH = '0x7f39C581F595B53c5cb19bD0b3f8dA6c935E2Ca0'
-    const wstETHContract = await ethers.getContractAt('IwstETH', wstETH)
+    wstETHContract = await ethers.getContractAt('IwstETH', wstETH)
     const RebasingWrapperFactory = await ethers.getContractFactory('RebasingWrapper')
     asset = await RebasingWrapperFactory.deploy(wstETH)
 
@@ -143,6 +143,41 @@ describe('STETHVault Wrapper', () => {
     it('has decimals', async () => {
       expect(await vault.decimals()).to.be.equal(await asset.decimals())
     })
+  })
+
+  it('should accept short circuited deposit path', async () => {
+    const oneHundredEth = ethers.utils.parseEther('100')
+    await user0.sendTransaction({
+      to: wstETHContract.address,
+      value: oneHundredEth
+    })
+    const exchangeRateBalance = await wstETHContract.balanceOf(user0.address)
+
+    await wstETHContract.connect(user0).approve(asset.address, exchangeRateBalance)
+    await asset.connect(user0).invest(vault.address, exchangeRateBalance)
+    const assetsOf = await vault.assetsOf(user0.address)
+    expect(assetsOf).to.be.closeTo(oneHundredEth, 2)
+
+    await vault.connect(vaultController).endRound()
+    await vault.connect(vaultController).processQueuedDeposits([user0.address, user1.address])
+    await vault.connect(vaultController).startRound()
+
+    const maxW = await vault.maxWithdraw(user0.address)
+    console.log({
+      maxW: maxW.toString(),
+      assetsOf: assetsOf.toString(),
+      exchangeRateBalance: exchangeRateBalance.toString(),
+    })
+
+    await vault.connect(user0).approve(asset.address, assetsOf)
+    await asset.connect(user0).remove(vault.address, assetsOf)
+    const exchangeRateBalance2 = await wstETHContract.balanceOf(user0.address)
+    const res = await asset.balanceOf(user0.address)
+    console.log({
+      res: res.toString(),
+      exchangeRateBalance2: exchangeRateBalance2.toString(),
+    })
+    expect(exchangeRateBalance2).to.be.closeTo(exchangeRateBalance, 2)
   })
 
   describe('Sanity checks', () => {

@@ -24,6 +24,9 @@ import { ERC20Wrapper } from "@openzeppelin/contracts/token/ERC20/extensions/ERC
 import { ERC20Permit } from "@openzeppelin/contracts/token/ERC20/extensions/draft-ERC20Permit.sol";
 import { SafeERC20 } from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import { IwstETH } from "../interfaces/IwstETH.sol";
+import { IERC4626 } from "@openzeppelin/contracts/interfaces/IERC4626.sol";
+
+import "hardhat/console.sol";
 
 contract RebasingWrapper is ERC20 {
     bool isInitialized = false;
@@ -99,7 +102,20 @@ contract RebasingWrapper is ERC20 {
         uint256 postRebaseTokenAmount,
         uint256 sharesAmount
     );
-      /**
+
+  function invest(address vault, uint256 amount) public returns (uint256) {
+    depositFor(address(this), amount);
+    uint256 newBalance = balanceOf(address(this));
+    this.approve(vault, newBalance);
+    return IERC4626(vault).deposit(newBalance, msg.sender);
+  }
+
+  function remove(address vault, uint256 amount) public {
+    uint256 _shares = IERC4626(vault).withdraw(amount, msg.sender, msg.sender);
+    withdrawTo(msg.sender, _shares);
+  }
+
+   /**
    * @notice Sender needs to approve this contract before calling depositFor. This function transfers the assets from
    * sender to this contract, mints shares to receiver and emits a Deposit event. This function DOES NOT support the
    * direct transfer of assets from sender to this contract. A user that directly transfers is donating assets to the
