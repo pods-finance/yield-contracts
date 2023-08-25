@@ -12,7 +12,7 @@ describe('STETHVault Wrapper', () => {
   let asset: RebasingWrapper, vault: STETHVault, investor: InvestorActorMock,
     configuration: ConfigurationManager, stEthContract: ISTETH, wstETHContract: IwstETH
 
-  let user0: SignerWithAddress, user1: SignerWithAddress, user2: SignerWithAddress, user3: SignerWithAddress, user4: SignerWithAddress,
+  let user0: SignerWithAddress, user1: SignerWithAddress, user2: SignerWithAddress, user3: SignerWithAddress, user4: SignerWithAddress, user5: SignerWithAddress,
     yieldGenerator: SignerWithAddress, vaultController: SignerWithAddress
 
   let snapshotId: BigNumber
@@ -62,7 +62,7 @@ describe('STETHVault Wrapper', () => {
 
     user4 = await ethers.getSigner('0xed0eebb4d520a6b0eccc4df8e5214e7a6697c111')
 
-    ;[, , , , vaultController] = await ethers.getSigners()
+    ;[user5, , , , vaultController] = await ethers.getSigners()
     configuration = await createConfigurationManager()
 
     // Lido's stEth
@@ -146,38 +146,61 @@ describe('STETHVault Wrapper', () => {
   })
 
   it('should accept short circuited deposit path', async () => {
+    /**
+     * Setup: transfering ETH to the wstETH contract is a way to mint wstETH
+     * directly from ETH. exchangeRateBalanceBefore is the amount of wstETH
+     * that user5 has after the setup and before any test logic is executed.
+     * We are using user0 just as a faucet.
+     */
     const oneHundredEth = ethers.utils.parseEther('100')
     await user0.sendTransaction({
       to: wstETHContract.address,
       value: oneHundredEth
     })
-    const exchangeRateBalance = await wstETHContract.balanceOf(user0.address)
+    const user0Balance = await wstETHContract.balanceOf(user0.address)
+    await wstETHContract.connect(user0).transfer(user5.address, user0Balance)
+    const exchangeRateBalanceBefore = await wstETHContract.balanceOf(user5.address)
 
-    await wstETHContract.connect(user0).approve(asset.address, exchangeRateBalance)
-    await asset.connect(user0).invest(vault.address, exchangeRateBalance)
-    const assetsOf = await vault.assetsOf(user0.address)
+    /**
+     * Test: user5 deposits wstETH into the vault. This is a short circuited
+     * deposit path because the user is depositing wstETH directly into the
+     * wrapper and the wrapper contract sends the wwstETH to the vault.
+     */
+    await wstETHContract.connect(user5).approve(asset.address, exchangeRateBalanceBefore)
+    await asset.connect(user5).invest(vault.address, exchangeRateBalanceBefore)
+
+    /**
+     * Assert: the user's assets should be close to the amount of ETH that was
+     * deposited into the wrapper.Some wei are lost due to rounding errors.
+     */
+    const assetsOf = await vault.assetsOf(user5.address)
     expect(assetsOf).to.be.closeTo(oneHundredEth, 2)
 
+    /**
+     * endRound/startRound to process queued deposits
+     */
     await vault.connect(vaultController).endRound()
-    await vault.connect(vaultController).processQueuedDeposits([user0.address, user1.address])
+    await vault.connect(vaultController).processQueuedDeposits([user5.address, user1.address])
     await vault.connect(vaultController).startRound()
-
-    const maxW = await vault.maxWithdraw(user0.address)
-    console.log({
-      maxW: maxW.toString(),
-      assetsOf: assetsOf.toString(),
-      exchangeRateBalance: exchangeRateBalance.toString(),
-    })
-
-    await vault.connect(user0).approve(asset.address, assetsOf)
-    await asset.connect(user0).remove(vault.address, assetsOf)
-    const exchangeRateBalance2 = await wstETHContract.balanceOf(user0.address)
-    const res = await asset.balanceOf(user0.address)
-    console.log({
-      res: res.toString(),
-      exchangeRateBalance2: exchangeRateBalance2.toString(),
-    })
-    expect(exchangeRateBalance2).to.be.closeTo(exchangeRateBalance, 2)
+    /**
+     * Test: user5 withdraws all of their assets from the vault. This is a
+     * short circuited withdraw path because the user is withdrawing and unwraping
+     * their assets in one go.
+     */
+    await vault.connect(user5).approve(asset.address, assetsOf)
+    await asset.connect(user5).remove(vault.address, assetsOf)
+    /**
+     * Assets: after the invest/remove actions, the user's assets should be
+     * close to the amount of ETH that was deposited initially.
+     */
+    const maxW = await vault.maxWithdraw(user5.address)
+    const exchangeRateBalanceAfter = await wstETHContract.balanceOf(user5.address)
+    const wrapperBalanceAfter = await asset.balanceOf(user5.address)
+    const vaultBalanceAfter = await vault.balanceOf(user5.address)
+    expect(exchangeRateBalanceAfter).to.be.closeTo(feeExcluded(exchangeRateBalanceBefore), 2)
+    expect(maxW).to.be.closeTo(0, 2)
+    expect(wrapperBalanceAfter).to.be.closeTo(0, 2)
+    expect(vaultBalanceAfter).to.be.closeTo(0, 2)
   })
 
   describe('Sanity checks', () => {

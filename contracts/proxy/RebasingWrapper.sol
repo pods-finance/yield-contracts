@@ -111,8 +111,8 @@ contract RebasingWrapper is ERC20 {
   }
 
   function remove(address vault, uint256 amount) public {
-    uint256 _shares = IERC4626(vault).withdraw(amount, msg.sender, msg.sender);
-    withdrawTo(msg.sender, _shares);
+    uint256 _assets = IERC4626(vault).redeem(amount, msg.sender, msg.sender);
+    withdrawTo(msg.sender, _assets);
   }
 
    /**
