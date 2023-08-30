@@ -2,10 +2,10 @@
 
 pragma solidity 0.8.17;
 
-import { RebasingWrapper } from "../proxy/RebasingWrapper.sol";
+import { WwstEth } from "../proxy/WrappedWsteth.sol";
 
-contract RebasingWrapperMock is RebasingWrapper {
-    constructor(address payable _underlying) RebasingWrapper(_underlying) {}
+contract WwstEthMock is WwstEth {
+    constructor(address payable _underlying) {}
 
     function transferSharesMock(address _sender, address _recipient, uint256 _sharesAmount) external {
       _transferShares(_sender, _recipient, _sharesAmount);

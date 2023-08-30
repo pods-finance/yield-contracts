@@ -23,19 +23,13 @@ import { IERC20 } from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import { ERC20Wrapper } from "@openzeppelin/contracts/token/ERC20/extensions/ERC20Wrapper.sol";
 import { ERC20Permit } from "@openzeppelin/contracts/token/ERC20/extensions/draft-ERC20Permit.sol";
 import { SafeERC20 } from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
-import { IwstETH } from "../interfaces/IwstETH.sol";
 import { IERC4626 } from "@openzeppelin/contracts/interfaces/IERC4626.sol";
 
 import "hardhat/console.sol";
 
-contract RebasingWrapper is ERC20 {
+abstract contract RebasingWrapper is ERC20 {
     bool isInitialized = false;
-    address payable public immutable underlyingToken;
-    constructor(
-      address payable _underlyingToken
-    ) ERC20("Rebasing Wrapper", "rWSTETH") {
-      underlyingToken = _underlyingToken;
-    }
+    address payable public underlyingToken;
     address constant internal INITIAL_TOKEN_HOLDER = 0x000000000000000000000000000000000000dEaD;
     uint256 constant internal INFINITE_ALLOWANCE = ~uint256(0);
 
@@ -46,8 +40,11 @@ contract RebasingWrapper is ERC20 {
      * the code, as well as to avoid corner cases and potential attacks.
      * Before calling initialize, it's required that the deployer transfer some underlying tokens to the wrapper.
      */
-    function initialize() public {
+    function initialize(address payable _underlyingToken) public {
+      console.log("initializing");
       require(!isInitialized, "already initialized");
+      console.log("setting _underlyingToken");
+      underlyingToken = _underlyingToken;
       isInitialized = true;
       _bootstrapInitialHolder();
     }
@@ -103,17 +100,9 @@ contract RebasingWrapper is ERC20 {
         uint256 sharesAmount
     );
 
-  function invest(address vault, uint256 amount) public returns (uint256) {
-    depositFor(address(this), amount);
-    uint256 newBalance = balanceOf(address(this));
-    this.approve(vault, newBalance);
-    return IERC4626(vault).deposit(newBalance, msg.sender);
-  }
+  function invest(address vault, uint256 amount) virtual public returns (uint256);
 
-  function remove(address vault, uint256 amount) public {
-    uint256 _assets = IERC4626(vault).redeem(amount, msg.sender, msg.sender);
-    withdrawTo(msg.sender, _assets);
-  }
+  function remove(address vault, uint256 amount) virtual public;
 
    /**
    * @notice Sender needs to approve this contract before calling depositFor. This function transfers the assets from
@@ -303,16 +292,12 @@ contract RebasingWrapper is ERC20 {
     /**
      * @return the amount of shares that corresponds to `assets` protocol-controlled assets.
      */
-    function convertToExchangeRate(uint256 assets) public view returns (uint256) {
-        return IwstETH(underlyingToken).getWstETHByStETH(assets);
-    }
+    function convertToExchangeRate(uint256 assets) virtual public view returns (uint256);
 
     /**
      * @return the amount of assets that corresponds to `_sharesAmount` token shares.
      */
-    function convertToRebasing(uint256 _sharesAmount) public view returns (uint256) {
-        return IwstETH(underlyingToken).getStETHByWstETH(_sharesAmount);
-    }
+    function convertToRebasing(uint256 _sharesAmount) virtual public view returns (uint256);
 
     /**
      * @notice Moves `_sharesAmount` token shares from the caller's account to the `_recipient` account.
@@ -367,9 +352,7 @@ contract RebasingWrapper is ERC20 {
      * @dev This is used for calculating tokens from shares and vice versa.
      * @dev This function is required to be implemented in a derived contract.
      */
-    function _getTotalPooledUnderlying() internal view returns (uint256) {
-      return IwstETH(underlyingToken).getStETHByWstETH(IwstETH(underlyingToken).balanceOf(address(this)));
-    }
+    function _getTotalPooledUnderlying() virtual internal view returns (uint256);
 
     /**
      * @notice Moves `_amount` tokens from `_sender` to `_recipient`.
@@ -545,15 +528,5 @@ contract RebasingWrapper is ERC20 {
      *
      * @dev must be invoked before using the token
      */
-    function _bootstrapInitialHolder() internal {
-        uint256 balance = IwstETH(underlyingToken).balanceOf(address(this));
-        assert(balance != 0);
-
-        if (_getTotalShares() == 0) {
-            // if protocol is empty bootstrap it with the contract's balance
-            // address(0xdead) is a holder for initial shares
-            // emitting `Submitted` before Transfer events to preserver events order in tx
-            _mintInitialShares(balance);
-        }
-    }
+    function _bootstrapInitialHolder() virtual internal;
 }

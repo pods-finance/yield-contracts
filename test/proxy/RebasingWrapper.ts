@@ -4,10 +4,10 @@ import { BigNumber } from 'ethers'
 import { SignerWithAddress } from '@nomiclabs/hardhat-ethers/signers'
 import minus from '../utils/minus'
 import { startMainnetFork, stopMainnetFork } from '../utils/mainnetFork'
-import { ISTETH, IwstETH, RebasingWrapper } from '../../typechain'
+import { ISTETH, IwstETH, WwstEth } from '../../typechain'
 
-describe('RebasingWrapper', () => {
-  let rebasingToken: RebasingWrapper, exchangeRateToken: IwstETH, stEthContract: ISTETH
+describe('WwstEth', () => {
+  let rebasingToken: WwstEth, exchangeRateToken: IwstETH, stEthContract: ISTETH
 
   let user0: SignerWithAddress, user1: SignerWithAddress
 
@@ -32,10 +32,10 @@ describe('RebasingWrapper', () => {
     exchangeRateToken = await ethers.getContractAt('IwstETH', wstETH)
     stEthContract = await ethers.getContractAt('ISTETH', stETH)
 
-    const RebasingWrapper = await ethers.getContractFactory('RebasingWrapper')
-    rebasingToken = await RebasingWrapper.deploy(wstETH)
+    const WwstEth = await ethers.getContractFactory('WwstEth')
+    rebasingToken = await WwstEth.deploy()
     await exchangeRateToken.connect(user0).transfer(rebasingToken.address, ethers.utils.parseEther('0.1'))
-    await rebasingToken.connect(user0).initialize()
+    await rebasingToken.connect(user0).initialize(wstETH)
     await exchangeRateToken.connect(user0).approve(rebasingToken.address, ethers.constants.MaxUint256)
     await stEthContract.connect(user0).approve(exchangeRateToken.address, ethers.constants.MaxUint256)
   })
@@ -54,7 +54,8 @@ describe('RebasingWrapper', () => {
 
   describe('sanity checks', () => {
     it('cant reinitialize', async () => {
-      await expect(rebasingToken.connect(user0).initialize()).to.be.revertedWith('already initialized')
+      const wstETH = '0x7f39C581F595B53c5cb19bD0b3f8dA6c935E2Ca0'
+      await expect(rebasingToken.connect(user0).initialize(wstETH)).to.be.revertedWith('already initialized')
     })
 
     it('check read only consistency', async () => {
@@ -95,7 +96,6 @@ describe('RebasingWrapper', () => {
       const stETHAmount = ethers.utils.parseEther('0.5')
       const wstEthAmount = await exchangeRateToken.connect(user0).callStatic.wrap(stETHAmount)
       const withdrawTrxn = await (await rebasingToken.connect(user0).withdrawTo(user0.address, stETHAmount)).wait()
-      console.log('withdrawTrxn', withdrawTrxn.events)
       const withdrawEvent = withdrawTrxn.events?.find((e) => e.event === 'SharesBurnt')
       const sharesAmount = withdrawEvent?.args?.sharesAmount
 
@@ -286,8 +286,8 @@ describe('RebasingWrapper', () => {
 
       const wstETH = '0x7f39C581F595B53c5cb19bD0b3f8dA6c935E2Ca0'
 
-      const rebasingWrapperMockFactory = await ethers.getContractFactory('RebasingWrapperMock')
-      const rebasingTokenMock = await rebasingWrapperMockFactory.deploy(wstETH)
+      const WwstEthMockFactory = await ethers.getContractFactory('WwstEthMock')
+      const rebasingTokenMock = await WwstEthMockFactory.deploy(wstETH)
 
       await expect(
         rebasingTokenMock.connect(user0).transferSharesMock(ZERO_ADDRESS, user0.address, ten)

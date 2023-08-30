@@ -6,10 +6,10 @@ import minus from '../utils/minus'
 import { startMainnetFork, stopMainnetFork } from '../utils/mainnetFork'
 import createConfigurationManager from '../utils/createConfigurationManager'
 import { feeExcluded } from '../utils/feeExcluded'
-import { ConfigurationManager, RebasingWrapper, InvestorActorMock, STETHVault, ISTETH, IwstETH } from '../../typechain'
+import { ConfigurationManager, WwstEth, InvestorActorMock, STETHVault, ISTETH, IwstETH } from '../../typechain'
 
 describe('STETHVault Wrapper', () => {
-  let asset: RebasingWrapper, vault: STETHVault, investor: InvestorActorMock,
+  let asset: WwstEth, vault: STETHVault, investor: InvestorActorMock,
     configuration: ConfigurationManager, stEthContract: ISTETH, wstETHContract: IwstETH
 
   let user0: SignerWithAddress, user1: SignerWithAddress, user2: SignerWithAddress, user3: SignerWithAddress, user4: SignerWithAddress, user5: SignerWithAddress,
@@ -70,8 +70,15 @@ describe('STETHVault Wrapper', () => {
     // Wrapper of wstETH
     const wstETH = '0x7f39C581F595B53c5cb19bD0b3f8dA6c935E2Ca0'
     wstETHContract = await ethers.getContractAt('IwstETH', wstETH)
-    const RebasingWrapperFactory = await ethers.getContractFactory('RebasingWrapper')
-    asset = await RebasingWrapperFactory.deploy(wstETH)
+    const RebasingWrapperFactory = await ethers.getContractFactory('WwstEth')
+    asset = await RebasingWrapperFactory.deploy()
+    await user0.sendTransaction({
+      to: wstETHContract.address,
+      value: ethers.utils.parseEther('10')
+    })
+    await wstETHContract.connect(user0)
+      .transfer(asset.address, ethers.utils.parseEther('0.1'))
+    await asset.initialize(wstETH)
 
     const depositUsersFundsIntoWrapper = async (user: SignerWithAddress): Promise<void> => {
       const userFunds = await stEthContract.balanceOf(user.address)
@@ -763,6 +770,7 @@ describe('STETHVault Wrapper', () => {
         [user0, vault],
         [minus(assetAmountUser0Effective), assetAmountUser0Effective]
       )
+
     await expect(async () => await vault.connect(user1).deposit(assetAmountUser1, user1.address))
       .to.changeTokenBalances(
         asset,
