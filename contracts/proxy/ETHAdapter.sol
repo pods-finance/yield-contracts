@@ -131,7 +131,10 @@ contract ETHAdapter {
         bytes32 r,
         bytes32 s
     ) external returns (uint256 assets) {
-        vault.permit(msg.sender, address(this), shares, deadline, v, r, s);
+        if (vault.allowance(msg.sender, address(this)) < shares) {
+            vault.permit(msg.sender, address(this), shares, deadline, v, r, s);
+        }
+
         assets = vault.redeem(shares, address(this), msg.sender);
         _returnETH(vault, receiver, minOutput);
     }
@@ -179,7 +182,11 @@ contract ETHAdapter {
         bytes32 s
     ) external returns (uint256 shares) {
         shares = vault.convertToShares(assets);
-        vault.permit(msg.sender, address(this), shares, deadline, v, r, s);
+
+        if (vault.allowance(msg.sender, address(this)) < shares) {
+            vault.permit(msg.sender, address(this), shares, deadline, v, r, s);
+        }
+
         shares = vault.withdraw(assets, address(this), msg.sender);
         _returnETH(vault, receiver, minOutput);
     }
