@@ -136,7 +136,10 @@ abstract contract BaseVault is IVault, ERC20Permit, ERC4626, Capped {
         bytes32 r,
         bytes32 s
     ) external virtual override whenNotProcessingDeposits returns (uint256) {
-        IERC20Permit(asset()).permit(msg.sender, address(this), assets, deadline, v, r, s);
+        if (IERC20Metadata(asset()).allowance(msg.sender, address(this)) < assets) {
+            IERC20Permit(asset()).permit(msg.sender, address(this), assets, deadline, v, r, s);
+        }
+
         return super.deposit(assets, receiver);
     }
 
@@ -165,7 +168,11 @@ abstract contract BaseVault is IVault, ERC20Permit, ERC4626, Capped {
         bytes32 s
     ) external virtual override whenNotProcessingDeposits returns (uint256) {
         uint256 assets = previewMint(shares);
-        IERC20Permit(asset()).permit(msg.sender, address(this), assets, deadline, v, r, s);
+
+        if (IERC20Metadata(asset()).allowance(msg.sender, address(this)) < assets) {
+            IERC20Permit(asset()).permit(msg.sender, address(this), assets, deadline, v, r, s);
+        }
+
         return super.mint(shares, receiver);
     }
 

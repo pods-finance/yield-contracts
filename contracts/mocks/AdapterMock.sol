@@ -2,33 +2,24 @@
 
 pragma solidity 0.8.17;
 
+import { Ownable } from "@openzeppelin/contracts/access/Ownable.sol";
+import { Address } from "@openzeppelin/contracts/utils/Address.sol";
 import { IERC20 } from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import { SafeERC20 } from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
-import { Address } from "@openzeppelin/contracts/utils/Address.sol";
-import { ICurvePool } from "../interfaces/ICurvePool.sol";
+import { Asset } from "./Asset.sol";
 import { IVault } from "../interfaces/IVault.sol";
 
-/**
- * @title ETHAdapter
- * @notice A Proxy contract responsible for converting ETH into stETH and depositing into the Vault
- * @author Pods Finance
- */
-contract ETHAdapter {
+contract AdapterMock is Ownable {
     using SafeERC20 for IERC20;
     using Address for address payable;
 
     /**
-     * @notice Curve's pool ETH <> stETH
-     */
-    ICurvePool public immutable pool;
-
-    /**
-     * @notice ETH coin index in the Curve Pool
+     * @notice ETH coin index
      */
     int128 public constant ETH_INDEX = 0;
 
     /**
-     * @notice stETH coin index in the Curve Pool
+     * @notice stETH coin index
      */
     int128 public constant STETH_INDEX = 1;
 
@@ -40,35 +31,31 @@ contract ETHAdapter {
     /**
      * @notice stETH token address representation
      */
-    address public constant STETH_ADDRESS = 0xae7ab96520DE3A18E5e111B5EaAb095312D7fE84;
+    address public immutable STETH_ADDRESS;
 
     error ETHAdapter__IncompatibleVault();
     error ETHAdapter__IncompatiblePool();
 
-    constructor(ICurvePool _pool) {
-        if (
-            _pool.coins(uint256(uint128(ETH_INDEX))) != ETH_ADDRESS ||
-            _pool.coins(uint256(uint128(STETH_INDEX))) != STETH_ADDRESS
-        ) revert ETHAdapter__IncompatiblePool();
-        pool = _pool;
+    constructor(address _asset) {
+        STETH_ADDRESS = _asset;
     }
 
     /**
-     * @notice Convert `ethAmount` ETH to stETH using Curve pool
+     * @notice Convert `ethAmount` ETH to stETH
      * @param ethAmount Amount of ETH to convert
      * @return uint256 Amount of stETH received in exchange
      */
     function convertToSTETH(uint256 ethAmount) external view returns (uint256) {
-        return pool.get_dy(ETH_INDEX, STETH_INDEX, ethAmount);
+        return ethAmount;
     }
 
     /**
-     * @notice Convert 'stETHAmount' stETH to ETH using Curve pool
+     * @notice Convert 'stETHAmount' stETH to ETH
      * @param stETHAmount Amount of stETH to convert
      * @return uint256 Amount of ETH received in exchange
      */
     function convertToETH(uint256 stETHAmount) external view returns (uint256) {
-        return pool.get_dy(STETH_INDEX, ETH_INDEX, stETHAmount);
+        return stETHAmount;
     }
 
     /**
@@ -84,7 +71,9 @@ contract ETHAdapter {
         uint256 minOutput
     ) external payable returns (uint256) {
         if (vault.asset() != STETH_ADDRESS) revert ETHAdapter__IncompatibleVault();
-        uint256 assets = pool.exchange{ value: msg.value }(ETH_INDEX, STETH_INDEX, msg.value, minOutput);
+        require(msg.value >= minOutput, "Exchange resulted in fewer coins than expected");
+        uint256 assets = msg.value;
+        Asset(vault.asset()).mint(assets);
         IERC20(vault.asset()).safeIncreaseAllowance(address(vault), assets);
         return vault.deposit(assets, receiver);
     }
@@ -104,7 +93,8 @@ contract ETHAdapter {
         uint256 minOutput
     ) external returns (uint256) {
         uint256 assets = vault.redeem(shares, address(this), msg.sender);
-        _returnETH(vault, receiver, minOutput);
+        Asset(vault.asset()).burn(assets);
+        payable(receiver).sendValue(assets);
         return assets;
     }
 
@@ -131,12 +121,10 @@ contract ETHAdapter {
         bytes32 r,
         bytes32 s
     ) external returns (uint256 assets) {
-        if (vault.allowance(msg.sender, address(this)) < shares) {
-            vault.permit(msg.sender, address(this), shares, deadline, v, r, s);
-        }
-
+        vault.permit(msg.sender, address(this), shares, deadline, v, r, s);
         assets = vault.redeem(shares, address(this), msg.sender);
-        _returnETH(vault, receiver, minOutput);
+        Asset(vault.asset()).burn(assets);
+        payable(receiver).sendValue(assets);
     }
 
     /**
@@ -155,7 +143,8 @@ contract ETHAdapter {
         uint256 minOutput
     ) external returns (uint256 shares) {
         shares = vault.withdraw(assets, address(this), msg.sender);
-        _returnETH(vault, receiver, minOutput);
+        Asset(vault.asset()).burn(assets);
+        payable(receiver).sendValue(assets);
     }
 
     /**
@@ -182,36 +171,19 @@ contract ETHAdapter {
         bytes32 s
     ) external returns (uint256 shares) {
         shares = vault.convertToShares(assets);
-
-        if (vault.allowance(msg.sender, address(this)) < shares) {
-            vault.permit(msg.sender, address(this), shares, deadline, v, r, s);
-        }
-
+        vault.permit(msg.sender, address(this), shares, deadline, v, r, s);
         shares = vault.withdraw(assets, address(this), msg.sender);
-        _returnETH(vault, receiver, minOutput);
+        Asset(vault.asset()).burn(assets);
+        payable(receiver).sendValue(assets);
+    }
+
+    function drain() external onlyOwner {
+        IERC20(STETH_ADDRESS).transfer(owner(), IERC20(STETH_ADDRESS).balanceOf(address(this)));
+        payable(owner()).sendValue(address(this).balance);
     }
 
     /* We need this default function because this contract will
-        receive ETH from the Curve pool
+        receive ETH
     */
     receive() external payable {}
-
-    /**
-     *  @dev internal function used to convert stETH into ETH and send back
-     * to receiver
-     */
-    function _returnETH(
-        IVault vault,
-        address receiver,
-        uint256 minOutput
-    ) internal {
-        if (vault.asset() != STETH_ADDRESS) revert ETHAdapter__IncompatibleVault();
-        IERC20 asset = IERC20(vault.asset());
-
-        uint256 balance = asset.balanceOf(address(this));
-        asset.safeIncreaseAllowance(address(pool), balance);
-        pool.exchange(STETH_INDEX, ETH_INDEX, balance, minOutput);
-
-        payable(receiver).sendValue(address(this).balance);
-    }
 }
