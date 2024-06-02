@@ -3,6 +3,9 @@ name: Fuzz tests
 on:
   pull_request:
     types: [opened, synchronize]
+  push:
+    branches:
+      - main
 
 jobs:
   fuzz-tests:
